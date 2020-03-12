@@ -1,0 +1,239 @@
+---
+title: "texmex scratch"
+author: "UKCEH; Adam Griffin"
+date: "12/02/2020"
+output: html_document
+---
+
+# AquaCAT, Project 07441
+
+This document investigates the `texmex` package, the netCDF files coming out of 
+the G2G modelling, and what needs wrangling to get the data in a reasonable shape.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+### PACKAGES
+library(texmex)
+library(ncdf4)
+library(fields)
+```
+
+
+### Adjusted texmex functions
+These functions allow the printing of one or two plots, not all the pairwise plots.
+```{r func, include=FALSE}
+plottexmex <- function (x, plots = "gpd", main = "", plotnum=NULL, ...) {
+  if (casefold(plots) == "gpd") {
+      which <- 1
+  }
+  else {
+      which <- 2
+  }
+  d2 <- dim(x$boot[[1]][[which]])
+  pointEst <- x$simpleDep
+  condVar <- names(x$simpleMar$data)[x$which]
+  margins <- x$margins
+  x <- x$boot
+  co <- unlist(lapply(x, function(z, wh) z[[wh]], wh = which))
+  co <- array(co, dim = c(d2[1], d2[2], length(co)/prod(d2)))
+  lco <- list(length = prod(d2))
+  for (i in 1:d2[2]) {
+      for (j in 1:d2[1]) {
+          lco[[j + d2[1] * (i - 1)]] <- co[j, i, ]
+      }
+  }
+  cn <- colnames(x[[1]][[which]])
+  rn <- rownames(x[[1]][[which]])
+  if (which == 2) {
+      cn <- paste(cn, "|", condVar)
+  }
+  labs <- paste(rep(rn, length(cn)), rep(cn, each = switch(which, 
+      2, 6)), sep = "  ")
+  fun <- function(X, z, label, ...) {
+      hist(z[[X]], prob = TRUE, xlab = label[X], main = main, 
+          ...)
+      lines(density(z[[X]], n = 100))
+      invisible()
+  }
+  if (which == 1) {
+      if(is.null(plotnum)){
+        plotnum <- 1:d2[2]
+      }
+      lapply(plotnum, fun, z = lco, label = labs, ...)
+  }
+  if (which == 2) {
+      fun <- function(X, z, label, ...) {
+          offset <- (X - 1) * 6
+          plot(lco[[offset + 1]], lco[[offset + 2]], xlab = labs[offset + 
+              1], ylab = labs[offset + 2], main = main, ...)
+          points(pointEst[1, X], pointEst[2, X], pch = "@", 
+              col = 2)
+          if (margins[[1]] == "gumbel") {
+              plot(lco[[offset + 3]], lco[[offset + 4]], xlab = labs[offset + 
+                3], ylab = labs[offset + 4], main = main, ...)
+              points(pointEst[3, X], pointEst[4, X], pch = "@", 
+                col = 2)
+          }
+      }
+      if(is.null(plotnum)){
+        plotnum <- 1:d2[2]
+      }
+      lapply(plotnum, fun, z = lco, label = labs, ...)
+  }
+  invisible()
+}
+
+
+plotpredmex <- function(x, pch = c(1, 3, 20), col = c(2, 8, 3), cex = c(1, 
+    1, 1), ask = TRUE, plotnum=NULL, ...){
+  d <- dim(x$data$simulated)[[2]] - 1
+  if (prod(par("mfrow")) < d) {
+      if (ask) {
+          op <- par(ask = TRUE)
+          on.exit(par(op))
+      }
+  }
+  xdat <- x$data$real[, 1]
+  upts <- seq(from = 0.001, to = 1 - 1e-04, len = 100)
+  xpts <- texmex:::revTransform(upts, data = x$data$real[, 1],
+                                qu = mean(x$data$real[, 1] < x$mth[1]),
+                                th = x$mth[1],
+                                sigma = x$gpd.coef[3, 1],
+                                xi = x$gpd.coef[4, 1])
+  if(is.null(plotnum)){
+    plotnum <- 2:(dim(x$data$real)[[2]])
+  }
+  for (i in plotnum) {
+      ydat <- x$data$real[, i]
+      xlimits <- range(xdat, x$data$simulated[, 1])
+      ylimits <- range(ydat, x$data$simulated[, i])
+      plot(xdat, ydat, xlim = xlimits, ylim = ylimits,
+          xlab = names(x$data$simulated)[1], 
+          ylab = names(x$data$simulated)[i], type = "n", 
+          ...)
+      points(x$data$simulated[x$data$CondLargest, 1],
+             x$data$simulated[x$data$CondLargest, i],
+             col = col[3], pch = pch[3], cex = cex[3])
+      points(x$data$simulated[!x$data$CondLargest, 1],
+             x$data$simulated[!x$data$CondLargest, i],
+             col = col[2], pch = pch[2], cex = cex[2])
+      points(xdat, ydat, pch = pch[1], col = col[1], cex = cex[1])
+      abline(v = x$data$pth, lty = 2, col = 3)
+      ypts <- texmex:::revTransform(upts, data = x$data$real[, i],
+                           qu = mean(x$data$real[, i] < x$mth[i]),
+                           th = x$mth[i],
+                           sigma = x$gpd.coef[3, i],
+                           xi = x$gpd.coef[4, i])
+      lines(xpts, ypts, col = 3)
+  }
+  invisible()
+}
+```
+
+## Data
+The data will come in 20-30 year periods on a daily time step (with possible difference in days/year). Data is in netCDF format, and is currently hosted on the linux network.
+```{r data}
+ncname_lin <-"/prj/ResilRiskInds/hmfg2g_runs/baseline_qx_setting/dmflow_out.nc"
+ncname_win <- "K:/hmfg2g_runs/baseline_qx_setting/dmflow_out.nc"  
+  # This file is ~36GB on the linux server.
+ST <- Sys.time()
+ncin <- nc_open(ncname_win)
+print(Sys.time() - ST)
+print(ncin)
+```
+
+Here we just take a small sample from the dataset (25*25 gridpoints for 2000 days) to take a look. `NA` is sea pixels, `-1` is not on the river network.
+```{r extraction}
+istart <- 390
+Di <- 25
+jstart <- 400
+Dj <- 25
+tstart <- 101
+Dt <- 2000
+
+ST <- Sys.time()
+ncflow <- ncvar_get(ncin, varid="dmflow",
+                    start=c(istart,jstart,101), count=c(Di,Dj,Dt))
+print(Sys.time() - ST)
+# for Di = 25, Dj = 25, Dt = 2000, ncflow is ~10MB
+
+for(i in 1:5){
+  v <- as.vector(ncflow[,,i])
+  print(paste("Range:", max(v[!is.na(v) & v > -1]), 
+        min(v[!is.na(v) & v > -1])))
+  print(paste("Number of -1s:", sum(v[!is.na(v)]==-1)))
+  print(paste("Number of NAs:", sum(is.na(v))))
+}
+image.plot(ncflow[,,1])
+
+ST <- Sys.time()
+ncWide <- ncvar_get(ncin, varid="dmflow", start=c(1, 1, tstart),
+                    count=c(-1, -1, 1))
+print(Sys.time() - ST)
+
+v <- as.vector(ncWide)
+print(paste("Range:", max(v[!is.na(v) & v > -1]), 
+        min(v[!is.na(v) & v > -1])))
+print(paste("Number of -1s:", sum(v[!is.na(v)]==-1)))
+print(paste("Number of NAs:", sum(is.na(v))))
+
+image.plot(ncWide[,dim(ncWide)[2]:1])
+```
+
+## Event extraction
+This will either be much more or much less in depth for the final dataset.
+```{r eventextract}
+HasData <- which(apply(ncflow, c(1,2),
+                       function(v){sum(v[which(!is.na(v))] > -1) == Dt}),
+                 arr.ind=T)
+# HasData is important for gluing the events back in at the other end of the
+# pipeline.
+
+ncData <- matrix(NA, ncol=nrow(HasData), nrow=Dt)
+for(i in 1:nrow(HasData)){
+  ncData[,i] <- ncflow[HasData[i,1], HasData[i,2],]
+}
+```
+
+For this, it is worth noting that for ` is.na(v) & v > -1` we have `FALSE & NA == FALSE`.
+
+## Using texmex
+This section gives a quick overview of the main functions needed from texmex.
+```{r texmex}
+ST <- Sys.time()
+  mmex <- mex(ncData, mqu=.7, penalty="none", dqu=.7, which=2)
+print(Sys.time() - ST)
+
+ST <- Sys.time()
+  myboot <- bootmex(mmex, R=10)  # R=10 is quite low.
+print(Sys.time() - ST)
+
+plottexmex(myboot, plotnum=3:6)
+
+ST <- Sys.time()
+mypred <- predict(myboot,  pqu=.99)
+print(Sys.time() - ST)
+plotpredmex(mypred, plotnum=3:6)
+
+
+summary(mypred, probs = c(0.025, 0.5, 0.975))
+
+MGPD <- migpd(ncData[,1:6], mqu=.7, penalty="none", maxit=1000)
+
+mexdep <- mexDependence(MGPD, which=1, dqu=.7, margins="gumbel")
+#mall <- mexAll(ncData[,1:6], mqu=0.8, dqu=0.8)
+
+res <- lapply(1:6, function(i) {
+    mex(ncData[,1:6], which = i, mqu = 0.8, dqu = 0.8)
+})
+names(res) <- names(data)
+oldClass(res) <- "mexList"
+
+
+mmc <- mexMonteCarlo(500, res)
+pairs(mmc$MCsample[,1:3])
+```
+
+Not sure what this means, but this is the text from plotting mex predict objects.
+
+The plot method for class "predict.mex" displays both the original data and the simulated data generated above the threshold for prediction; it shows the threshold for prediction (vertical line) and also the curve joining equal quantiles of the marginal distributions – this is for reference: variables that are perfectly dependent will lie exactly on this curve. Original data are shown with one plotting character and simulated data with another; colours of simulated point distinguish those points which have the conditioning variable as the largest (on a quantile scale) or not the largest.
