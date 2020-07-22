@@ -1,7 +1,0 @@
-"0","plot_wide <- ncvar_get(ncin, ""dmflow"","
-"0","                    start=c(1,1,1000), count=c(-1, -1, 1))"
-"0",""
-"0","brks <- c(-1.01, seq(0, max(plot_wide, na.rm=T), length.out=21))"
-"0","image.plot(plot_wide, x=0:700, y=0:1250, xlim=c(0,700), ylim=c(1250,0),"
-"0","           xlab=""day 1000"", asp=1, col=c(""grey90"", heat.colors(20)), "
-"0","           breaks=brks)"

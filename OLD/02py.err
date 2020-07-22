@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "02_Event_ExtractA.py", line 61, in <module>
+    rn = np.column_stack((rn, q5))
+  File "<__array_function__ internals>", line 6, in column_stack
+  File "/users/sgsys/adagri/miniconda3/lib/python3.7/site-packages/numpy/lib/shape_base.py", line 641, in column_stack
+    return _nx.concatenate(arrays, 1)
+  File "<__array_function__ internals>", line 6, in concatenate
+ValueError: all the input array dimensions for the concatenation axis must match exactly, but along dimension 0, the array at index 0 has size 19914 and the array at index 1 has size 2

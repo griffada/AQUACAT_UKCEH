@@ -1,0 +1,184 @@
+---
+title: "Choice of Empirical Copula"
+author: "Adam Griffin; UKCEH"
+date: "23/06/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ncdf4)
+library(extRemes)
+library(dplyr)
+library(fitdistrplus)
+library(MASS)
+library(truncdist)
+```
+
+# Intro
+Here we aim to determine an appropriate distribution to choose from for drawing from something that looks like the empirical distribution of tail probabilities in the event set. This will need to be averaged over the set of ensemble members.
+
+```{r data}
+if (substr(osVersion,1,3) == "Win") {
+  ncname <- "S:/CodeABG/InterimData/dmflow_copy.nc"  # rechunked for spaceslices
+  ncname2 <- "S:/run_hmfg2g/outputs/dmflow_RCM01_198012_201011_out.nc" 
+    # pre-rechunk
+  wd <- "S:/"
+  wd_id <- "S:/CodeABG/InterimData/"
+  wd_cd <- "S:/CodeABG/"
+  
+} else {
+  ncname <- "/prj/aquacat/CodeABG/InterimData/dmflow_copy.nc"
+  ncname2 <- "S:/run_hmfg2g/outputs/dmflow_RCM01_198012_201011_out.nc"
+  wd <- "/prj/aquacat/"
+  wd_id <- "/prj/aquacat/CodeABG/InterimData/"
+  wd_cd <- "/prj/aquacat/CodeABG/"
+}
+
+ND <- 10800 # Number of days
+
+
+# river network
+rn <- read.csv(paste0(wd_id, "hasData2.csv"),stringsAsFactors=FALSE)
+NH <- nrow(rn)
+
+
+# threshold for inundation
+threshVal <- c(5/365, 2/365, 1/365, 0.2/365, 0.1/365)
+threshName <- c("POT5", "POT2", "POT1", "Q5", "Q10")
+NT <- length(threshVal)
+
+
+# cut-off bound for widespread event
+wsBound <- c(0.05, 0.02, 0.01, 0.005, 0.001)
+wsName <- c("pc5", "pc2", "pc1", "pc05", "pc01")
+NW <- length(wsBound)
+
+
+# lists of which days different thresholds were exceeded at different points
+# NT lists of NW lists
+threshDayExcList <- readRDS(paste0(wd_id, "threshDayExcList2.rds"))
+
+
+
+# matrix of threshold value (col) at a given cell (row)
+threshMat <- read.csv(paste0(wd_id, "threshMat2.csv"), stringsAsFactors=FALSE)
+#dim(threshMat)  =  19914 x 5
+
+
+
+# eventLList length of event L, NT lists (by threshold) of NW lists 
+# (by inun cutoff))
+# eventDayList start of event L, NT lists of NW lists
+load(paste0(wd_id, "eventLists03.RDa")) 
+NE <- length(eventDayList[[2]][[2]]) # POT2, 2% inun.
+
+
+
+# timewise maxima at each cell for each event ((NE + 2) x NH)
+eventDF <- readr::read_csv(paste0(wd,"Data/eventdf_POT2_pc2.csv"))
+
+# PoE under different computations with extra data. Tidy format.
+present <- readr::read_csv(paste0(wd,"Data/present1_returnlevels.csv"))
+
+dummy <- readr::read_csv(paste0(wd, "Data/dummy1_returnlevels.csv"))
+```
+
+# Choice of distribution
+
+```{r tailsGen}
+tailsGen <- function(n, low=1, pool=present$gpp, maxit=1000, betapar=c(1,1)){
+  # draw new probabilities of exceedence from pool, allowing minumum lower bound
+  # to be enforced. Technically drawing from the conditional distribution 
+  # P[X=x | X_i < low for some i].
+  #
+  # n         number of PoEs to draw
+  # low       lower target on PoE
+  # pool      existing PoE to take quantiles from.
+  # maxit     number of trials to get an event of the required probability
+  # betapar   vector of two parameters for the Beta distribution
+  
+  QV <- rep(2, n)
+  
+  #TODO needs the right distribution to extrapolate from pool to reach tails.
+  
+  z <- 0
+  while(min(QV) > low){
+    V <- runif(n)
+    z <- z+1
+    
+    QV <- qbeta(V, betapar[1], betapar[2])
+    if(z >= maxit){
+      print("maxit exceeded")
+      break
+    }
+  }
+  if(z>1){print(paste(z, "iterations."))}
+  unname(QV)
+}
+```
+
+```{r}
+beta_mom <- function(x) {
+  
+  m_x <- mean(x, na.rm = TRUE)
+  s_x <- sd(x, na.rm = TRUE)
+  
+  alpha <- m_x*((m_x*(1 - m_x)/s_x^2) - 1)
+  beta <- (1 - m_x)*((m_x*(1 - m_x)/s_x^2) - 1)
+  
+  return(list(shape1 = alpha, shape2 = beta))
+  
+}
+
+BM <- beta_mom(dummy$gpp)
+
+FF <- fitdist(dummy$gpp, "beta", method="mle")
+summary(FF)
+plot(FF)
+
+FG <- fitdist(dummy$gpp, "gamma", method="mle")
+summary(FG)
+plot(FG)
+
+FH <- fitdist(dummy$gpp, "exp", method="mle")
+summary(FH)
+plot(FH)
+
+library(truncdist)
+dtruncgamma <- function(x, shape, scale) dtrunc(x, "gamma", a=0, b=1, shape, scale)
+ptruncgamma <- function(x, shape, scale) ptrunc(x, "gamma", a=0, b=1, shape, scale)
+qtruncgamma <- function(x, shape, scale) qtrunc(x, "gamma", a=0, b=1, shape, scale)
+dtruncexp <- function(x, rate) dtrunc(x, "exp", a=0, b=1, rate)
+ptruncexp <- function(x, rate) ptrunc(x, "exp", a=0, b=1, rate)
+qtruncexp <- function(x, rate) qtrunc(x, "exp", a=0, b=1, rate)
+
+mu <- mean(dummy$gpp)
+sd2 <- var(dummy$gpp)
+
+FE <- fitdist(dummy$gpp, "truncgamma", method="mle",
+              start=list(shape=mu^2/sd2, scale=mu/sd2))
+summary(FE)
+plot(FE)
+
+FI <- fitdist(dummy$gpp, "truncexp", method="mle",
+              start=list(rate=sd2/mu))
+summary(FI)
+plot(FI)
+
+dfr <- data.frame(method=c("beta", "gamma", "exp", "truncgamma", "truncexp"),
+                  AIC=c(FF$aic, FG$aic, FH$aic, FE$aic, FI$aic),
+                  BIC=c(FF$bic, FG$bic, FH$bic, FE$bic, FI$bic),
+                  llhd=c(FF$loglik, FG$loglik, FH$loglik, FE$loglik, FI$loglik))
+
+
+knitr::kable(dfr)
+print(gofstat(list(FF, FG, FH, FI, FE)))
+```
+
+
+```{r}
+FF <- fitdist(present$gpp, "beta", method="mle")
+summary(FF)
+```
+

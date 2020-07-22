@@ -1,0 +1,525 @@
+[1] "2020-07-06 12:09:20 BST"
+[1] "2020-07-06 12:09:26 BST"
+File /prj/aquacat/CodeABG/InterimData/dmflow_copy.nc (NC_FORMAT_NETCDF4):
+
+     1 variables (excluding dimension variables):
+        float dmflow[Easting,Northing,Time]   (Chunking: [13,19,4])  (Compression: shuffle,level 5)
+            units: m3 s-1
+            standard_name: dmflow
+            long_name: Daily mean river flow
+            _FillValue: -999
+            missing_value: -999
+
+     3 dimensions:
+        Northing  Size:1000
+            standard_name: Northing
+            axis: Y
+            units: GB National Grid
+        Easting  Size:700
+            standard_name: Easting
+            axis: X
+            units: GB National Grid
+        Time  Size:10800   *** is unlimited ***
+            standard_name: Time
+            axis: T
+            units: days since 1961-1-1 0:0:0
+            calendar: 360_day
+Time difference of 0 secs
+[1] 19914     5
+[1] "loop start"
+[1] "200 out of 19914"
+user.self  sys.self   elapsed 
+      180        23       204 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "400 out of 19914"
+user.self  sys.self   elapsed 
+      347        47       396 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "600 out of 19914"
+user.self  sys.self   elapsed 
+      513        75       590 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "800 out of 19914"
+user.self  sys.self   elapsed 
+      670        98       771 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "1000 out of 19914"
+user.self  sys.self   elapsed 
+      828       119       952 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "1200 out of 19914"
+user.self  sys.self   elapsed 
+      989       141      1136 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "1400 out of 19914"
+user.self  sys.self   elapsed 
+     1151       167      1325 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "1600 out of 19914"
+user.self  sys.self   elapsed 
+     1316       195      1517 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "1800 out of 19914"
+user.self  sys.self   elapsed 
+     1474       217      1699 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "2000 out of 19914"
+user.self  sys.self   elapsed 
+     1643       240      1891 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "2200 out of 19914"
+user.self  sys.self   elapsed 
+     1806       263      2077 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "2400 out of 19914"
+user.self  sys.self   elapsed 
+     1970       292      2276 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "2600 out of 19914"
+user.self  sys.self   elapsed 
+     2143       317      2474 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "2800 out of 19914"
+user.self  sys.self   elapsed 
+     2301       340      2658 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "3000 out of 19914"
+user.self  sys.self   elapsed 
+     2460       362      2840 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "3200 out of 19914"
+user.self  sys.self   elapsed 
+     2620       383      3022 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "3400 out of 19914"
+user.self  sys.self   elapsed 
+     2782       410      3212 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "3600 out of 19914"
+user.self  sys.self   elapsed 
+     2937       433      3390 
+user.self  sys.self   elapsed 
+        1         0         1 
+[1] "3800 out of 19914"
+user.self  sys.self   elapsed 
+     3093       454      3567 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "4000 out of 19914"
+user.self  sys.self   elapsed 
+     3252       476      3749 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "4200 out of 19914"
+user.self  sys.self   elapsed 
+     3412       499      3932 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "4400 out of 19914"
+user.self  sys.self   elapsed 
+     3587       527      4136 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "4600 out of 19914"
+user.self  sys.self   elapsed 
+     3757       551      4332 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "4800 out of 19914"
+user.self  sys.self   elapsed 
+     3920       574      4520 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "5000 out of 19914"
+user.self  sys.self   elapsed 
+     4079       596      4701 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "5200 out of 19914"
+user.self  sys.self   elapsed 
+     4243       619      4889 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "5400 out of 19914"
+user.self  sys.self   elapsed 
+     4410       644      5082 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "5600 out of 19914"
+user.self  sys.self   elapsed 
+     4569       666      5263 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "5800 out of 19914"
+user.self  sys.self   elapsed 
+     4736       688      5453 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "6000 out of 19914"
+user.self  sys.self   elapsed 
+     4898       710      5637 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "6200 out of 19914"
+user.self  sys.self   elapsed 
+     5063       733      5825 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "6400 out of 19914"
+user.self  sys.self   elapsed 
+     5233       761      6023 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "6600 out of 19914"
+user.self  sys.self   elapsed 
+     5406       786      6222 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "6800 out of 19914"
+user.self  sys.self   elapsed 
+     5569       810      6411 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "7000 out of 19914"
+user.self  sys.self   elapsed 
+     5736       835      6603 
+user.self  sys.self   elapsed 
+        1         0         1 
+[1] "7200 out of 19914"
+user.self  sys.self   elapsed 
+     5917       868      6817 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "7400 out of 19914"
+user.self  sys.self   elapsed 
+     6090       892      7015 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "7600 out of 19914"
+user.self  sys.self   elapsed 
+     6268       917      7218 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "7800 out of 19914"
+user.self  sys.self   elapsed 
+     6448       944      7427 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "8000 out of 19914"
+user.self  sys.self   elapsed 
+     6622       973      7643 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "8200 out of 19914"
+user.self  sys.self   elapsed 
+     6798      1002      7866 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "8400 out of 19914"
+user.self  sys.self   elapsed 
+     6966      1027      8059 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "8600 out of 19914"
+user.self  sys.self   elapsed 
+     7137      1053      8260 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "8800 out of 19914"
+user.self  sys.self   elapsed 
+     7306      1078      8455 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "9000 out of 19914"
+user.self  sys.self   elapsed 
+     7487      1113      8673 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "9200 out of 19914"
+user.self  sys.self   elapsed 
+     7658      1137      8868 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "9400 out of 19914"
+user.self  sys.self   elapsed 
+     7833      1161      9072 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "9600 out of 19914"
+user.self  sys.self   elapsed 
+     7998      1185      9261 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "9800 out of 19914"
+user.self  sys.self   elapsed 
+     8172      1213      9467 
+user.self  sys.self   elapsed 
+        1         0         1 
+[1] "10000 out of 19914"
+user.self  sys.self   elapsed 
+     8340      1237      9660 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "10200 out of 19914"
+user.self  sys.self   elapsed 
+     8509      1261      9853 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "10400 out of 19914"
+user.self  sys.self   elapsed 
+     8682      1287     10071 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "10600 out of 19914"
+user.self  sys.self   elapsed 
+     8852      1311     10266 
+user.self  sys.self   elapsed 
+        1         0         1 
+[1] "10800 out of 19914"
+user.self  sys.self   elapsed 
+     9020      1338     10462 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "11000 out of 19914"
+user.self  sys.self   elapsed 
+     9187      1363     10658 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "11200 out of 19914"
+user.self  sys.self   elapsed 
+     9352      1386     10848 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "11400 out of 19914"
+user.self  sys.self   elapsed 
+     9520      1410     11041 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "11600 out of 19914"
+user.self  sys.self   elapsed 
+     9688      1437     11241 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "11800 out of 19914"
+user.self  sys.self   elapsed 
+     9863      1466     11451 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "12000 out of 19914"
+user.self  sys.self   elapsed 
+    10031      1492     11644 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "12200 out of 19914"
+user.self  sys.self   elapsed 
+    10200      1518     11840 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "12400 out of 19914"
+user.self  sys.self   elapsed 
+    10373      1545     12044 
+user.self  sys.self   elapsed 
+        0         0         2 
+[1] "12600 out of 19914"
+user.self  sys.self   elapsed 
+    10560      1577     12276 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "12800 out of 19914"
+user.self  sys.self   elapsed 
+    10735      1603     12478 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "13000 out of 19914"
+user.self  sys.self   elapsed 
+    10906      1628     12675 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "13200 out of 19914"
+user.self  sys.self   elapsed 
+    11087      1653     12882 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "13400 out of 19914"
+user.self  sys.self   elapsed 
+    11262      1683     13089 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "13600 out of 19914"
+user.self  sys.self   elapsed 
+    11429      1708     13281 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "13800 out of 19914"
+user.self  sys.self   elapsed 
+    11602      1732     13479 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "14000 out of 19914"
+user.self  sys.self   elapsed 
+    11778      1757     13683 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "14200 out of 19914"
+user.self  sys.self   elapsed 
+    11953      1781     13883 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "14400 out of 19914"
+user.self  sys.self   elapsed 
+    12130      1809     14088 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "14600 out of 19914"
+user.self  sys.self   elapsed 
+    12295      1833     14278 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "14800 out of 19914"
+user.self  sys.self   elapsed 
+    12458      1857     14467 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "15000 out of 19914"
+user.self  sys.self   elapsed 
+    12622      1880     14654 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "15200 out of 19914"
+user.self  sys.self   elapsed 
+    12791      1906     14850 
+user.self  sys.self   elapsed 
+        1         0         1 
+[1] "15400 out of 19914"
+user.self  sys.self   elapsed 
+    12960      1936     15065 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "15600 out of 19914"
+user.self  sys.self   elapsed 
+    13132      1960     15263 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "15800 out of 19914"
+user.self  sys.self   elapsed 
+    13295      1984     15450 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "16000 out of 19914"
+user.self  sys.self   elapsed 
+    13461      2008     15640 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "16200 out of 19914"
+user.self  sys.self   elapsed 
+    13642      2042     15863 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "16400 out of 19914"
+user.self  sys.self   elapsed 
+    13813      2071     16100 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "16600 out of 19914"
+user.self  sys.self   elapsed 
+    13987      2098     16305 
+user.self  sys.self   elapsed 
+        1         0         1 
+[1] "16800 out of 19914"
+user.self  sys.self   elapsed 
+    14172      2142     17615 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "17000 out of 19914"
+user.self  sys.self   elapsed 
+    14361      2167     17835 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "17200 out of 19914"
+user.self  sys.self   elapsed 
+    14541      2191     18040 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "17400 out of 19914"
+user.self  sys.self   elapsed 
+    14722      2215     18247 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "17600 out of 19914"
+user.self  sys.self   elapsed 
+    14900      2242     18468 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "17800 out of 19914"
+user.self  sys.self   elapsed 
+    15074      2269     18670 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "18000 out of 19914"
+user.self  sys.self   elapsed 
+    15253      2292     18873 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "18200 out of 19914"
+user.self  sys.self   elapsed 
+    15430      2316     19075 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "18400 out of 19914"
+user.self  sys.self   elapsed 
+    15606      2340     19276 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "18600 out of 19914"
+user.self  sys.self   elapsed 
+    15793      2368     19498 
+user.self  sys.self   elapsed 
+        1         0         1 
+[1] "18800 out of 19914"
+user.self  sys.self   elapsed 
+    15969      2392     19699 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "19000 out of 19914"
+user.self  sys.self   elapsed 
+    16142      2415     19895 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "19200 out of 19914"
+user.self  sys.self   elapsed 
+    16319      2438     20097 
+user.self  sys.self   elapsed 
+        1         0         1 
+[1] "19400 out of 19914"
+user.self  sys.self   elapsed 
+    16501      2465     20307 
+user.self  sys.self   elapsed 
+        0         0         1 
+[1] "19600 out of 19914"
+user.self  sys.self   elapsed 
+    16674      2492     20510 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "19800 out of 19914"
+user.self  sys.self   elapsed 
+    16850      2516     20713 
+user.self  sys.self   elapsed 
+        0         0         0 
+[1] "2020-07-06 17:57:31 BST"
