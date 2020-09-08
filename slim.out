@@ -1,0 +1,25 @@
+[1] "2020-09-02 10:39:20 BST"
+[1] "SETUP DONE."
+Time difference of 6.584157 secs
+List of 2
+ $ margins   :List of 2
+  ..$ transformed    : num [1:79, 1:1437] 2.002 -0.192 1.961 0.888 4.108 ...
+  .. ..- attr(*, "dimnames")=List of 2
+  ..$ referenceMargin: NULL
+ $ dependence:List of 10
+  ..$ coefficients        : num [1:6, 1:1436] 0.189 0.973 0 0 0.814 ...
+  .. ..- attr(*, "dimnames")=List of 2
+  ..$ Z                   : num [1:24, 1:1436] 0.835 0.845 0.85 0.819 0.858 ...
+  .. ..- attr(*, "dimnames")=List of 2
+  ..$ dth                 : num 0.501
+  ..$ dqu                 : num 0.7
+  ..$ which               : num 1
+  ..$ conditioningVariable: chr "L1"
+  ..$ loglik              : num [1:1436] 31.57 18.67 13.93 8.84 4 ...
+  ..$ marginfns           :List of 3
+  ..$ constrain           : logi TRUE
+  ..$ v                   : num 10
+  ..- attr(*, "class")= chr "mexDependence"
+ - attr(*, "class")= chr "mex"
+[1] "STEP 3 COMPLETE"
+Time difference of 38.17626 secs

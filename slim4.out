@@ -1,0 +1,168 @@
+[1] "2020-09-07 10:37:44 BST"
+[1] "SETUP DONE."
+Time difference of 9.439093 secs
+List of 3
+ $ models:List of 1437
+ $ mth   : Named num [1:1437] 11.5 12.2 15.1 16.5 17.5 ...
+  ..- attr(*, "names")= chr [1:1437] "L1" "L2" "L3" "L4" ...
+ $ mqu   : Named num [1:1437] 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 ...
+  ..- attr(*, "names")= chr [1:1437] "L1" "L2" "L3" "L4" ...
+ - attr(*, "class")= chr "migpd"
+[1] "STEP 1 COMPLETE"
+Time difference of 22.46022 secs
+List of 1
+ $ transformed: num [1:79, 1:1437] 2.002 -0.192 1.961 0.888 4.108 ...
+  ..- attr(*, "dimnames")=List of 2
+[1] "STEP 2 COMPLETE"
+Time difference of 22.95162 secs
+List of 2
+ $ margins   :List of 1
+  ..$ referenceMargin: NULL
+ $ dependence:List of 8
+  ..$ dth                 : num 0.501
+  ..$ dqu                 : num 0.7
+  ..$ which               : num 1
+  ..$ conditioningVariable: chr "L1"
+  ..$ loglik              : num [1:1436] 31.57 18.67 13.93 8.84 4 ...
+  ..$ marginfns           :List of 3
+  ..$ constrain           : logi TRUE
+  ..$ v                   : num 10
+[1] "STEP 3 COMPLETE"
+Time difference of 34.69979 secs
+[1] "Dependence at3.4794711203897%"
+[1] "Dependence at6.9589422407794%"
+[1] "Dependence at10.4384133611691%"
+[1] "Dependence at13.9178844815588%"
+[1] "Dependence at17.3973556019485%"
+[1] "Dependence at20.8768267223382%"
+[1] "Dependence at24.3562978427279%"
+[1] "Dependence at27.8357689631176%"
+[1] "Dependence at31.3152400835073%"
+[1] "Dependence at34.794711203897%"
+[1] "Dependence at38.2741823242867%"
+[1] "Dependence at41.7536534446764%"
+[1] "Dependence at45.2331245650661%"
+[1] "Dependence at48.7125956854558%"
+[1] "Dependence at52.1920668058455%"
+[1] "Dependence at55.6715379262352%"
+[1] "Dependence at59.1510090466249%"
+[1] "Dependence at62.6304801670146%"
+[1] "Dependence at66.1099512874043%"
+[1] "Dependence at69.589422407794%"
+[1] "Dependence at73.0688935281837%"
+[1] "Dependence at76.5483646485734%"
+[1] "Dependence at80.0278357689631%"
+[1] "Dependence at83.5073068893528%"
+[1] "Dependence at86.9867780097425%"
+[1] "Dependence at90.4662491301322%"
+[1] "Dependence at93.9457202505219%"
+[1] "Dependence at97.4251913709116%"
+List of 1437
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+ $ :List of 2
+  [list output truncated]
+[1] "STEP 4 COMPLETE"
+Time difference of 10.18815 hours
+List of 1
+ $ datafit:List of 2
+  ..$ simulated  :'data.frame':	1451370 obs. of  1437 variables:
+  ..$ CondLargest: logi [1:1451370] FALSE TRUE FALSE FALSE FALSE FALSE ...
+[1] "STEP 5 COMPLETE"
+Time difference of 5.372004 hours

@@ -2,51 +2,64 @@
 # Adam Griffin, 2020-02-21
 #
 # Event threshold extraction from daily flow.
-# Practiced on one 30-year period of data.
-# Rewritten for linux to reduce read-write times for netCDF.
 #
 # This takes about 9 hours to run on linux if you're lucky.
+# This should only need running for one G2G output if everything goes as 
+# expected.
 #
 # For aquaCAT, Project 07441.
 # 
 # Created ABG 2020-02-21, edited 2020-05-04
+# Pipeline version 2020-09-07
 #
-# OUTPUTS: InterimData/threshDayExcList.rds,
-#          interimData/thresMat.csv,
-#          interimData/***_threshGrid2.asc
+# OUTPUTS: threshDayExcList.rda,
+#          thresMat.rda,
+#          threshGrid2.asc
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
 
 #### SETUP ####----------------------
-library(ncdf4)
-library(raster)
-
-# threshold for inundation
-threshVal <- c(5/365, 2/365, 1/365, 0.2/365, 0.1/365)
-threshName <- c("POT5", "POT2", "POT1", "Q5", "Q10")
-NT <- length(threshVal)
-
-# cut-off for widespread event
-wsCutoff <- c(0.05, 0.02, 0.01, 0.005, 0.001)
-NW <- length(wsCutoff)
-
+if(substr(osVersion,1,3) == "Win"){
+  source("S:/CodeABG/setup_script_00.R")
+}else{
+  source("/prj/aquacat/CodeABG/setup_script_00.R")
+}
 
 threshGridList <- list()
 
 threshDayExcList <- vector("list", length(threshVal))
 
-#### DATA ####-----------------------
-if(substr(osVersion,1,3) == "Win"){
-  data_wd <- "S:/CodeABG/InterimData/"
-  wd <- "S:/"
-}else{
-  data_wd <- "/prj/aquacat/CodeABG/InterimData/"
-  wd <- "/prj/aquacat/"
-}
+#### PARSE COMMAND LINE ARGS --------------------------------------------------
+# if(length(args)==0){
+#   RCM <- "01"
+#   period <- "present"
+#   suffix <- "_198012_201011"
+# }else if(length(args)==1){
+#   RCM <- sprintf("%02d",args[1])
+#   period <- "present"
+#   suffix <- "_198012_201011"
+# }else if(length(args)==2){
+#   RCM <- sprintf("%02d", args[1])
+#   period <- args[2]
+#   if(period=="present"){
+#     suffix <- "_198012_201011"
+#   }else if (period=="future"){
+#     suffix <- "_205012_201011"
+#   }else{  
+#     stop("correct call: 102_Threshold_Extract.R RCM [period]. Period should be 'present' or 'future'.")
+#   }
+# }
+# if(as.numeric(RCM) < 0 | as.numeric(RCM) > 16){
+#   stop("correct call: 102_Threshold_Extract.R RCM [period]. RCM should be between 1 and 16.")
+# }
+# 
+# ncname <- paste0(wd, "run_hmfg2g/outputs/dmflow_RCM", RCM, suffix, "_out.nc") 
+# 
+# nccopy <- paste0(wd, "Data/dmflow_copy_RCM", RCM, suffix, ".nc")
 
-ncname <- "run_hmfg2g/outputs/dmflow_RCM01_198012_201011_out.nc" #2GB
+
 ST <-  Sys.time()
-ncin <- nc_open(paste0(data_wd,"dmflow_timechunks.nc"), readunlim=FALSE) 
+ncin <- nc_open(nccopy, readunlim=FALSE) 
 # this is a huge file, do not open without reason.
 print(Sys.time() - ST)
 print(ncin)
@@ -69,12 +82,13 @@ north <- ncvar_get(ncin, "Northing")
 rn$east <- east[rn[,1]]
 rn$nor <- north[rn[,2]]
 
-readr::write_csv(data.frame(rn), paste0(wd,"CodeABG/InterimData/hasData3.csv"))
+readr::write_csv(data.frame(rn), paste0(data_wd, "hasData_primary.csv"))
 
 NH <- nrow(rn)
 ## Initialise dfs and lists ##-------------------------
 
-threshGrid <- ncvar_get(ncin, "dmflow", start=c(1,1,tStart), count=c(-1, -1, 1))
+threshGrid <- ncvar_get(ncin, "dmflow", start=c(1,1,tStart),
+                        count=c(-1, -1, 1))
 threshMat <- matrix(NA, ncol=NT, nrow=NH)
 # Reset grid to easily spot things
 threshGrid[!is.na(threshGrid) & threshGrid > -1] <- 0
@@ -124,7 +138,8 @@ for(n in 1:NH){
 }
 
 
-saveRDS(threshGridList, file=paste0(wd, "CodeABG/InterimData/threshGridList3.rds"))
+saveRDS(threshGridList, file=paste0(data_wd, subfold,
+                          "threshGridList_RCM", RCM, suffix,".rds"))
 
 ## Save outputs ##-----------------------------------------------------
 # for(i in 1:NT){
@@ -135,11 +150,11 @@ saveRDS(threshGridList, file=paste0(wd, "CodeABG/InterimData/threshGridList3.rds
 #               overwrite=TRUE)
 # }
 # 
-# saveRDS(threshDayExcList,
-#         file=paste0(wd,"InterimData/threshDayExcList2.rds"))
-# saveRDS(threshMat,
-#         file=paste0(wd,"InterimData/threshMat2.rds"))
-# readr::write_csv(x=data.frame(threshMat),
-#                  path=paste0(wd,"InterimData/threshMat2.csv"))
+saveRDS(threshDayExcList, file=paste0(data_wd, subfold,
+                          "threshDayExcList_RCM", RCM, suffix,".rds"))
+saveRDS(threshMat, file=paste0(data_wd, subfold,
+                          "threshMat_RCM", RCM, suffix,".rds"))
+readr::write_csv(x=data.frame(threshMat), path=paste0(data_wd, subfold,
+                          "threshMat_RCM", RCM, suffix,".csv"))
 
 nc_close(ncin)

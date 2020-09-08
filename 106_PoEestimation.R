@@ -1,21 +1,31 @@
 #~~~~~~~~~~~~~~~~~~~~~~~
 # Adam Griffin, 2020-06-15
 #
-# Estimating PoE along time series using ecdf and plotting positions.
+# Estimating probability of exceedence along time series using ecdf and
+# plotting positions.
+# Uses inputs from 104_Event_Extract and 105_timeDF_compile.
 #
 # For aquaCAT, Project 07441.
 # 
 # Created ABG 2020-06-15
+# Pipeline version ABG 2020-09-07
+#
+# Outputs: present_returnlevels***.csv
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
 
 ##### SETUP #####------------------------------------------------------------
-
-print(Sys.time())
-library(ncdf4)
-library(raster)
-library(fields)
 library(extRemes)
+
+if(substr(osVersion,1,3) == "Win"){
+  source("S:/CodeABG/setup_script_00.R")
+}else{
+  source("/prj/aquacat/CodeABG/setup_script_00.R")
+}
+
+thresh1 <- "POT2" #!#!#!#!# Important constants to select.
+ws1 <- "pc05"
+print("Running for threshold", POT2, "at ", ws1, "minimum spread.")
 
 ### Functions ###---------------------------------------
 
@@ -32,62 +42,29 @@ weibull <- function(v){
 
 ##### DATA #####--------------------------------------------------------------
 
-if(substr(osVersion,1,3) == "Win"){
-  ncname <- "S:/CodeABG/InterimData/dmflow_copy.nc"
-  ncname2 <- "S:/CodeABG/InterimData/dmflow_trial.nc"
-  wd <- "S:/"
-}else{
-  ncname <- "/prj/aquacat/CodeABG/InterimData/dmflow_copy.nc"
-  wd <- "/prj/aquacat/"
-}
-
-ND <- 10800 # Number of days
-
-# river network
-rn <- read.csv(paste0(wd,"CodeABG/InterimData/hasData2.csv"),
-               stringsAsFactors=FALSE)
-NH <- nrow(rn)
-
-# threshold for inundation
-threshVal <- c(5/365, 2/365, 1/365, 0.2/365, 0.1/365)
-threshName <- c("POT5", "POT2", "POT1", "Q5", "Q10")
-NT <- length(threshVal)
-
-# cut-off bound for widespread event
-wsBound <- c(0.05, 0.02, 0.01, 0.005, 0.001)
-wsName <- c("pc5", "pc2", "pc1", "pc05", "pc01")
-NW <- length(wsBound)
-
-
-
-
 print(ST <- Sys.time())
 ncin <- nc_open(ncname) # This file is ~2.5GB on the linux server.
 print(ncin)
 print(floor(Sys.time() - ST))
 
 
-
-
 # lists of which days different thresholds were exceeded at different points
 # NT lists of NW lists
-threshDayExcList <- readRDS(
-                      paste0(wd, "CodeABG/InterimData/threshDayExcList2.rds"))
-
+threshDayExcList <- readRDS( paste0(data_wd, subfold, "threshDayExcList_RCM",
+                                    RCM, suffix,".rds"))
 
 
 # matrix of threshold value (col) at a given cell (row)
-threshMat <- read.csv(paste0(wd, "CodeABG/InterimData/threshMat2.csv"),
+threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM", 
+                             RCM, suffix,".rds"),
                       stringsAsFactors=FALSE)
-dim(threshMat) #19914 x 5
+#dim(threshMat) #19914 x 5
 
 
-
-# eventLList length of event L, NT lists (by threshold) of NW lists 
+#eventLList (length of event L, NT lists (by threshold) of NW lists 
 # (by inun cutoff))
 # eventDayList start of event L, NT lists of NW lists
-load(paste0(wd, "CodeABG/InterimData/eventLists03.RDa")) 
-NE <- length(eventDayList[[2]][[4]])
+load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
 
 
 
@@ -96,7 +73,8 @@ NE <- length(eventDayList[[2]][[4]])
 #library(data.table)
 #edf <- fread(paste0(wd,"/Data/eventdf_POT2_pc2.csv"), colClasses=rep("numeric",287))
 
-eventDF <- readr::read_csv(paste0(wd,"Data/eventdf_POT2_pc05.csv"))
+eventDF <- readr::read_csv(paste0(data_wd,subfold, "eventdf_",thresh1,"_", ws1,
+                                  "_RCM", RCM, suffix, ".csv"))
 
 
 
@@ -183,7 +161,8 @@ for(n in 1:NH){
 
 
 readr::write_csv(x=rarityDF,
-                 path=paste0(wd,"Data/present_returnlevels_POT2_pc05.csv"))
+                 path=paste0(data_wd, subfold, "present_returnlevels_",
+                             thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 nc_close(ncin)
 print(Sys.time())
 ######

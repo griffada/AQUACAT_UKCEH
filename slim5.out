@@ -1,0 +1,86 @@
+[1] "2020-09-08 11:37:29 BST"
+[1] "2020-09-08 11:37:29 BST"
+[1] "SETUP DONE."
+Time difference of 8.774339 secs
+List of 3
+ $ margins   :List of 1
+  ..$ referenceMargin: NULL
+ $ dependence:List of 8
+  ..$ dth                 : num 0.5
+  ..$ dqu                 : num 0.7
+  ..$ which               : num 2
+  ..$ conditioningVariable: chr "L2"
+  ..$ loglik              : num [1:1436] 30.5 30.5 24.3 17.1 10.3 ...
+  ..$ marginfns           :List of 3
+  ..$ constrain           : logi TRUE
+  ..$ v                   : num 10
+ $ errcode   : num 0
+List of 3
+ $ margins   :List of 1
+  ..$ referenceMargin: NULL
+ $ dependence:List of 8
+  ..$ dth                 : num 0.501
+  ..$ dqu                 : num 0.7
+  ..$ which               : int 1
+  ..$ conditioningVariable: chr "L1"
+  ..$ loglik              : num [1:1436] 31.57 18.67 13.93 8.84 4 ...
+  ..$ marginfns           :List of 3
+  .. ..$    : chr "laplace"
+  .. ..$ p2q:function (p)  
+  .. ..$ q2p:function (q)  
+  ..$ constrain           : logi TRUE
+  ..$ v                   : num 10
+ $ errcode   : num 0
+List of 3
+ $ margins   :List of 1
+  ..$ referenceMargin: NULL
+ $ dependence:List of 8
+  ..$ dth                 : num 0.5
+  ..$ dqu                 : num 0.7
+  ..$ which               : int 2
+  ..$ conditioningVariable: chr "L2"
+  ..$ loglik              : num [1:1436] 30.5 30.5 24.3 17.1 10.3 ...
+  ..$ marginfns           :List of 3
+  .. ..$    : chr "laplace"
+  .. ..$ p2q:function (p)  
+  .. ..$ q2p:function (q)  
+  ..$ constrain           : logi TRUE
+  ..$ v                   : num 10
+ $ errcode   : num 0
+List of 3
+ $ margins   :List of 1
+  ..$ referenceMargin: NULL
+ $ dependence:List of 8
+  ..$ dth                 : num 0.49
+  ..$ dqu                 : num 0.7
+  ..$ which               : int 3
+  ..$ conditioningVariable: chr "L3"
+  ..$ loglik              : num [1:1436] 15.6 35.9 43 25.4 15.4 ...
+  ..$ marginfns           :List of 3
+  .. ..$    : chr "laplace"
+  .. ..$ p2q:function (p)  
+  .. ..$ q2p:function (q)  
+  ..$ constrain           : logi TRUE
+  ..$ v                   : num 10
+ $ errcode   : num 0
+List of 3
+ $ margins   :List of 1
+  ..$ referenceMargin: NULL
+ $ dependence:List of 8
+  ..$ dth                 : num 0.498
+  ..$ dqu                 : num 0.7
+  ..$ which               : int 4
+  ..$ conditioningVariable: chr "L4"
+  ..$ loglik              : num [1:1436] 12.4 28.5 44.6 39.5 23.1 ...
+  ..$ marginfns           :List of 3
+  .. ..$    : chr "laplace"
+  .. ..$ p2q:function (p)  
+  .. ..$ q2p:function (q)  
+  ..$ constrain           : logi TRUE
+  ..$ v                   : num 10
+ $ errcode   : num 0
+[1] "Dependence at3.48%"
+[1] "Dependence at6.96%"
+[1] "Dependence at10.44%"
+[1] "Dependence at13.92%"
+[1] "Dependence at17.4%"

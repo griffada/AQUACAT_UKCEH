@@ -11,7 +11,7 @@
 
 ##### SETUP #####-----------------------------------------------------------
 if(T){
-  #setwd("S:/")
+  setwd("S:")
   library(texmex)
   library(readr)
   library(dplyr)
@@ -182,8 +182,7 @@ save(present_migpd_comb, file=paste0(wd_id, "present_migpd_",REG,"_",threshName[
 print("SAVED INTERIM STEP")
 present_mexdep <- vector("list", NREG)
 
-#load(paste0(wd_id, "present_migpd_",REG,"_",threshName[2],"_",wsName[4],".RDa"))
-
+load(paste0(wd_id, "present_migpd_",REG,"_",threshName[2],"_",wsName[4],".RDa"))
 m <- 1
 for(k in 1:NREG){
   if(k %% 50 == 0){print(k)}
@@ -192,7 +191,7 @@ for(k in 1:NREG){
   })
   present_mexdep[[m]] <- present_mexdep_temp
   m <- m+1
-  if(m > 99){
+  if(m > 24){
     names(present_mexdep) <- names(present_melt[(k-99):k])
     save(present_mexdep, file=paste0(wd_id, "/present_mexdep/present_mexdep_list",REG,"_",threshName[2],"_",wsName[4],"_K",k,".RDa"))
     m <- 1
@@ -202,6 +201,8 @@ for(k in 1:NREG){
 oldClass(present_mexdep) <- "mexList"
 print("SAVED_PARTIAL_MEXDEPS")
 #save(present_mexdep, file=paste0(wd_id, "present_mexdep"))
+load(paste0(wd_id, "present_mexdep/present_mexdep_list",REG,"_",threshName[2],"_",wsName[4],"_K",99,".RDa"))
+
 
 #present_MCMC <- mexMonteCarloBIG(500, present_mexdep)
 
