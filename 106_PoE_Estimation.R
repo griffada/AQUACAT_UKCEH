@@ -4,6 +4,10 @@
 # Estimating probability of exceedence along time series using ecdf and
 # plotting positions.
 # Uses inputs from 104_Event_Extract and 105_timeDF_compile.
+
+# Note that for FUTURE estimation of return periods, make use of the present day
+# data (tSlice) to compute the ecdf.
+#
 #
 # For aquaCAT, Project 07441.
 # 
@@ -27,6 +31,11 @@ thresh1 <- "POT2" #!#!#!#!# Important constants to select.
 ws1 <- "pc05"
 print("Running for threshold", POT2, "at ", ws1, "minimum spread.")
 
+
+subfold <- paste0("RCM", RCM, "_", suffix, "/")
+
+jV <- which(threshName==thresh1)
+jI <- which(wsName == ws1)
 ### Functions ###---------------------------------------
 
 logit <- function(x){log(x/(1-x))}
@@ -43,7 +52,13 @@ weibull <- function(v){
 ##### DATA #####--------------------------------------------------------------
 
 print(ST <- Sys.time())
-ncin <- nc_open(ncname) # This file is ~2.5GB on the linux server.
+
+suffix_pres <- "_198012_201011"
+subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
+
+
+ncin <- nc_open(paste0(data_wd, subfold_pres, "dmflow_copy_RCM",
+                       RCM, suffix_pres, ".nc")) # This file is ~2.5GB on the linux server.
 print(ncin)
 print(floor(Sys.time() - ST))
 
@@ -89,7 +104,7 @@ rarityDF <- expand.grid("eventNo" = 1:NE,
 rarityDF$Easting <- rn[rarityDF[, 2], 1]
 rarityDF$Northing <- rn[rarityDF[, 2], 2]
 rarityDF$thresh <- NA
-rarityDF$DayS <- eventDayList[[2]][[2]][rarityDF[, 1]]
+rarityDF$DayS <- eventDayList[[jV]][[jI]][rarityDF[, 1]]
 rarityDF$val <- NA
 rarityDF$gpp <- NA
 rarityDF$ecdf <- NA
@@ -98,7 +113,7 @@ rarityDF$gev <- NA
 
 n <- 1
 
-edl <- eventDayList[[2]][[2]]
+edl <- eventDayList[[jV]][[jI]]
 
 ST0 <- proc.time()
 ST <- proc.time()
@@ -111,12 +126,13 @@ for(n in 1:NH){
   
   i <- rn[n,1]
   j <- rn[n,2]
-  # Pull out spaceslice
+  #!#!#!#!# Pull out spaceslice from present day to get present day PoE
   tSlice <- ncvar_get(ncin, varid="dmflow",
                       start=c(i, j,  1),
                       count=c(1, 1, -1))
   
-  tSliceEvent <- unname(unlist(eventDF[n, -(1:2)]))
+  #event magnitudes from correct period (present or future)
+  tSliceEvent <- unlist(eventDF[n, -(1:2)], use.names=FALSE)
   
   threshval <- threshMat[n, 2] # POT2 column
   
@@ -127,15 +143,19 @@ for(n in 1:NH){
   
   # get ecdf and estimate PoE
   
-  ecdfSlice <- ecdf(tSlice)
+  ecdfSlice <- ecdf(tSlice_pres)
   poeEvent <- 1 - ecdfSlice(tSliceEvent)
   
   
   # Weibull or Gringorten plotting position
   
-  grSlice <- gringorten(tSlice)
-  grEvent <- sapply(tSliceEvent,
-                            function(x){grSlice[which(tSlice == x)[1]]})
+  
+  if(period=="future"){
+    grEvent <- sapply(tSliceEvent, function(x){ gringorten(c(x, tSlice))[1] })
+  }else{
+    grSlice <- gringorten(tSlice)
+    grEvent <- sapply(tSliceEvent, function(x){ grSlice[which(tSlice == x)[1]] })
+  }
   
   rarityDF$gpp[which(rarityDF$loc == n)] <- grEvent
   rarityDF$ecdf[which(rarityDF$loc == n)] <- poeEvent
@@ -161,7 +181,7 @@ for(n in 1:NH){
 
 
 readr::write_csv(x=rarityDF,
-                 path=paste0(data_wd, subfold, "present_returnlevels_",
+                 path=paste0(data_wd, subfold, "returnlevels_",
                              thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 nc_close(ncin)
 print(Sys.time())

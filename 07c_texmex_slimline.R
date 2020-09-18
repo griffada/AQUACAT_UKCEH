@@ -208,7 +208,7 @@ mexDependence_slim <- function (which, dqu, mth, mqu=0.7, margins = "laplace",
                                 constrain = TRUE, v = 10, maxit = 1e+06,
                                 start = c(0.01, 0.01), marTransform = "mixture", 
                                 referenceMargin = NULL, marginsTransformed = NULL,
-                                nOptim = 1){
+                                nOptim = 1, zspot=FALSE){
   
   # Extension of **mexDependence** from texmex, removing data from the arguments.
   # Reduces the number of outputs to lower overheads.
@@ -405,10 +405,12 @@ mexDependence_slim <- function (which, dqu, mth, mqu=0.7, margins = "laplace",
     errcode <- 107
   }
   dimnames(z) <- list(NULL, dimnames(x$transformed)[[2]][dependent])
-  
+  if(zspot){
+    print(dim(z))
+  }
   COEFFS[,,which] <<- res
   if(is.array(z) && !inherits(z, c("Error", "try-error"))){
-    Z[,,which] <<- z
+    Z[1:(dim(z)[1]),1:(dim(z)[2]),which] <<- z
   }
   
   res2 <- list(dth = unique(dth), 
@@ -422,10 +424,12 @@ mexDependence_slim <- function (which, dqu, mth, mqu=0.7, margins = "laplace",
   output <- list(margins = list(#transformed=x$transformed,
                                 referenceMargin=x$referenceMargin),
                  dependence = res2,
-                 errcode = errcode)
+                 errcode = errcode,
+                 zspot = dim(z))
   #oldClass(output) <- "mex" # A bit of a lie but helps things work.
   output
 }
+
 
 
 
@@ -435,50 +439,43 @@ mexMonteCarlo_slim <- function(marginfns, referenceMargin=NULL,
   # Extension of **mexMonteCarlo** from texmex, removing data from the arguments.
   # Reduces the number of outputs to lower overheads.
   # fetches DATA from the global environment
+  # fetches TRANSFORMED from the global environment
   
   d <- length(mexList)
 
   nData <- dim(DATA)[1]
   which <- sample(1:nData, size = nSample, replace = TRUE)
   MCsampleOriginal <- DATA[which, ]
-  dataLaplace <- mexTransform_slim(marginfns = marginfns,
-                                   mth=mth, 
-                                   method = "mixture")$transformed
-  MCsampleLaplace <- dataLaplace[which, ]
+  MCsampleLaplace <- TRANSFORMED[which, ]
   whichMax <- apply(MCsampleLaplace, 1, which.max)
   dth <- sapply(mexList, function(l) l$dependence$dth)
   dqu <- sapply(mexList, function(l) l$dependence$dqu)
   whichMaxAboveThresh <- sapply(1:nSample, 
                           function(i) MCsampleLaplace[i, whichMax[i]] >= dth[whichMax[i]])
-  mexKeep <- lapply(1:d, function(i) {
-    if((d < 100) | (i %% 50== 0)) print(paste0("Currently simulated to ", (i/d)*100, "%"))
-    mc <- predict.mex_slim(which=i,
-                           referenceMargin=referenceMargin,
-                           marginfns=marginfns,
-                           constrain=mexList[[i]]$dependence$constrain,
-                           coeffs_in = COEFFS[,,i],
-                           z_in = Z[,,i],
-                           pqu = dqu[i],
-                           mth=mth,
-                           mqu=mqu,
-                           nsim = nSample * d * mult)
-    mc$datafit$simulated[mc$datafit$CondLargest, order(c(i, c(1:d)[-i]))]
-  })
+  
+  nReplace <- sapply(1:d, function(i){sum(whichMax==i & whichMaxAboveThresh)})
   nR <- rep(0, d)
   names(nR) <- names(DATA)
   for (i in 1:d) {
-    if(d < 50 | i %% 50 == 0){
+    if(d < 50 | i %% 10 == 0){
       print(paste0("Currently processing at ", (i/d)*100, "%"))
     }
     replace <- whichMax == i & whichMaxAboveThresh
-    nReplace <- sum(replace)
-    if (nReplace > 0) {
-      nR[i] <- nReplace
-      MCsampleOriginal[replace, ] <- as.matrix(mexKeep[[i]])[1:nReplace, 
-                                                             ]
+    if (nReplace[i] > 0) {
+      MCsampleOriginal[replace, ] <- predict.mex_slim(which=i,
+                                      referenceMargin=referenceMargin,
+                                      marginfns=marginfns,
+                                      constrain=mexList[[i]]$dependence$constrain,
+                                      coeffs_in = COEFFS[,,i],
+                                      z_in = Z[,,i],
+                                      pqu = dqu[i],
+                                      mth=mth,
+                                      mqu=mqu,
+                                      nsim = nSample * d * mult,
+                                      d=d)[1:nReplace[i],]
     }
   }
-  res <- list(nR = nR, MCsample = MCsampleOriginal, whichMax = whichMax, 
+  res <- list(nR = nReplace, MCsample = MCsampleOriginal, whichMax = whichMax, 
               whichMaxAboveThresh = whichMaxAboveThresh)
   # oldClass(res) <- "mexMC" # A bit of a lie, but keeps things smooth
   res
@@ -557,7 +554,7 @@ revTransform_slim <- function (x, data_temp, qu, th = 0, sigma = 1, xi = 0,
 predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
                              constrain, coeffs_in, z_in, 
                              mth, mqu, pqu = .99, nsim = 1000, trace=10,
-                             smoothZdistribution=FALSE, ...){
+                             smoothZdistribution=FALSE, d, ...){
   
   # Extension of **predict.mex** from texmex, removing data from the arguments.
   # Reduces the number of outputs to lower overheads.
@@ -569,8 +566,6 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
   if(!exists("TRANSFORMED")){
     stop("Needs TRANSFORMED object; laplace-transformed output from mexTransform, $transformed item")
   }
-  
-    theCall <- match.call()
     
     if(is.null(referenceMargin)){
       migpd <- list(transformed=TRANSFORMED)
@@ -585,7 +580,7 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
       ui <- runif(nsim , min = max(c(mqu[which], pqu)))
       y <-  marginfns$p2q(ui)
       distFun <- marginfns$q2p
-      
+      z <- z[!is.na(z[,1]), !is.na(z[1,])]
       z <- as.matrix(z[ sample( 1:( dim( z )[ 1 ] ), size=nsim, replace=TRUE ) ,])
       if(smoothZdistribution){
         z <- apply(z,2,function(x)x + rnorm(length(x),0,bw.nrd(x)))
@@ -606,11 +601,9 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
                                    qu = mqu[-which][i],
                                    sigma=coxmi[1, i], xi=coxmi[2, i])
       }
-      sim <- data.frame( xi , xmi , y, ymi)
+      sim <- data.frame( xi , xmi)
       names( sim ) <- c( colnames( DATA )[ which ],
-                         colnames( DATA )[ -which ],
-                         paste0(c(colnames( DATA )[ which ],
-                                  colnames( DATA )[ -which ]),".trans"))
+                         colnames( DATA )[ -which ])
       sim[,dim(sim)[2]+1] <- y > apply(ymi,1,max) # condlargest extra column
       sim
     }
@@ -640,21 +633,20 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
                          coxi=cox,
                          coxmi=coxmi)
     CondLargest <- sim[,dim(sim)[2]]
-    transformed <- sim[,(((dim(sim)[2]-1)/2)+1):(dim(sim)[2]-1)]
-    sim <- sim[,1:((dim(sim)[2]-1)/2)]
+    sim <- sim[,-(ncol(sim))]
     
     m <- 1 / ( 1 - pqu ) # Need to estimate pqu quantile
     zeta <- 1 - mqu[ which ] # Coles, page 81
     pth <- mth[ which ] + cox[ 1 ] / cox[ 2 ] * ( ( m*zeta )^cox[ 2 ] - 1 )
-    
-    datafit <- list( #real = data.frame( data[, which], data[, -which] ),
-                  simulated = sim,
-                  CondLargest=CondLargest)
-    
-    res <- list(datafit = datafit)
-    
+    # 
+    # datafit <- list( #real = data.frame( data[, which], data[, -which] ),
+    #               simulated = sim,
+    #               CondLargest=CondLargest)
+    # 
+    #res <- list(datafit = datafit)
+    as.matrix(sim[CondLargest, order(c(which, c(1:d)[-which]))])
     #oldClass( res ) <- "predict.mex" # A bit of a lie, but keeps things smooth.
     
-    res
+    #res
 }
 

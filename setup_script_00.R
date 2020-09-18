@@ -66,12 +66,12 @@ if (substr(osVersion,1,3) == "Win") {
 if(!dir.exists(paste0(data_wd, "RCM", RCM, "_", suffix))){
   dir.create(paste0(data_wd, "RCM", RCM, "_", suffix))
 }
-subfold <- paste0("RCM", RCM, "_", suffix, "/")
+subfold <- paste0("RCM", RCM, suffix, "/")
 
 
-ncname <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix, "_out.nc") 
+ncoriginal <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix, "_out.nc") 
 
-nccopy <- paste0(data_wd, subfold, "dmflow_copy_RCM", RCM, suffix, ".nc")
+ncname <- paste0(data_wd, subfold, "dmflow_copy_RCM", RCM, suffix, ".nc")
 
 # threshold for inundation
 threshVal <- c(5/365, 2/365, 1/365, 0.2/365, 0.1/365)

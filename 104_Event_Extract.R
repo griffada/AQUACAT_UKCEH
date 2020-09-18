@@ -10,7 +10,7 @@
 # Pipeline version ABG 2020-09-07
 # 
 # Outputs:
-#   eventLists***.Rda
+#   eventLists***.Rda = eventLList, eventDayList
 #
 #####
 
@@ -25,37 +25,6 @@ if(substr(osVersion,1,3) == "Win"){
 
 ##### DATA #####------------------------------------------------------------
 
-# if(length(args)==0){
-#   RCM <- "01"
-#   period <- "present"
-#   suffix <- "_198012_201011"
-# }else if(length(args)==1){
-#   RCM <- sprintf("%02d",args[1])
-#   period <- "present"
-#   suffix <- "_198012_201011"
-# }else if(length(args)==2){
-#   RCM <- sprintf("%02d", args[1])
-#   period <- args[2]
-#   if(period=="present"){
-#     suffix <- "_198012_201011"
-#   }else if (period=="future"){
-#     suffix <- "_205012_201011"
-#   }else{  
-#     stop("correct call: 104_Event_Extract.R RCM [period]. Period should be 'present' or 'future'.")
-#   }
-# }
-# if(as.numeric(RCM) < 0 | as.numeric(RCM) > 16){
-#   stop("correct call: 104_Event_Extract.R RCM [period]. RCM should be between 1 and 16.")
-# }
-# 
-# 
-# if(!dir.exists(paste0(data_wd, "RCM", RCM, "_", suffix))){
-#   dir.create(paste0(data_wd, "RCM", RCM, "_", suffix))
-# }
-# subfold <- paste0("RCM", RCM, "_", suffix, "/")
-
-
-
 
 threshDayExcList <- readRDS(paste0(data_wd, subfold,
                             "threshDayExcList_RCM", RCM, suffix, ".rds"))
@@ -63,8 +32,6 @@ threshDayExcList <- readRDS(paste0(data_wd, subfold,
 
 thresMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
                            RCM, suffix, ".rds"))
-
-
 
 
 # Number of events

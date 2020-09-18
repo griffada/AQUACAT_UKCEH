@@ -32,8 +32,9 @@ if(length(args)==3){
 
 thresh1 <- "POT2" #!#!#!#!# Important constants to select.
 ws1 <- "pc05"
-print("Running for threshold", POT2, "at ", ws1, "minimum spread.")
-
+print(paste0("Running for threshold ", thresh1, " at ", ws1, " minimum spread."))
+jV <- which(threshName==thresh1)
+jI <- which(wsName == ws1)
 library(readr)
 library(dplyr)
 library(ncdf4)
@@ -48,33 +49,23 @@ HA <- readOGR(dsn="~/FEH_C/HydrometricAreas/temp", layer="hyd_areas",
               stringsAsFactors=FALSE)
 HA@data$HA_NUM <- as.numeric(HA@data$HA_NUM)
 
-NE <- length(eventDayList[[jV]][[jI]]) # POT2, 2% inun.
-
 # lists of which days different thresholds were exceeded at different points
 # NT lists of NW lists
-threshDayExcList <- readRDS( paste0(data_wd, subfold, "threshDayExcList_RCM",
-                                    RCM, suffix,".rds"))
+threshMat <- read_csv(paste0(wd_id, "threshMat2.csv"))
+thresh0 <- unlist(threshMat['X2'], use.names=F)
+#dim(threshMat)  =  19914 x 5
 
-
-# matrix of threshold value (col) at a given cell (row)
-threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM", 
-                             RCM, suffix,".rds"),
-                      stringsAsFactors=FALSE)
-#dim(threshMat) #19914 x 5
-
-
-#eventLList (length of event L, NT lists (by threshold) of NW lists 
+# eventLList length of event L, NT lists (by threshold) of NW lists 
 # (by inun cutoff))
 # eventDayList start of event L, NT lists of NW lists
-load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
+load(paste0(wd_id, "eventLists03.RDa")) 
 NE <- length(eventDayList[[jV]][[jI]]) # POT2, 2% inun.
 
-
 # timewise maxima at each cell for each event ((NE + 2) x NH)
-eventDF <- readr::read_csv(paste0(wd,"Data/eventdf_POT2_pc05.csv"))
+eventDF <- readr::read_csv(paste0(data_wd,"eventdf_POT2_pc05.csv"))
 
 # PoE under different computations with extra data. Tidy format.
-present <- readr::read_csv(paste0(wd,"Data/present2_returnlevels.csv"))
+present <- readr::read_csv(paste0(data_wd,"present_returnlevels_",thresh1,"_",ws1,".csv"))
 
 
 
@@ -119,7 +110,7 @@ present_above3 <- present_region %>% subset(eventNo %in% w1)
 
 write_csv(present_above3, path=paste0(wd_id, "regionalEvents_exampleNW_3.csv"))
 
-
+event_region <- event_region[, (p_a_events+2)]
 
 
 

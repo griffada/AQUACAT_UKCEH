@@ -101,19 +101,21 @@ str(step3_test2, max.level=2)
 step3_test1 <- readRDS(file=paste0(wd_id, "slimline/step3.rds"))
 step4_test1 <- lapply(1:NREG,
                 function(k){
+                  #print(k)
                   if (k%%50==0) print(paste0("Dependence at", round(100*k/NREG,2), "%"))
-                    o <- try(mexDependence_slim(dqu=dqu, mth=step1_test1$mth, which=k,
+                  o <- try(mexDependence_slim(dqu=dqu, mth=step1_test1$mth, which=k,
                                                     marginsTransformed=TRANSFORMED))
                         
-                        if(inherits(o, "try-error")){
-                          if(interactive()) browser()
-                          warning("Error in mexDependence")
-                        }
-                        if(k < 5){str(o)}
-                        if(o$errcode > 0){
-                          print("Error code ", o$errcode, " on iter ", k, ".")
-                        }
-                        o
+                  if(inherits(o, "try-error")){
+                    print(k)
+                    if(interactive()) browser()
+                    warning(paste0("Error in mexDependence loop, iteration", k))
+                  }
+                  else if(o$errcode > 0){
+                    print("Error code ", o$errcode, " on iter ", k, ".")
+                  }
+                  if(k < 5){print(str(o))}
+                  o
                       })
 #str(step4_test1, max.level=1)
 # 
@@ -123,7 +125,7 @@ saveRDS(COEFFS, file=paste0(wd_id, "slimline/COEFFS.rds"))
 
 saveRDS(Z, file=paste0(wd_id, "slimline/Z.rds"))
 
-Z <- readRDS(paste0(wd_id, "slimline/Z.rds"))
+#Z <- readRDS(paste0(wd_id, "slimline/Z.rds"))
 
 print("STEP 4 COMPLETE")
 print(Sys.time() - ST)
@@ -134,6 +136,10 @@ nSample <- 101  # still a very low number of events.
 d <- NREG
 mult <- 10
 k <- 1
+
+margins_temp <- list("laplace",
+                     p2q = function(p) ifelse(p <  0.5, log(2 * p), -log(2 * (1 - p))),
+                     q2p = function(q) ifelse(q <  0, exp(q)/2, 1 - 0.5 * exp(-q)))
 
 step5_test1 <- predict.mex_slim(which=k, referenceMargin=NULL,
                                 marginfns=margins_temp,
@@ -152,7 +158,7 @@ ST <- Sys.time()
 #step4_test1 <- readRDS(paste0(wd_id, "/slimline/step4.rds"))
 
 step6_test1 <- mexMonteCarlo_slim(mexList=step4_test1,
-                                  marginfns=step3_test1$dependence$marginfns,
+                                  marginfns=margins_temp,
                                   mth=step1_test1$mth,
                                   mqu=step1_test1$mqu,
                                   nSample=nSample, mult=mult)

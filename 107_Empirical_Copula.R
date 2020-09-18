@@ -8,7 +8,7 @@
 # Created ABG 2020-06-15
 # Pipeline version ABG 2020-09-07
 #
-# Outputs: NewEventPresentEC_***.csv
+# Outputs: NewEventPresentEC_***.csv: data table of events, one event per row.
 #   
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
@@ -49,23 +49,24 @@ threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM",
 
 #eventLList (length of event L, NT lists (by threshold) of NW lists 
 # (by inun cutoff))
+
 # eventDayList start of event L, NT lists of NW lists
 load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
-
 
 NE <- length(eventDayList[[jV]][[jI]]) # POT2, 0.5% inun.
 
 
 
-# timewise maxima at each cell for each event ((NE + 2) x NH)
-eventDF <- readr::read_csv(paste0(data_wd,subfold,
-                      "eventdf_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
-# PoE under different computations with extra data. Tidy format.
-present <- readr::read_csv(paste0(data_wd, subfold, "present_returnlevels_",
+# timewise maxima at each cell for each event ((NE + 2) x NH)
+eventDF <- readr::read_csv(paste0(data_wd,subfold, "eventdf_",
                                   thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
-dummy <- present %>% filter(loc < 4)
+# PoE under different computations with extra data. Tidy format.
+present <- readr::read_csv(paste0(data_wd, subfold, "returnlevels_",
+                                  thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+
+#dummy <- present %>% filter(loc < 4)
 
 
 ##### COPULA FUNCTIONS #####---------------------------------------------------
@@ -159,6 +160,7 @@ FF <- fitdist(present$gpp, "beta", method="mle")
 
 T3 <- tailsGen(1, pool=present$gpp, maxit=1000, betapar=FF$estimate)
 
+# Number of new events to simulate
 M <- 500
 
 print("Simulating new events")
@@ -172,7 +174,7 @@ for(m in 1:M){
 }
 
 readr::write_csv(data.frame(newEventMat),
-                 paste0(data_wd, subfold, "NewEventPresentEC_",
+                 paste0(data_wd, subfold, "NewEventEC_",
                             thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 print(Sys.time())
 # Roll new tails

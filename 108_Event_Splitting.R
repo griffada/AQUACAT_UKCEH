@@ -46,11 +46,12 @@ library(tidyverse)
 
 ### DATA ###--------------------------------------------------------------
 
+#Hydrometric areas map
 HA <- readOGR(dsn="~/FEH_C/HydrometricAreas/temp", layer="hyd_areas",
               stringsAsFactors=FALSE)
 HA@data$HA_NUM <- as.numeric(HA@data$HA_NUM)
 
-NE <- length(eventDayList[[jV]][[jI]]) # POT2, 2% inun.
+
 
 # lists of which days different thresholds were exceeded at different points
 # NT lists of NW lists
@@ -62,6 +63,7 @@ threshDayExcList <- readRDS( paste0(data_wd, subfold, "threshDayExcList_RCM",
 threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM", 
                              RCM, suffix,".rds"),
                       stringsAsFactors=FALSE)
+thresh0 <- unlist(threshMat['X2'], use.names=FALSE)
 #dim(threshMat) #19914 x 5
 
 
@@ -69,14 +71,14 @@ threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM",
 # (by inun cutoff))
 # eventDayList start of event L, NT lists of NW lists
 load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
-
+NE <- length(eventDayList[[jV]][[jI]]) # POT2, 2% inun.
 
 # timewise maxima at each cell for each event ((NE + 2) x NH)
 eventDF <- readr::read_csv(paste0(data_wd,subfold, "eventdf_",thresh1,"_",
                                   ws1, "_RCM", RCM, suffix, ".csv"))
 
 # PoE under different computations with extra data. Tidy format.
-present <- readr::read_csv(paste0(data_wd, subfold, "present_returnlevels_",
+present <- readr::read_csv(paste0(data_wd, subfold, "returnlevels_",
                               thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
 
@@ -97,6 +99,13 @@ present_above2 <- present_region %>% subset(eventNo %in% p_a_events)
 
 write_csv(present_above2, path=paste0(data_wd, subfold, "regionalEvents_",REG,"_RCM", 
                                       RCM, suffix,".csv"))
+
+event_region <- event_region[, (p_a_events+2)]
+
+write_csv(event_region, path=paste0(data_wd, subfold, "eventdf_region_",REG,"_RCM", 
+                                     RCM, suffix,".csv"))
+
+
 
 
 

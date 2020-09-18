@@ -29,37 +29,8 @@ threshGridList <- list()
 
 threshDayExcList <- vector("list", length(threshVal))
 
-#### PARSE COMMAND LINE ARGS --------------------------------------------------
-# if(length(args)==0){
-#   RCM <- "01"
-#   period <- "present"
-#   suffix <- "_198012_201011"
-# }else if(length(args)==1){
-#   RCM <- sprintf("%02d",args[1])
-#   period <- "present"
-#   suffix <- "_198012_201011"
-# }else if(length(args)==2){
-#   RCM <- sprintf("%02d", args[1])
-#   period <- args[2]
-#   if(period=="present"){
-#     suffix <- "_198012_201011"
-#   }else if (period=="future"){
-#     suffix <- "_205012_201011"
-#   }else{  
-#     stop("correct call: 102_Threshold_Extract.R RCM [period]. Period should be 'present' or 'future'.")
-#   }
-# }
-# if(as.numeric(RCM) < 0 | as.numeric(RCM) > 16){
-#   stop("correct call: 102_Threshold_Extract.R RCM [period]. RCM should be between 1 and 16.")
-# }
-# 
-# ncname <- paste0(wd, "run_hmfg2g/outputs/dmflow_RCM", RCM, suffix, "_out.nc") 
-# 
-# nccopy <- paste0(wd, "Data/dmflow_copy_RCM", RCM, suffix, ".nc")
-
-
 ST <-  Sys.time()
-ncin <- nc_open(nccopy, readunlim=FALSE) 
+ncin <- nc_open(ncname, readunlim=FALSE) 
 # this is a huge file, do not open without reason.
 print(Sys.time() - ST)
 print(ncin)
@@ -70,7 +41,7 @@ print(ncin)
 tStart <- 1
 deltaT <- 1
 ncwide <- ncvar_get(ncin, "dmflow",
-					start=c(1,1,tStart),
+					start=c(1, 1, tStart),
 					count=c(-1, -1, 1))
 
 rn <- which(apply(ncwide, c(1,2),
@@ -87,7 +58,7 @@ readr::write_csv(data.frame(rn), paste0(data_wd, "hasData_primary.csv"))
 NH <- nrow(rn)
 ## Initialise dfs and lists ##-------------------------
 
-threshGrid <- ncvar_get(ncin, "dmflow", start=c(1,1,tStart),
+threshGrid <- ncvar_get(ncin, "dmflow", start=c(1, 1, tStart),
                         count=c(-1, -1, 1))
 threshMat <- matrix(NA, ncol=NT, nrow=NH)
 # Reset grid to easily spot things
@@ -110,36 +81,57 @@ print("loop start")
 ST <- Sys.time()
 print(ST)
 ST0 <- ST
-for(n in 1:NH){
-  print(n)
-  # running time diagnosis
-  if(n %% 50 == 0){
-    I <- Sys.time() - ST
-    I0 <- Sys.time() - ST0
-    print(paste("Percent remaining", (NH-n)/NH))
-    print(paste("Time remaining", (NH-n)/n * I0))
-    print(paste("Since last readout:", I)); ST <- Sys.time() 
+if(period=="present"){
+  for(n in 1:NH){
+    print(n)
+    # running time diagnosis
+    if(n %% 50 == 0){
+      I <- Sys.time() - ST
+      I0 <- Sys.time() - ST0
+      print(paste("Percent remaining", (NH-n)/NH))
+      print(paste("Time remaining", (NH-n)/n * I0))
+      print(paste("Since last readout:", I)); ST <- Sys.time() 
+    }
+    
+    i <- rn[n,1]
+    j <- rn[n,2]
+    tSlice <- ncvar_get(ncin, varid="dmflow",
+                         start=c(i, j,  1),
+                         count=c(1, 1, -1))
+    # find quantile for threshold
+    thresh <- quantile(as.vector(tSlice), prob=c(1 - threshVal), na.rm=T) #vec
+    threshMat[n,] <- thresh
+    for(k in 1:NT){
+  	# add threshold k at position (i,j) to raster k
+      threshGridList[[k]][i,j] <- thresh[k]
+      # save which days cell n was exceeded.
+      threshDayExcList[[k]][[n]] <- which(tSlice > thresh[k])
+    }
   }
+
   
-  i <- rn[n,1]
-  j <- rn[n,2]
-  tSlice <- ncvar_get(ncin, varid="dmflow",
-                       start=c(i, j,  1),
-                       count=c(1, 1, -1))
-  # find quantile for threshold
-  thresh <- quantile(as.vector(tSlice), prob=c(1 - threshVal), na.rm=T) #vec
-  threshMat[n,] <- thresh
-  for(k in 1:NT){
-	# add threshold k at position (i,j) to raster k
-    threshGridList[[k]][i,j] <- thresh[k]
-    # save which days cell n was exceeded.
-    threshDayExcList[[k]][[n]] <- which(tSlice > thresh[k])
+}
+if(period=="future"){
+  suffix_pres <- "_198012_201011"
+  subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
+  #use the Present day threshold matrix
+  threshMat <- readRDS(paste0(data_wd, subfold_present,
+                          "threshMat_RCM", RCM, suffix_pres,".rds"))
+  # Just load in threshGridList to save to the Future folder
+  threshGridList <- readRDS(file=paste0(data_wd, subfold,
+                                        "threshGridList_RCM", RCM, suffix,".rds"))
+  for(n in 1:NH){
+    i <- rn[n,1]
+    j <- rn[n,2]
+    tSlice <- ncvar_get(ncin, varid="dmflow",
+                        start=c(i,j,1), count=c(1,1,-1))
+    for(k in 1:NT){
+      threshDayExcList[[k]][[n]] <- which(tSlice > thresMat[n,k])
+    }
   }
 }
 
-
-saveRDS(threshGridList, file=paste0(data_wd, subfold,
-                          "threshGridList_RCM", RCM, suffix,".rds"))
+nc_close(ncin)
 
 ## Save outputs ##-----------------------------------------------------
 # for(i in 1:NT){
@@ -150,11 +142,13 @@ saveRDS(threshGridList, file=paste0(data_wd, subfold,
 #               overwrite=TRUE)
 # }
 # 
+
+# Note this will make copies of some objects in the Future case, but this is safer
 saveRDS(threshDayExcList, file=paste0(data_wd, subfold,
                           "threshDayExcList_RCM", RCM, suffix,".rds"))
+saveRDS(threshGridList, file=paste0(data_wd, subfold,
+                                    "threshGridList_RCM", RCM, suffix,".rds"))
 saveRDS(threshMat, file=paste0(data_wd, subfold,
-                          "threshMat_RCM", RCM, suffix,".rds"))
-readr::write_csv(x=data.frame(threshMat), path=paste0(data_wd, subfold,
-                          "threshMat_RCM", RCM, suffix,".csv"))
-
-nc_close(ncin)
+                               "threshMat_RCM", RCM, suffix,".rds"))
+readr::write_csv(x=data.frame(threshMat), 
+                 path=paste0(data_wd, subfold, "threshMat_RCM", RCM, suffix,".csv"))
