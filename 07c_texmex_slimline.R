@@ -442,13 +442,18 @@ mexMonteCarlo_slim <- function(marginfns, referenceMargin=NULL,
   # fetches TRANSFORMED from the global environment
   
   d <- length(mexList)
-
+  dth <- sapply(mexList, function(l) l$dependence$dth)
+  
   nData <- dim(DATA)[1]
-  which <- sample(1:nData, size = nSample, replace = TRUE)
+  
+  wMa <- apply(TRANSFORMED,1,which.max)
+  wMaTa <- sapply(1:nData, function(i){TRANSFORMED[i, wMa[i]] >= dth[wMa[i]]})
+  
+  which <- sample((1:nData)[wMaTa], size = nSample, replace = TRUE)
   MCsampleOriginal <- DATA[which, ]
   MCsampleLaplace <- TRANSFORMED[which, ]
   whichMax <- apply(MCsampleLaplace, 1, which.max)
-  dth <- sapply(mexList, function(l) l$dependence$dth)
+  
   dqu <- sapply(mexList, function(l) l$dependence$dqu)
   whichMaxAboveThresh <- sapply(1:nSample, 
                           function(i) MCsampleLaplace[i, whichMax[i]] >= dth[whichMax[i]])
@@ -588,7 +593,7 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
       ymi <- sapply( 1:( dim( z )[[ 2 ]] ) , makeYsubMinusI, z=z, v=dco , y=y )
       #print(range(ymi[,11]))
       xmi <- apply( ymi, 2, distFun )
-      xmi[xmi > (1 - 1e-8)] <- (1 - 1e-8) # ! # FUDGE TO AVOID EXACTLY 1
+      xmi[xmi > (1 - 1e-10)] <- (1 - 1e-10) # ! # FUDGE TO AVOID EXACTLY 1
       #print(range(xmi[,11]))
       xi <- texmex:::u2gpd( ui, p = 1 - mqu[which], th = mth[which],
                    sigma = coxi[1], xi = coxi[2] )
@@ -644,6 +649,7 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
     #               CondLargest=CondLargest)
     # 
     #res <- list(datafit = datafit)
+    #print(CondLargest)
     as.matrix(sim[CondLargest, order(c(which, c(1:d)[-which]))])
     #oldClass( res ) <- "predict.mex" # A bit of a lie, but keeps things smooth.
     

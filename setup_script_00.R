@@ -29,7 +29,7 @@ if(length(args)==0){
   if(period=="present"){
     suffix <- "_198012_201011"
   }else if (period=="future"){
-    suffix <- "_205012_201011"
+    suffix <- "_205012_208011"
   }else{  
     stop("incorrect call: Rscript 10X_*****.R RCM [period]. Period should be 'present' or 'future'.")
   }
@@ -63,8 +63,8 @@ if (substr(osVersion,1,3) == "Win") {
   
 }
 
-if(!dir.exists(paste0(data_wd, "RCM", RCM, "_", suffix))){
-  dir.create(paste0(data_wd, "RCM", RCM, "_", suffix))
+if(!dir.exists(paste0(data_wd, "RCM", RCM, suffix))){
+  dir.create(paste0(data_wd, "RCM", RCM, suffix))
 }
 subfold <- paste0("RCM", RCM, suffix, "/")
 

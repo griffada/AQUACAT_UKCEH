@@ -69,7 +69,6 @@ event_region <- eventDF[r1,]
 thresh_region <- threshMat[r1,]
 
 present_region <- readr::read_csv(paste0(wd_id,"regionalEvents_exampleNW_2.csv"))
-source(paste0(wd,"07c_texmex_slimline.R"))
 thresh0 <- unname(unlist(thresh_region['X2']))
 #melt to reshape dataframe
 present_melt <- dcast(present_region, eventNo~loc, value.var="val")
@@ -159,7 +158,7 @@ if(file.exists(paste0(wd_id, "slimline/step4_1_D.rds"))){
   step4_test1 <- readRDS(file=paste0(wd_id, "slimline/step4_1_D.rds"))
   COEFFS <- readRDS(file=paste0(wd_id, "slimline/COEFFS_D.rds"))
   Z <- readRDS(file=paste0(wd_id, "slimline/Z_D.rds"))
-  
+  print(step4_test1$errcode)
   print("STEP 4 COMPLETE")
 }else{
   step4_test1 <- lapply(1:NREG,
@@ -181,16 +180,16 @@ str(step4_test1, max.level=2)
 
 
 # 
-nSample <- 101  # still a very low number of events.
+nSample <- 11  # still a very low number of events.
 d <- NREG
-mult <- 10
+mult <- 2
 k <- 1
 
 step5_test1 <- predict.mex_slim(which=k, referenceMargin=NULL, marginfns=margins_temp,
                                 constrain=step3_test1$dependence$constrain,
                                 coeffs_in=COEFFS[,,k], z_in=Z[,,k],
                                 mth=step1_test1$mth, mqu=step1_test1$mqu, pqu = dqu,
-                                nsim = nSample * d * mult,
+                                nsim = nSample*d*mult,
                                 d=d)
 str(step5_test1, max.level=2)
 # 
@@ -200,18 +199,18 @@ print(Sys.time() - ST)
 ST <- Sys.time()
 
 #step4_test1 <- readRDS(paste0(wd_id, "/slimline/step4.rds"))
-library(profvis)
-profvis({
+#library(profvis)
+#profvis({
 step6_test1 <- mexMonteCarlo_slim(mexList=step4_test1,
                                   marginfns=step3_test1$dependence$marginfns,
                                   mth=step1_test1$mth,
                                   mqu=step1_test1$mqu,
-                                  nSample=nSample, mult=mult)
+                                  nSample=20, mult=2)
 str(step6_test1, max.level=2)
-})
+#})
 #step6_test1 <- readRDS(file=paste0(wd_id, "slimline/step6_D.rds"))
 
-write.csv(step6_test1$MCsample, paste0(wd_id, "slimline/step7_MCSample.csv"))
+write_csv(step6_test1$MCsample, paste0(wd_id, "slimline/step7_MCSample.csv"), append=T)
 saveRDS(step6_test1, file=paste0(wd_id, "slimline/step6_D.rds"))
 
 print("STEP 6 COMPLETE.")

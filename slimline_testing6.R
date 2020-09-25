@@ -39,7 +39,8 @@ source(paste0(wd, "07c_texmex_slimline.R"))
 
 
 ##### DATA #####-----------------------------------------------------------
-
+jI <- which(threshName=="POT2")
+jV <- which(wsName=="pc05")
 # lists of which days different thresholds were exceeded at different points
 # NT lists of NW lists
 #threshDayExcList <- readRDS(paste0(wd_id, "threshDayExcList2.rds"))
@@ -53,15 +54,13 @@ thresh0 <- unname(unlist(threshMat['X2']))
 # (by inun cutoff))
 # eventDayList start of event L, NT lists of NW lists
 load(paste0(wd_id, "eventLists03.RDa")) 
-NE <- length(eventDayList[[2]][[4]]) # POT2, 2% inun.
+NE <- length(eventDayList[[jI]][[jV]]) # POT2, 2% inun.
 
 # timewise maxima at each cell for each event ((NE + 2) x NH)
 eventDF <- readr::read_csv(paste0(data_wd,"eventdf_POT2_pc05.csv"))
 
 # PoE under different computations with extra data. Tidy format.
-print("SETUP DONE.")
-print(Sys.time() - ST)
-ST <- Sys.time()
+
 
 REG <- "NW"
 r1 <- which(rn_regions$REGION == REG) # length = 1437
@@ -82,13 +81,73 @@ D <- 200; j <- 1
 ### Need a "data" object
 DATA0 <- present_melt[,((j-1)*D+1):(min(NREG, j*D))]
 DATA <- present_melt
+
+print("SETUP DONE.")
+print(Sys.time() - ST)
+ST <- Sys.time()
+
 mqu <- 0.7
 
 dqu <- 0.7
+if(file.exists(paste0(wd_id, "slimline/MODELS.rda"))){
+  load(paste0(wd_id, "slimline/MODELS.rda"))
+}else{
+  step1_test1 <- migpd_slim(mqu=mqu, penalty="none")
+  
+  MODELS <- step1_test1$models
+  mth <- step1_test1$mth
+  save(MODELS, mth, file=paste0(wd_id, "slimline/MODELS.rda"))
+}
 
-step1_test1 <- readRDS(paste0(wd_id, "slimline/step1.rds"))
-MODELS<- readRDS(paste0(wd_id, "slimline/MODELS.rds"))
-TRANSFORMED <- readRDS(file=paste0(wd_id, "slimline/TRANSFORMED.rds"))
+#step1_test1 <- readRDS(paste0(wd_id, "slimline/step1.rds"))
+str(step1_test1, max.level=2)
+
+print("STEP 1 COMPLETE")
+print(Sys.time() - ST)
+ST <- Sys.time()
+
+
+#MODELS<- readRDS(paste0(wd_id, "slimline/MODELS.rds"))
+#TRANSFORMED <- readRDS(file=paste0(wd_id, "slimline/TRANSFORMED.rds"))
+
+margins_temp <- list("laplace",
+                     p2q = function(p) ifelse(p <  0.5, log(2 * p), -log(2 * (1 - p))),
+                     q2p = function(q) ifelse(q <  0, exp(q)/2, 1 - 0.5 * exp(-q)))
+
+if(file.exists(paste0(wd_id, "slimline/TRANSFORMED.rds"))){
+  TRANSFORMED <- readRDS(paste0(wd_id, "slimline/TRANSFORMED.rds"))
+}else{
+  step2_test1 <- mexTransform_slim(marginfns=margins_temp, mth=step1_test1$mth,
+                                   method="mixture", r=NULL)
+  
+  TRANSFORMED <- step2_test1$transformed
+  
+  saveRDS(TRANSFORMED, file=paste0(wd_id, "slimline/TRANSFORMED.rds"))
+  
+  str(step2_test1, max.level=2)
+  
+  saveRDS(step2_test1, file=paste0(wd_id, "slimline/step2.rds"))
+}
+
+print("STEP 2 COMPLETE")
+print(Sys.time() - ST)
+ST <- Sys.time()
+#NREG <- D
+
+if(file.exists(paste0(wd_id, "slimline/step3.rds"))){
+  step3_test1 <- readRDS(paste0(wd_id, "slimline/step3.rds"))
+}else{
+  COEFFS <- array(NA, dim=c(6,NREG-1,NREG))
+  Z <- array(NA, dim=c(step3_test1$zspot[1], NREG-1, NREG))
+  
+  k <- 1
+  step3_test1 <- mexDependence_slim(dqu=0.7, mth=step1_test1$mth, which=k,
+                                    marginsTransformed=TRANSFORMED)
+  str(step3_test1, max.level=2)
+  saveRDS(step3_test1, file=paste0(wd_id, "slimline/step3.rds"))
+}
+
+
 # COEFFS <- array(NA, dim=c(6,NREG-1,NREG))
 # Z <- array(NA, dim=c(24,NREG-1,NREG))
 # 
@@ -97,48 +156,63 @@ TRANSFORMED <- readRDS(file=paste0(wd_id, "slimline/TRANSFORMED.rds"))
 #                                   marginsTransformed=TRANSFORMED, zspot=TRUE)
 # str(step3_test2, max.level=2)
 # 
-# Z <- array(NA, dim=c(step3_test2$zspot[1], NREG-1, NREG))
 
 
-step3_test1 <- readRDS(file=paste0(wd_id, "slimline/step3.rds"))
-# step4_test1 <- lapply(1:NREG,
-#                 function(k){
-#                   #print(k)
-#                   if (k%%50==0) print(paste0("Dependence at", round(100*k/NREG,2), "%"))
-#                   o <- try(mexDependence_slim(dqu=dqu, mth=step1_test1$mth, which=k,
-#                                                     marginsTransformed=TRANSFORMED))
-#                         
-#                   if(inherits(o, "try-error")){
-#                     print(k)
-#                     if(interactive()) browser()
-#                     warning(paste0("Error in mexDependence loop, iteration", k))
-#                   }
-#                   else if(o$errcode > 0){
-#                     print("Error code ", o$errcode, " on iter ", k, ".")
-#                   }
-#                   if(k < 5){print(str(o))}
-#                   o
-#                       })
-#str(step4_test1, max.level=1)
+
+#step3_test1 <- readRDS(file=paste0(wd_id, "slimline/step3.rds"))
+if(file.exists(paste0(wd_id, "slimline/step4.rds"))){
+  step4_test1 <- readRDS(file=paste0(wd_id, "slimline/step4.rds"))
+  COEFFS <- readRDS(file=paste0(wd_id, "slimline/COEFFS.rds"))
+  Z <- readRDS(file=paste0(wd_id, "slimline/Z.rds"))
+  print(step4_test1$errcode)
+  print("STEP 4 COMPLETE")
+  print(Sys.time() - ST)
+  ST <- Sys.time()
+}else{
+step4_test1 <- lapply(1:NREG,
+                function(k){
+                  #print(k)
+                  if (k%%25==0) print(paste0("Dependence at", round(100*k/NREG,2), "%"))
+                  o <- try(mexDependence_slim(dqu=dqu, mth=step1_test1$mth, which=k,
+                                                    marginsTransformed=TRANSFORMED))
+
+                  if(inherits(o, "try-error")){
+                    print(k)
+                    if(interactive()) browser()
+                    warning(paste0("Error in mexDependence loop, iteration", k))
+                  }
+                  else if(o$errcode > 0){
+                    print("Error code ", o$errcode, " on iter ", k, ".")
+                  }
+                  if(k < 5){print(str(o))}
+                  o
+              })
+
+print("STEP 4 COMPLETE")
+print(Sys.time() - ST)
+ST <- Sys.time()
+}
+str(step4_test1, max.level=1)
+
 # 
-# saveRDS(step4_test1, file=paste0(wd_id, "slimline/step4.rds"))
-# 
-# saveRDS(COEFFS, file=paste0(wd_id, "slimline/COEFFS.rds"))
-# 
-# saveRDS(Z, file=paste0(wd_id, "slimline/Z.rds"))
+saveRDS(step4_test1, file=paste0(wd_id, "slimline/step4.rds"))
+
+saveRDS(COEFFS, file=paste0(wd_id, "slimline/COEFFS.rds"))
+
+saveRDS(Z, file=paste0(wd_id, "slimline/Z.rds"))
 
 #Z <- readRDS(paste0(wd_id, "slimline/Z.rds"))
 
 # print("STEP 4 COMPLETE")
 # print(Sys.time() - ST)
 # ST <- Sys.time()
-
 # 
-step4_test1 <- readRDS(paste0(wd_id, "slimline/step4.rds"))
-
-COEFFS <- readRDS(paste0(wd_id, "slimline/COEFFS.rds"))
-
-Z <- readRDS(paste0(wd_id, "slimline/Z.rds"))
+# # 
+# step4_test1 <- readRDS(paste0(wd_id, "slimline/step4.rds"))
+# 
+# COEFFS <- readRDS(paste0(wd_id, "slimline/COEFFS.rds"))
+# 
+# Z <- readRDS(paste0(wd_id, "slimline/Z.rds"))
 
 nSample <- 101  # still a very low number of events.
 d <- NREG

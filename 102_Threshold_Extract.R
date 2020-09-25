@@ -115,7 +115,7 @@ if(period=="future"){
   suffix_pres <- "_198012_201011"
   subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
   #use the Present day threshold matrix
-  threshMat <- readRDS(paste0(data_wd, subfold_present,
+  threshMat <- readRDS(paste0(data_wd, subfold_pres,
                           "threshMat_RCM", RCM, suffix_pres,".rds"))
   # Just load in threshGridList to save to the Future folder
   threshGridList <- readRDS(file=paste0(data_wd, subfold,

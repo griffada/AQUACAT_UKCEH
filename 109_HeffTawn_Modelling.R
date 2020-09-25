@@ -176,7 +176,13 @@ MCEVENTS <- mexMonteCarlo_slim(mexList=DEPENDENCE,
 
 str(MCEVENTS, max.level=1)
 
-write.csv(MCEVENTS$MCsample, paste0(data_wd, subfold, "HT_events_raw.csv"))
+MCS <- MCEVENTS$MCsample
+colnames(MCS) <- paste0("L", 1:NREG)
+
+readr::write_csv(MCEVENTS$MCsample,
+                 paste0(data_wd, subfold, "NewEventHT_",REG,"_",
+                        thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"), 
+                 append=T)
 print("Step 4 Complete: New events simulated.")
 print(Sys.time() - ST)
 ST <- Sys.time()
