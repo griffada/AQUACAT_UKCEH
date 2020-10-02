@@ -27,9 +27,9 @@ if(substr(osVersion,1,3) == "Win"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
 }
 
-thresh1 <- "POT2" #!#!#!#!# Important constants to select.
+thresh1 <- "POT2"
 ws1 <- "pc05"
-print("Running for threshold", POT2, "at ", ws1, "minimum spread.")
+print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
 
 
 subfold <- paste0("RCM", RCM, "_", suffix, "/")

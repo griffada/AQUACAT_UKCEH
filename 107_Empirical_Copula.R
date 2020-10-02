@@ -29,7 +29,7 @@ library(fitdistrplus)
 
 thresh1 <- "POT2" #!#!#!#!# Important constants to select.
 ws1 <- "pc05"
-print("Running for threshold", POT2, "at ", ws1, "minimum spread.")
+print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
 
 jV <- which(threshName==thresh1)
 jI <- which(wsName == ws1)

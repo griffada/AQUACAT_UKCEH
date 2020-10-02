@@ -84,7 +84,7 @@ wsName <- c("pc5", "pc2", "pc1", "pc05", "pc01")
 NW <- length(wsCutoff)
 
 # location of river network
-rn <- read_csv(paste0(wd_id,"hasData3.csv"))
+rn <- as.matrix(read_csv(paste0(wd_id,"hasData3.csv")), use.names=F)
 #rn <- read_csv(paste0(data_wd, "hasData_primary.csv"))
 NH <- nrow(rn)
 

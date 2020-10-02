@@ -1,9 +1,16 @@
 #!/bin/bash
 
-echo "01 future run of 102-103"
+# This bash script runs the bare essentials to get the Regional split and the
+# point-by-point thresholds for RCM01, present and future.
 
-Rscript --vanilla 102_Threshold_Extract.R 01 present > pipe102_pr.err 2> pipe102_pr.out
-Rscript --vanilla 103_Regional_Splitting.R 01 present > pipe103_pr.err 2> pipe103_pr.out
+echo "102 01 present"
+Rscript --vanilla 102_Threshold_Extract.R 01 present > pipe102_pr.out 2> pipe102_pr.out
+tail pipe102_pr.out
+echo "103 01 present"
+Rscript --vanilla 103_Regional_Splitting.R > pipe103.out 2> pipe103.out 
+tail pipe103.out
+echo "102 01 future"
+Rscript --vanilla 102_Threshold_Extract.R 01 future > pipe102_fu.out 2> pipe102_fu.out 
+tail pipe102_fu.out
 
-Rscript --vanilla 102_Threshold_Extract.R 01 future > pipe102_fu.err 2> pipe102_fu.out
-Rscript --vanilla 103_Regional_Splitting.R 01 future > pipe103_fu.err 2> pipe103_fu.out
+echo "Complete"

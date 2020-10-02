@@ -18,8 +18,15 @@ if(substr(osVersion,1,3) == "Win"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
 }
 
+if(file.exists(paste0(wd_id, "hasData_Regions.csv")) &&
+   file.exists(paste0(data_wd, "hasData_Regions.csv"))){
+    print("Files already exist for 103. Proceeding to next job.")
+    stop("Stopping.")
+}else{
+   print("Proceeding to job.")
+}
 #### DATA ------------------------------------------------------------
-HA <- readOGR(dsn=paste0(wd_id, "hydrometricAreas"), layer="hyd_areas",
+HA <- readOGR(dsn=paste0(data_wd, "hydrometricAreas"), layer="hyd_areas",
               stringsAsFactors=FALSE)
 HA@data$HA_NUM <- as.numeric(HA@data$HA_NUM)
 #plot(HA[80+1:4,], axes=T)
@@ -33,9 +40,9 @@ pts <- over(rn, HA)
 
 w <- which(is.na(pts[,1]))
 
-nearw <- rep(0,NR)
+nearw <- rep(0,NH)
 
-pts$REGION <- rep(NA, NR)
+pts$REGION <- rep(NA, NH)
 
 
 #### PROCESSING -----------------------------------------------

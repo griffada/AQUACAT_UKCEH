@@ -23,9 +23,9 @@ if(substr(osVersion,1,3) == "Win"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
 }
 
-thresh1 <- "POT2" #!#!#!#!# Important constants to select.
+thresh1 <- "POT2"
 ws1 <- "pc05"
-print("Running for threshold", POT2, "at ", ws1, "minimum spread.")
+print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
 
 ##### DATA #####------------------------------------------------------------
 
@@ -42,7 +42,7 @@ threshDayExcList <- readRDS( paste0(data_wd, subfold, "threshDayExcList_RCM",
 
 # matrix of threshold value (col) at a given cell (row)
 threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM", 
-                             RCM, suffix,".rds"),
+                             RCM, suffix,".csv"),
                      stringsAsFactors=FALSE)
 #dim(threshMat) #19914 x 5
 
@@ -97,5 +97,5 @@ for(i in 1:length(event2_2)){
 
 eventDataFrame <- cbind(rn, eventDataFrame)
 
-readr::write_csv(eventDataFrame, path=paste0(data_wd,subfold,
+readr::write_csv(as.data.frame(eventDataFrame), path=paste0(data_wd,subfold,
                   "eventdf_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))

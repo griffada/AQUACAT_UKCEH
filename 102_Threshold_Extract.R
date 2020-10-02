@@ -25,6 +25,16 @@ if(substr(osVersion,1,3) == "Win"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
 }
 
+if(file.exists(paste0(data_wd, subfold, "threshDayExcList_RCM", RCM, suffix,".rds")) &&
+   file.exists(paste0(data_wd, subfold, "threshGridList_RCM", RCM, suffix,".rds")) &&
+   file.exists(paste0(data_wd, subfold, "threshMat_RCM", RCM, suffix,".rds")) &&
+   file.exists(paste0(data_wd, subfold, "threshMat_RCM", RCM, suffix,".csv"))){
+    print("Files already exist for 102. Proceeding to next job.")
+    stop("Stopping.")
+}else{
+   print("Proceeding to job.")
+}
+
 threshGridList <- list()
 
 threshDayExcList <- vector("list", length(threshVal))
@@ -81,16 +91,19 @@ print("loop start")
 ST <- Sys.time()
 print(ST)
 ST0 <- ST
+print(paste("NH =", NH))
 if(period=="present"){
   for(n in 1:NH){
-    print(n)
+    #print(n)
     # running time diagnosis
-    if(n %% 50 == 0){
+    if((n < 10) | (n %% 50 == 0)){
+      print(n)
       I <- Sys.time() - ST
       I0 <- Sys.time() - ST0
       print(paste("Percent remaining", (NH-n)/NH))
       print(paste("Time remaining", (NH-n)/n * I0))
-      print(paste("Since last readout:", I)); ST <- Sys.time() 
+      print(paste("Since last readout:", I)); ST <- Sys.time()
+      print(ST) 
     }
     
     i <- rn[n,1]
@@ -118,15 +131,26 @@ if(period=="future"){
   threshMat <- readRDS(paste0(data_wd, subfold_pres,
                           "threshMat_RCM", RCM, suffix_pres,".rds"))
   # Just load in threshGridList to save to the Future folder
-  threshGridList <- readRDS(file=paste0(data_wd, subfold,
-                                        "threshGridList_RCM", RCM, suffix,".rds"))
+  threshGridList <- readRDS(file=paste0(data_wd, subfold_pres,
+                                        "threshGridList_RCM", RCM, suffix_pres,".rds"))
   for(n in 1:NH){
+    
+    if((n < 10) | (n %% 100 == 0)){
+      print(n)
+      I <- Sys.time() - ST
+      I0 <- Sys.time() - ST0
+      print(paste("Percent remaining", ((NH-n)/NH)*100))
+      print(paste("Time remaining", (NH-n)/n * I0))
+      print(paste("Since last readout:", I)); ST <- Sys.time()
+      print(ST) 
+    }
+    
     i <- rn[n,1]
     j <- rn[n,2]
     tSlice <- ncvar_get(ncin, varid="dmflow",
                         start=c(i,j,1), count=c(1,1,-1))
     for(k in 1:NT){
-      threshDayExcList[[k]][[n]] <- which(tSlice > thresMat[n,k])
+      threshDayExcList[[k]][[n]] <- which(tSlice > threshMat[n,k])
     }
   }
 }
@@ -152,3 +176,5 @@ saveRDS(threshMat, file=paste0(data_wd, subfold,
                                "threshMat_RCM", RCM, suffix,".rds"))
 readr::write_csv(x=data.frame(threshMat), 
                  path=paste0(data_wd, subfold, "threshMat_RCM", RCM, suffix,".csv"))
+
+print("Complete")

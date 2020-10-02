@@ -19,7 +19,7 @@ if(substr(osVersion,1,3) == "Win"){
 regions <- c("ANG", "NE", "NW", "SCO", "SE", "SEV", "SW", "THA", "TRE", "WAL")
 
 if(length(args)==3){
-  RCM <- sprintf("%02d", args[1])
+  RCM <- sprintf("%02d", as.numeric(args[1]))
   period <- args[2]
   if(period=="present"){
     suffix <- "_198012_201011"
@@ -32,9 +32,9 @@ if(length(args)==3){
   }
 }
 
-thresh1 <- "POT2" #!#!#!#!# Important constants to select.
+thresh1 <- "POT2" # Important constants to select.
 ws1 <- "pc05"
-print("Running for threshold", POT2, "at ", ws1, "minimum spread.")
+print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
 
 library(readr)
 library(dplyr)

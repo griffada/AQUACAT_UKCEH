@@ -96,6 +96,7 @@ if(file.exists(paste0(wd_id, "slimline/MODELS.rda"))){
   
   MODELS <- step1_test1$models
   mth <- step1_test1$mth
+  mqu <- step1_test1$mth
   save(MODELS, mth, file=paste0(wd_id, "slimline/MODELS.rda"))
 }
 
@@ -117,7 +118,7 @@ margins_temp <- list("laplace",
 if(file.exists(paste0(wd_id, "slimline/TRANSFORMED.rds"))){
   TRANSFORMED <- readRDS(paste0(wd_id, "slimline/TRANSFORMED.rds"))
 }else{
-  step2_test1 <- mexTransform_slim(marginfns=margins_temp, mth=step1_test1$mth,
+  step2_test1 <- mexTransform_slim(marginfns=margins_temp, mth=mth,
                                    method="mixture", r=NULL)
   
   TRANSFORMED <- step2_test1$transformed
@@ -141,7 +142,7 @@ if(file.exists(paste0(wd_id, "slimline/step3.rds"))){
   Z <- array(NA, dim=c(step3_test1$zspot[1], NREG-1, NREG))
   
   k <- 1
-  step3_test1 <- mexDependence_slim(dqu=0.7, mth=step1_test1$mth, which=k,
+  step3_test1 <- mexDependence_slim(dqu=0.7, mth=mth, which=k,
                                     marginsTransformed=TRANSFORMED)
   str(step3_test1, max.level=2)
   saveRDS(step3_test1, file=paste0(wd_id, "slimline/step3.rds"))
@@ -173,7 +174,7 @@ step4_test1 <- lapply(1:NREG,
                 function(k){
                   #print(k)
                   if (k%%25==0) print(paste0("Dependence at", round(100*k/NREG,2), "%"))
-                  o <- try(mexDependence_slim(dqu=dqu, mth=step1_test1$mth, which=k,
+                  o <- try(mexDependence_slim(dqu=dqu, mth=mth, which=k,
                                                     marginsTransformed=TRANSFORMED))
 
                   if(inherits(o, "try-error")){
@@ -227,7 +228,7 @@ step5_test1 <- predict.mex_slim(which=k, referenceMargin=NULL,
                                 marginfns=margins_temp,
                                 constrain=step3_test1$dependence$constrain,
                                 coeffs_in=COEFFS[,,k], z_in=Z[,,k],
-                                mth=step1_test1$mth, mqu=step1_test1$mqu,
+                                mth=mth, mqu=mqu,
                                 pqu = dqu,
                                 nsim = nSample * d * mult,
                                 printout = TRUE)
@@ -242,8 +243,8 @@ ST <- Sys.time()
 
 step6_test1 <- mexMonteCarlo_slim(mexList=step4_test1,
                                   marginfns=margins_temp,
-                                  mth=step1_test1$mth,
-                                  mqu=step1_test1$mqu,
+                                  mth=mth,
+                                  mqu=mqu,
                                   nSample=nSample, mult=mult)
 str(step6_test1, max.level=1)
 #step6_test1 <- readRDS(file=paste0(wd_id, "slimline/step6.rds"))

@@ -76,7 +76,7 @@ EventSizeSumm <- apply(inunMat, 1, function(v){
 widespreadArray <- array(FALSE, dim=c(NT, ND, NW))
 for(j in 1:NW){
   # Is there a widespread event on this day (at bound j)?
-  widespreadArray[,,j] <- inunMat >= NH*wsBound[j] 
+  widespreadArray[,,j] <- inunMat >= NH*wsCutoff[j] 
 }
 dimnames(widespreadArray) <- list(threshold = threshName,
                                   days=1:ND,

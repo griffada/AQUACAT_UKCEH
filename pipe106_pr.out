@@ -1,0 +1,55 @@
+[1] "2020-09-30 16:55:24 BST"
+[1] "Running for threshold POT2 at  pc05 minimum spread."
+[1] "2020-09-30 16:55:27 BST"
+File /prj/aquacat/Data/RCM01_198012_201011/dmflow_copy_RCM01_198012_201011.nc (NC_FORMAT_NETCDF4):
+
+     1 variables (excluding dimension variables):
+        float dmflow[Easting,Northing,Time]   (Chunking: [13,19,4])  (Compression: shuffle,level 5)
+            units: m3 s-1
+            standard_name: dmflow
+            long_name: Daily mean river flow
+            _FillValue: -999
+            missing_value: -999
+
+     3 dimensions:
+        Northing  Size:1000
+            standard_name: Northing
+            axis: Y
+            units: GB National Grid
+        Easting  Size:700
+            standard_name: Easting
+            axis: X
+            units: GB National Grid
+        Time  Size:10800   *** is unlimited ***
+            standard_name: Time
+            axis: T
+            units: days since 1961-1-1 0:0:0
+            calendar: 360_day
+Time difference of 0 secs
+
+ Path to GDAL shared files: /usr/share/gdal
+ GDAL binary built with GEOS: TRUE 
+ Loaded PROJ.4 runtime: Rel. 4.8.0, 6 March 2012, [PJ_VERSION: 480]
+ Path to PROJ.4 shared files: (autodetected)
+ Linking to sp version: 1.4-1 
+Parsed with column specification:
+cols(
+  row = col_double(),
+  col = col_double(),
+  east = col_double(),
+  nor = col_double()
+)
+Parsed with column specification:
+cols(
+  row = col_double(),
+  col = col_double(),
+  HA_NUM = col_double(),
+  HA_NAME = col_character(),
+  REGION = col_character()
+)
+Error in gzfile(file, "rb") : cannot open the connection
+Calls: readRDS -> gzfile
+In addition: Warning message:
+In gzfile(file, "rb") :
+  cannot open compressed file '/prj/aquacat/Data/RCM01__198012_201011/threshDayExcList_RCM01_198012_201011.rds', probable reason 'No such file or directory'
+Execution halted
