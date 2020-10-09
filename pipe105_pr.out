@@ -1,6 +1,6 @@
 Loading required package: sp
 L[1] "Running for threshold POT2 at  pc05 minimum spread."
-[1] "2020-09-30 16:24:20 BST"
+[1] "2020-10-08 13:20:06 BST"
 File /prj/aquacat/Data/RCM01_198012_201011/dmflow_copy_RCM01_198012_201011.nc (NC_FORMAT_NETCDF4):
 
      1 variables (excluding dimension variables):
@@ -25,7 +25,7 @@ File /prj/aquacat/Data/RCM01_198012_201011/dmflow_copy_RCM01_198012_201011.nc (N
             axis: T
             units: days since 1961-1-1 0:0:0
             calendar: 360_day
-Time difference of 0.04047823 secs
+Time difference of 1.135222 secs
 [1] 25
 [1] 50
 [1] 75
@@ -43,7 +43,7 @@ Time difference of 0.04047823 secs
 [1] 375
 [1] 400
 [1] 425
-,
+(),
   nor = col_double()
 )
 Parsed with column specification:
@@ -54,7 +54,3 @@ cols(
   HA_NAME = col_character(),
   REGION = col_character()
 )
-Error in write_delim(x, path, delim = ",", na = na, append = append, col_names = col_names,  : 
-  is.data.frame(x) is not TRUE
-Calls: <Anonymous> -> write_delim -> stopifnot
-Execution halted

@@ -46,7 +46,13 @@ jV <- which(wsName=="pc05")
 #threshDayExcList <- readRDS(paste0(wd_id, "threshDayExcList2.rds"))
 
 # matrix of threshold value (col) at a given cell (row)
-threshMat <- read_csv(paste0(wd_id, "threshMat2.csv"))
+threshMat <- readr::read_csv(paste0(wd_id, "threshMat2.csv"), col_types=cols(
+  X1 = col_double(),
+  X2 = col_double(),
+  X3 = col_double(),
+  X4 = col_double(),
+  X5 = col_double()
+))
 thresh0 <- unname(unlist(threshMat['X2']))
 #dim(threshMat)  =  19914 x 5
 
@@ -57,7 +63,9 @@ load(paste0(wd_id, "eventLists03.RDa"))
 NE <- length(eventDayList[[jI]][[jV]]) # POT2, 2% inun.
 
 # timewise maxima at each cell for each event ((NE + 2) x NH)
-eventDF <- readr::read_csv(paste0(data_wd,"eventdf_POT2_pc05.csv"))
+eventDF <- readr::read_csv(paste0(data_wd,"/TestData/eventdf_POT2_pc05.csv"),
+                           col_types=paste0(rep("c",431),collapse="")
+                           )
 
 # PoE under different computations with extra data. Tidy format.
 
@@ -68,7 +76,19 @@ NREG <- length(r1)
 event_region <- eventDF[r1,]
 thresh_region <- threshMat[r1,]
 
-present_region <- readr::read_csv(paste0(wd_id,"regionalEvents_exampleNW_2.csv"))
+present_region <- readr::read_csv(paste0(wd_id,"regionalEvents_exampleNW_2.csv"),
+                                  col_types=cols(
+                                    eventNo = col_double(),
+                                    loc = col_double(),
+                                    Easting = col_double(),
+                                    Northing = col_double(),
+                                    thresh = col_double(),
+                                    DayS = col_double(),
+                                    val = col_double(),
+                                    gpp = col_double(),
+                                    ecdf = col_double(),
+                                    gev = col_double()
+                                  ))
 thresh0 <- unname(unlist(thresh_region['X2']))
 #melt to reshape dataframe
 present_melt <- dcast(present_region, eventNo~loc, value.var="val")
@@ -93,15 +113,15 @@ if(file.exists(paste0(wd_id, "slimline/MODELS.rda"))){
   load(paste0(wd_id, "slimline/MODELS.rda"))
 }else{
   step1_test1 <- migpd_slim(mqu=mqu, penalty="none")
-  
+  str(step1_test1, max.level=2)
   MODELS <- step1_test1$models
   mth <- step1_test1$mth
   mqu <- step1_test1$mth
   save(MODELS, mth, file=paste0(wd_id, "slimline/MODELS.rda"))
 }
-
+mqu <- rep(mqu, length(mth))[1:length(mth)]
 #step1_test1 <- readRDS(paste0(wd_id, "slimline/step1.rds"))
-str(step1_test1, max.level=2)
+
 
 print("STEP 1 COMPLETE")
 print(Sys.time() - ST)
@@ -137,9 +157,10 @@ ST <- Sys.time()
 
 if(file.exists(paste0(wd_id, "slimline/step3.rds"))){
   step3_test1 <- readRDS(paste0(wd_id, "slimline/step3.rds"))
+  
 }else{
   COEFFS <- array(NA, dim=c(6,NREG-1,NREG))
-  Z <- array(NA, dim=c(step3_test1$zspot[1], NREG-1, NREG))
+  Z <- array(NA, dim=c(24, NREG-1, NREG))
   
   k <- 1
   step3_test1 <- mexDependence_slim(dqu=0.7, mth=mth, which=k,
@@ -158,7 +179,8 @@ if(file.exists(paste0(wd_id, "slimline/step3.rds"))){
 # str(step3_test2, max.level=2)
 # 
 
-
+COEFFS <- array(NA, dim=c(6,NREG-1,NREG))
+Z <- array(NA, dim=c(step3_test1$zspot[1], NREG-1, NREG))
 
 #step3_test1 <- readRDS(file=paste0(wd_id, "slimline/step3.rds"))
 if(file.exists(paste0(wd_id, "slimline/step4.rds"))){
@@ -192,8 +214,7 @@ step4_test1 <- lapply(1:NREG,
 print("STEP 4 COMPLETE")
 print(Sys.time() - ST)
 ST <- Sys.time()
-}
-str(step4_test1, max.level=1)
+#str(step4_test1, max.level=1)
 
 # 
 saveRDS(step4_test1, file=paste0(wd_id, "slimline/step4.rds"))
@@ -201,6 +222,8 @@ saveRDS(step4_test1, file=paste0(wd_id, "slimline/step4.rds"))
 saveRDS(COEFFS, file=paste0(wd_id, "slimline/COEFFS.rds"))
 
 saveRDS(Z, file=paste0(wd_id, "slimline/Z.rds"))
+}
+
 
 #Z <- readRDS(paste0(wd_id, "slimline/Z.rds"))
 
@@ -231,7 +254,8 @@ step5_test1 <- predict.mex_slim(which=k, referenceMargin=NULL,
                                 mth=mth, mqu=mqu,
                                 pqu = dqu,
                                 nsim = nSample * d * mult,
-                                printout = TRUE)
+                                printout = TRUE,
+                                d = d)
 str(step5_test1, max.level=2)
 # 
 saveRDS(step5_test1, file=paste0(wd_id, "slimline/step5.rds"))

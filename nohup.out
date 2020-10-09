@@ -1,156 +1,16 @@
-102 01 present
-Parsed with column specification:
-cols(
-  row = col_double(),
-  col = col_double(),
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
-Error: Stopping.
-Execution halted
-103 01 present
-Parsed with column specification:
-cols(
-  row = col_double(),
-  col = col_double(),
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
-Error: Stopping.
-Execution halted
-104 01 present
-  nor = col_double()
-)
-Parsed with column specification:
-cols(
-  row = col_double(),
-  col = col_double(),
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
+BASH/present_01_108.sh: line 2: $'\r': command not found
+BASH/present_01_108.sh: line 5: $'\r': command not found
+BASH/present_01_108.sh: line 15: $'\r': command not found
 105 01 present
-  row = col_double(),
-  col = col_double(),
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
-Error in write_delim(x, path, delim = ",", na = na, append = append, col_names = col_names,  : 
-  is.data.frame(x) is not TRUE
-Calls: <Anonymous> -> write_delim -> stopifnot
-Execution halted
+tail: cannot open ‘pipe105_pr.out\r’ for reading: No such file or directory
+BASH/present_01_108.sh: line 19: $'\r': command not found
 106 01 present
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
-Error in gzfile(file, "rb") : cannot open the connection
-Calls: readRDS -> gzfile
-In addition: Warning message:
-In gzfile(file, "rb") :
-  cannot open compressed file '/prj/aquacat/Data/RCM01__198012_201011/threshDayExcList_RCM01_198012_201011.rds', probable reason 'No such file or directory'
-Execution halted
+tail: cannot open ‘pipe106_pr.out\r’ for reading: No such file or directory
+BASH/present_01_108.sh: line 23: $'\r': command not found
 107 01 present
-Loading required package: survival
-Warning messages:
-1: In read.table(file = file, header = header, sep = sep, quote = quote,  :
-  line 2 appears to contain embedded nulls
-2: In read.table(file = file, header = header, sep = sep, quote = quote,  :
-  line 5 appears to contain embedded nulls
-3: In scan(file = file, what = what, sep = sep, quote = quote, dec = dec,  :
-  embedded nul(s) found in input
-Error: '/prj/aquacat/Data/RCM01_198012_201011/eventdf_POT2_pc05_RCM01_198012_201011.csv' does not exist.
-Execution halted
+tail: cannot open ‘pipe107_pr.out\r’ for reading: No such file or directory
+BASH/present_01_108.sh: line 27: $'\r': command not found
 108 01 present
-── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-✖ tidyr::extract() masks raster::extract()
-✖ dplyr::filter()  masks stats::filter()
-✖ dplyr::lag()     masks stats::lag()
-✖ purrr::map()     masks maps::map()
-✖ dplyr::select()  masks raster::select()
-Error in ogrInfo(dsn = dsn, layer = layer, encoding = encoding, use_iconv = use_iconv,  : 
-  Cannot open file
-Calls: readOGR -> suppressMessages -> withCallingHandlers -> ogrInfo
-Execution halted
-Complete
-102 01 present
-Parsed with column specification:
-cols(
-  row = col_double(),
-  col = col_double(),
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
-Error: Stopping.
-Execution halted
-103 01 present
-Parsed with column specification:
-cols(
-  row = col_double(),
-  col = col_double(),
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
-Error: Stopping.
-Execution halted
-104 01 present
-  nor = col_double()
-)
-Parsed with column specification:
-cols(
-  row = col_double(),
-  col = col_double(),
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
-105 01 present
-  row = col_double(),
-  col = col_double(),
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
-Error in write_delim(x, path, delim = ",", na = na, append = append, col_names = col_names,  : 
-  is.data.frame(x) is not TRUE
-Calls: <Anonymous> -> write_delim -> stopifnot
-Execution halted
-106 01 present
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
-Error in gzfile(file, "rb") : cannot open the connection
-Calls: readRDS -> gzfile
-In addition: Warning message:
-In gzfile(file, "rb") :
-  cannot open compressed file '/prj/aquacat/Data/RCM01__198012_201011/threshDayExcList_RCM01_198012_201011.rds', probable reason 'No such file or directory'
-Execution halted
-107 01 present
-Loading required package: survival
-Warning messages:
-1: In read.table(file = file, header = header, sep = sep, quote = quote,  :
-  line 2 appears to contain embedded nulls
-2: In read.table(file = file, header = header, sep = sep, quote = quote,  :
-  line 5 appears to contain embedded nulls
-3: In scan(file = file, what = what, sep = sep, quote = quote, dec = dec,  :
-  embedded nul(s) found in input
-Error: '/prj/aquacat/Data/RCM01_198012_201011/eventdf_POT2_pc05_RCM01_198012_201011.csv' does not exist.
-Execution halted
-108 01 present
-── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-✖ tidyr::extract() masks raster::extract()
-✖ dplyr::filter()  masks stats::filter()
-✖ dplyr::lag()     masks stats::lag()
-✖ purrr::map()     masks maps::map()
-✖ dplyr::select()  masks raster::select()
-Error in ogrInfo(dsn = dsn, layer = layer, encoding = encoding, use_iconv = use_iconv,  : 
-  Cannot open file
-Calls: readOGR -> suppressMessages -> withCallingHandlers -> ogrInfo
-Execution halted
+tail: cannot open ‘pipe108_pr.out\r’ for reading: No such file or directory
+BASH/present_01_108.sh: line 31: $'\r': command not found
 Complete

@@ -25,21 +25,6 @@ rgdal: version: 1.2-20, (SVN revision 725)
  Loaded PROJ.4 runtime: Rel. 4.8.0, 6 March 2012, [PJ_VERSION: 480]
  Path to PROJ.4 shared files: (autodetected)
  Linking to sp version: 1.4-1 
-Parsed with column specification:
-cols(
-  row = col_double(),
-  col = col_double(),
-  east = col_double(),
-  nor = col_double()
-)
-Parsed with column specification:
-cols(
-  row = col_double(),
-  col = col_double(),
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
 Loading required package: Lmoments
 Loading required package: distillery
 
@@ -84,5 +69,10 @@ Warning messages:
   line 5 appears to contain embedded nulls
 3: In scan(file = file, what = what, sep = sep, quote = quote, dec = dec,  :
   embedded nul(s) found in input
-Error: '/prj/aquacat/Data/RCM01_198012_201011/eventdf_POT2_pc05_RCM01_198012_201011.csv' does not exist.
+Parsed with column specification:
+cols(
+  .default = col_double()
+)
+See spec(...) for full column specifications.
+Error: '/prj/aquacat/Data/RCM01_198012_201011/returnlevels_POT2_pc05_RCM01_198012_201011.csv' does not exist.
 Execution halted

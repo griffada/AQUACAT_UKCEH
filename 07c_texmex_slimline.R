@@ -416,7 +416,8 @@ mexDependence_slim <- function (which, dqu, mth, mqu=0.7, margins = "laplace",
   res2 <- list(dth = unique(dth), 
                dqu = unique(dqu), which = which,
                conditioningVariable = colnames(DATA)[which], 
-               loglik = loglik, marginfns = marginfns, constrain = constrain, 
+               #loglik = loglik,
+               marginfns = marginfns, constrain = constrain, 
                v = v)
   
   #oldClass(res2) <- "mexDependence"  # A bit of a lie, but helps things work.
@@ -556,6 +557,21 @@ revTransform_slim <- function (x, data_temp, qu, th = 0, sigma = 1, xi = 0,
 }
 
 
+makeYsubMinusI <- function( i, z, v , y ){
+  v <- v[ , i ]
+  z <- z[ , i ]
+  if ( !is.na( v[ 1 ] ) ){
+    if( v[ 1 ] < 10^(-5) & v[ 2 ] < 0 ){
+      if( v[ 4 ] < 10^(-5 ) ) d <- 0
+      else d <- v[ 4 ]
+      a <- v[ 3 ] - d * log( y )
+    }
+    else a <- v[ 1 ] * y
+  } # close if( !is.na...
+  else a <- NA
+  a + ( y^v[ 2 ] ) * z
+}
+
 predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
                              constrain, coeffs_in, z_in, 
                              mth, mqu, pqu = .99, nsim = 1000, trace=10,
@@ -572,25 +588,36 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
     stop("Needs TRANSFORMED object; laplace-transformed output from mexTransform, $transformed item")
   }
     
-    if(is.null(referenceMargin)){
-      migpd <- list(transformed=TRANSFORMED)
-    } else {
-      migpd <- referenceMargin
-    }
+    # if(is.null(referenceMargin)){
+    #   migpd <- list(transformed=TRANSFORMED)
+    # } else {
+    #   migpd <- referenceMargin
+    # }
       marginfns <- marginfns
       constrain <- constrain
     
     ################################################################
     MakeThrowData <- function(dco,z,coxi,coxmi){
-      ui <- runif(nsim , min = max(c(mqu[which], pqu)))
-      y <-  marginfns$p2q(ui)
+      
       distFun <- marginfns$q2p
       z <- z[!is.na(z[,1]), !is.na(z[1,])]
       z <- as.matrix(z[ sample( 1:( dim( z )[ 1 ] ), size=nsim, replace=TRUE ) ,])
       if(smoothZdistribution){
         z <- apply(z,2,function(x)x + rnorm(length(x),0,bw.nrd(x)))
       }
+      tick <- rep(FALSE, nsim)
+      while(sum(tick)<2){
+      print("ping")
+      ui <- runif(nsim , min = max(c(mqu[which], pqu)))
+      y <-  marginfns$p2q(ui)
       ymi <- sapply( 1:( dim( z )[[ 2 ]] ) , makeYsubMinusI, z=z, v=dco , y=y )
+      tick <- y > apply(ymi,1,max)
+      print(sum(tick))
+      ymi <- ymi[tick,]
+      y <- y[tick]
+      ui <- ui[tick]
+      }
+      
       #print(range(ymi[,11]))
       xmi <- apply( ymi, 2, distFun )
       xmi[xmi > (1 - 1e-10)] <- (1 - 1e-10) # ! # FUDGE TO AVOID EXACTLY 1
@@ -609,25 +636,12 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
       sim <- data.frame( xi , xmi)
       names( sim ) <- c( colnames( DATA )[ which ],
                          colnames( DATA )[ -which ])
-      sim[,dim(sim)[2]+1] <- y > apply(ymi,1,max) # condlargest extra column
+      #sim[,dim(sim)[2]+1] <- y > apply(ymi,1,max) # condlargest extra column
       sim
     }
     
     ################################################################
-    makeYsubMinusI <- function( i, z, v , y ){
-      v <- v[ , i ]
-      z <- z[ , i ]
-      if ( !is.na( v[ 1 ] ) ){
-        if( v[ 1 ] < 10^(-5) & v[ 2 ] < 0 ){
-          if( v[ 4 ] < 10^(-5 ) ) d <- 0
-          else d <- v[ 4 ]
-          a <- v[ 3 ] - d * log( y )
-        }
-        else a <- v[ 1 ] * y
-      } # close if( !is.na...
-      else a <- NA
-      a + ( y^v[ 2 ] ) * z
-    }
+
     bootRes <- NULL
     
     cox <- coef.migpd_slim(mth, mqu)[3:4, which]
@@ -637,8 +651,8 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
                          z=z_in,
                          coxi=cox,
                          coxmi=coxmi)
-    CondLargest <- sim[,dim(sim)[2]]
-    sim <- sim[,-(ncol(sim))]
+    #CondLargest <- sim[,dim(sim)[2]]
+    #sim <- sim[,-(ncol(sim))]
     
     m <- 1 / ( 1 - pqu ) # Need to estimate pqu quantile
     zeta <- 1 - mqu[ which ] # Coles, page 81
@@ -650,7 +664,7 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
     # 
     #res <- list(datafit = datafit)
     #print(CondLargest)
-    as.matrix(sim[CondLargest, order(c(which, c(1:d)[-which]))])
+    as.matrix(sim[, order(c(which, c(1:d)[-which]))])
     #oldClass( res ) <- "predict.mex" # A bit of a lie, but keeps things smooth.
     
     #res

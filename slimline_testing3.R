@@ -81,6 +81,7 @@ D <- 200; j <- 1
 ### Need a "data" object
 DATA <- present_melt[,((j-1)*D+1):(min(NREG, j*D))]
 DATA0 <- present_melt
+NREG <- ncol(DATA)
 mqu <- 0.7
 step1_test1 <- migpd_slim(mqu=mqu, penalty="none")
 
@@ -180,7 +181,7 @@ str(step4_test1, max.level=2)
 
 
 # 
-nSample <- 11  # still a very low number of events.
+nSample <- 5  # still a very low number of events.
 d <- NREG
 mult <- 2
 k <- 1

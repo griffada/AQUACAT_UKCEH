@@ -1,6 +1,6 @@
-[1] "2020-09-30 16:55:24 BST"
+[1] "2020-10-08 13:50:54 BST"
 [1] "Running for threshold POT2 at  pc05 minimum spread."
-[1] "2020-09-30 16:55:27 BST"
+[1] "2020-10-08 13:50:56 BST"
 File /prj/aquacat/Data/RCM01_198012_201011/dmflow_copy_RCM01_198012_201011.nc (NC_FORMAT_NETCDF4):
 
      1 variables (excluding dimension variables):
@@ -32,21 +32,6 @@ Time difference of 0 secs
  Loaded PROJ.4 runtime: Rel. 4.8.0, 6 March 2012, [PJ_VERSION: 480]
  Path to PROJ.4 shared files: (autodetected)
  Linking to sp version: 1.4-1 
-Parsed with column specification:
-cols(
-  row = col_double(),
-  col = col_double(),
-  east = col_double(),
-  nor = col_double()
-)
-Parsed with column specification:
-cols(
-  row = col_double(),
-  col = col_double(),
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
 Error in gzfile(file, "rb") : cannot open the connection
 Calls: readRDS -> gzfile
 In addition: Warning message:

@@ -84,10 +84,27 @@ wsName <- c("pc5", "pc2", "pc1", "pc05", "pc01")
 NW <- length(wsCutoff)
 
 # location of river network
-rn <- as.matrix(read_csv(paste0(wd_id,"hasData3.csv")), use.names=F)
+rn <- as.matrix(read_csv(paste0(wd_id,"hasData3.csv"), 
+                         col_types=cols(
+                           row = col_double(),
+                           col = col_double(),
+                           east = col_double(),
+                           nor = col_double()
+                         )), use.names=F)
 #rn <- read_csv(paste0(data_wd, "hasData_primary.csv"))
 NH <- nrow(rn)
 
-rn_regions <- try({read_csv(paste0(wd_id, "hasData_Regions.csv"))})
+
+rn_regions <- try({
+  read_csv(paste0(wd_id,"hasData_Regions.csv"),
+    col_types = cols(
+      row = col_double(),
+      col = col_double(),
+      HA_NUM = col_double(),
+      HA_NAME = col_character(),
+      REGION = col_character()
+    )
+  )
+})
 
 ND <- 10800 # Number of days
