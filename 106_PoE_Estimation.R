@@ -31,11 +31,18 @@ thresh1 <- "POT2"
 ws1 <- "pc05"
 print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
 
+if(file.exists(paste0(data_wd, subfold, "returnlevels_",
+                      thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))){
+  stop("returnlevels already exists. ending 106.")
+}
 
-subfold <- paste0("RCM", RCM, "_", suffix, "/")
 
-jV <- which(threshName==thresh1)
-jI <- which(wsName == ws1)
+
+
+subfold <- paste0("RCM", RCM, suffix, "/")
+
+jT <- which(threshName==thresh1)
+jW <- which(wsName == ws1)
 ### Functions ###---------------------------------------
 
 logit <- function(x){log(x/(1-x))}
@@ -70,9 +77,8 @@ threshDayExcList <- readRDS( paste0(data_wd, subfold, "threshDayExcList_RCM",
 
 
 # matrix of threshold value (col) at a given cell (row)
-threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM", 
-                             RCM, suffix,".rds"),
-                      stringsAsFactors=FALSE)
+threshMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
+                            RCM, suffix, ".rds"))
 #dim(threshMat) #19914 x 5
 
 
@@ -89,9 +95,12 @@ load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
 #edf <- fread(paste0(wd,"/Data/eventdf_POT2_pc2.csv"), colClasses=rep("numeric",287))
 
 eventDF <- readr::read_csv(paste0(data_wd,subfold, "eventdf_",thresh1,"_", ws1,
-                                  "_RCM", RCM, suffix, ".csv"))
+                                  "_RCM", RCM, suffix, ".csv"),
+                           col_types=cols(
+                             .default = col_double()
+                           ))
 
-
+NE <- ncol(eventDF) - 4
 
 
 ##### PROB CALCULATION #####-------------------------------------------------
@@ -104,7 +113,7 @@ rarityDF <- expand.grid("eventNo" = 1:NE,
 rarityDF$Easting <- rn[rarityDF[, 2], 1]
 rarityDF$Northing <- rn[rarityDF[, 2], 2]
 rarityDF$thresh <- NA
-rarityDF$DayS <- eventDayList[[jV]][[jI]][rarityDF[, 1]]
+rarityDF$DayS <- eventDayList[[jT]][[jW]][rarityDF[, 1]]
 rarityDF$val <- NA
 rarityDF$gpp <- NA
 rarityDF$ecdf <- NA
@@ -113,7 +122,7 @@ rarityDF$gev <- NA
 
 n <- 1
 
-edl <- eventDayList[[jV]][[jI]]
+edl <- eventDayList[[jT]][[jW]]
 
 ST0 <- proc.time()
 ST <- proc.time()
@@ -131,19 +140,19 @@ for(n in 1:NH){
                       start=c(i, j,  1),
                       count=c(1, 1, -1))
   
-  #event magnitudes from correct period (present or future)
-  tSliceEvent <- unlist(eventDF[n, -(1:2)], use.names=FALSE)
+  #event magnitudes from correct period for a specific location(present or future)
+  tSliceEvent <- unlist(eventDF[n, -(1:4)], use.names=FALSE)
   
-  threshval <- threshMat[n, 2] # POT2 column
+  threshval <- threshMat[n, jT] # POT2 column
   
   
   
   rarityDF$thresh[which(rarityDF$loc == n)] <- threshval
   rarityDF$val[which(rarityDF$loc == n)] <- tSliceEvent
-  
+
   # get ecdf and estimate PoE
   
-  ecdfSlice <- ecdf(tSlice_pres)
+  ecdfSlice <- ecdf(tSlice)
   poeEvent <- 1 - ecdfSlice(tSliceEvent)
   
   
@@ -187,9 +196,9 @@ nc_close(ncin)
 print(Sys.time())
 ######
 #
-# CONVERTION FROM PoE IN DAYS (p) TO PoE IN YEARS (b): p = 1 - (b)^(1/365.25)
+# CONVERTION FROM PoE IN DAYS (p) TO PoE IN YEARS (b): p = 1 - (1-b)^(1/365.25)
 #
-# b = (1-p)^(365.25)
+# b = 1- (1-p)^(365.25)
 #
 #####
 

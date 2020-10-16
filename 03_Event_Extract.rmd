@@ -1,7 +1,6 @@
 ---
 title: "Event Plotting - AQUACAT"
 author: "UKCEH; Adam Griffin"
-date: "05/03/2020; updated 10/03/2020"
 output:
   html_document: default
   pdf_document: default
@@ -18,41 +17,59 @@ library(knitr)
 library(kableExtra)
 library(dplyr)
 
-threshVal <- c(5/365, 2/365, 1/365, 0.2/365, 0.1/365)
-threshName <- c("POT5", "POT2", "POT1", "Q5", "Q10")
-NT <- length(threshVal)
-```
-
-# Data used and produced in previous scripts
-```{r data}
 
 if(substr(osVersion,1,3) == "Win"){
-  wd <- "S:/"
+  source("S:/CodeABG/setup_script_00.R")
 }else{
-  wd <- "/prj/aquacat/"
+  source("/prj/aquacat/CodeABG/setup_script_00.R")
 }
 
-ncname <- "run_hmfg2g/outputs/dmflow_RCM01_198012_201011_out.nc" #2GB
+##### DATA #####------------------------------------------------------------
 
-ND <- 10800 # Number of days
+threshDayExcList <- readRDS(paste0(data_wd, subfold,
+                            "threshDayExcList_RCM", RCM, suffix, ".rds"))
+#5 lists of NH lists
 
+thresMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
+                           RCM, suffix, ".rds"))
 
-rn <- read.csv(paste0(wd,"CodeABG/InterimData/hasData.csv"),
-                      stringsAsFactors=FALSE)
-NH <- nrow(rn)
-
-
-threshDayExcList <- readRDS(paste0(wd,
-                            "CodeABG/InterimData/threshDayExcList2.rds"))
-  #5 lists of NH lists
 
 # Number of events
 S <- sapply(threshDayExcList, function(l){length(l[[1]])})
 for(i in 1:5){
   print(paste(threshName[i], "events per grid-cell:", S[i]))
 }
+```
 
-thresMat <- readRDS(paste0(wd,"CodeABG/InterimData/threshMat2.rds"))
+# Data used and produced in previous scripts
+```{r data}
+# if(substr(osVersion,1,3) == "Win"){
+#   wd <- "S:/"
+# }else{
+#   wd <- "/prj/aquacat/"
+# }
+# 
+# ncname <- "run_hmfg2g/outputs/dmflow_RCM01_198012_201011_out.nc" #2GB
+# 
+# ND <- 10800 # Number of days
+# 
+# 
+# rn <- read.csv(paste0(wd,"CodeABG/InterimData/hasData.csv"),
+#                       stringsAsFactors=FALSE)
+# NH <- nrow(rn)
+# 
+# 
+# threshDayExcList <- readRDS(paste0(wd,
+#                             "CodeABG/InterimData/threshDayExcList2.rds"))
+#   #5 lists of NH lists
+# 
+# # Number of events
+# S <- sapply(threshDayExcList, function(l){length(l[[1]])})
+# for(i in 1:5){
+#   print(paste(threshName[i], "events per grid-cell:", S[i]))
+# }
+# 
+# thresMat <- readRDS(paste0(wd,"CodeABG/InterimData/threshMat2.rds"))
 ```
 
 ## Find size of widespread inundation events.
@@ -157,8 +174,8 @@ for(j in 1:5){
     eventDayList[[j]][[k]] <- eventD
   }
 }
-save(eventLList, eventDayList,
-      file=paste0(wd,"CodeABG/InterimData/eventLists03.RDa"))
+# save(eventLList, eventDayList,
+#       file=paste0(wd,"CodeABG/InterimData/eventLists03.RDa"))
 ```
 
 ```{r fig.width=10, fig.height=10, echo=F}
@@ -174,62 +191,70 @@ for(j in 1:5){
          xlim=c(0,21), ylim=c(0,100), cex=0.7)
   }
 }
+dev.off()
+table(eventLList[[2]][[4]])
+png("./eventLengths.png", width=120, height=120, units="mm", res=240)
+par(mgp=c(2,1,0), mar=c(3,3,1,0))
+    ylab <- "Number of events"
+    mainlab <- "Minimum 0.5% coverage"
+    xlab <- "Length in days"
+    plot(table(eventLList[[2]][[4]]), ylab=ylab, main=mainlab,
+         xlab=xlab,
+         xlim=c(0,35), ylim=c(0,150), cex=0.7, type='o')
+dev.off()
 ```
 
 ```{r}
 #load(paste0(wd,"CodeABG/InterimData/eventLists03.RDa"))
-qv <- c()
-
-for(qi in quantile(inunMat[4,inunMat[4,]>0],
-                   probs=c(0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85))){
-  print(qi)
-  qv <- c(qv,which.min(abs(inunMat[4,] - qi)))
-}
-
-netcdf <- nc_open(paste0(wd,"dmflow_RCM01_198012_201011_out.nc"))
-var <- "dmflow"
-for(i in 1:length(qv)){
-
-  day <- qv[i]
-  #flow <- raster(ncname_win, layer=day)
-  fl <- ncvar_get(ncin, var, start=c(1,1,day), count=c(-1, -1, 1))
-  flowM <- as.matrix(fl)[,1000:1]
-  
-  s <- sum(flowM[!is.na(flowM)] > 0)
-  
-  Wdown <- which(flowM > threshgrid, arr.ind=T)
-  print(dim(Wdown))
-  WW <- which(flowM <= threshgrid, arr.ind=T)
-  sw <- round(length(which(flowM > threshgrid))/s, 2) * 100 # % inundation
-  
-  for(i in 1:nrow(WW)){
-    if(is.na(flowM[WW[i,1], WW[i,2]])) next
-    if(!(flowM[WW[i,1], WW[i,2]] == -1)){
-      flowM[WW[i,1], WW[i,2]] <- -0.5
-    }
-  }
-  
-  flowM <- focal(as.raster(flowM), w=matrix(1,3,3),
-                 fun=function(x){if(!all(is.na(x))){max(x, na.rm=T)}else{return(NA)}},
-                 na.rm=T)
-  
-  brks <- c(-1.01, -0.51, seq(0, max(1500, na.rm=T), length.out=20))
-  
-  png(paste0("./exampleevent_",extremes$Day[w[k]],"_",extremes$Inun[w[k]], ".png"),
-      res=300, width=70, height=70, units='mm', pointsize=9)
-  par(mar=c(3,3,1,1), mgp=c(2,1,0))
-  image.plot(flowM, x=0:700, y=0:1250, ylim=c(0,1250), zlim=c(-2,1500),
-             col=c("grey90", "grey90", heat.colors(19)), breaks=brks, asp=1,
-             xlab="Easting", ylab="Northing")
-  
-  #pu <- par('usr')
-  
-  #text(pu[1] + (pu[2]-pu[1])*0.9, pu[3] + (pu[4] - pu[3])*0.9,
-  #     paste0("POT5 threshold\n", sw, "% inundation"),
-  #     adj=c(1,0.5))
-  dev.off()
-}
-
+# qv <- c()
+# 
+# for(qi in quantile(inunMat[4,inunMat[4,]>0],
+#                    probs=c(0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85))){
+#   print(qi)
+#   qv <- c(qv,which.min(abs(inunMat[4,] - qi)))
+# }
+# 
+# netcdf <- nc_open(ncname)
+# var <- "dmflow"
+# for(i in 1:length(qv)){
+# 
+#   day <- qv[i]
+#   #flow <- raster(ncname_win, layer=day)
+#   fl <- ncvar_get(netcdf, var, start=c(1,1,day), count=c(-1, -1, 1))
+#   flowM <- as.matrix(fl)[,1000:1]
+#   
+#   s <- sum(flowM[!is.na(flowM)] > 0)
+#   
+#   Wdown <- which(flowM > threshgrid, arr.ind=T)
+#   print(dim(Wdown))
+#   WW <- which(flowM <= threshgrid, arr.ind=T)
+#   sw <- round(length(which(flowM > threshgrid))/s, 2) * 100 # % inundation
+#   
+#   for(i in 1:nrow(WW)){
+#     if(is.na(flowM[WW[i,1], WW[i,2]])) next
+#     if(!(flowM[WW[i,1], WW[i,2]] == -1)){
+#       flowM[WW[i,1], WW[i,2]] <- -0.5
+#     }
+#   }
+#   
+#   flowM <- focal(as.raster(flowM), w=matrix(1,3,3),
+#                  fun=function(x){if(!all(is.na(x))){max(x, na.rm=T)}else{return(NA)}},
+#                  na.rm=T)
+#   
+#   brks <- c(-1.01, -0.51, seq(0, max(1500, na.rm=T), length.out=20))
+#   
+#   png(paste0("./Aexampleevent_",extremes$Day[w[k]],"_",extremes$Inun[w[k]], ".png"),
+#       res=300, width=70, height=70, units='mm', pointsize=9)
+#   par(mar=c(3,3,1,1), mgp=c(2,1,0))
+#   image.plot(flowM, x=0:700, y=0:1250, ylim=c(0,1250), zlim=c(-2,1500),
+#              col=c("grey90", "grey90", heat.colors(19)), breaks=brks, asp=1,
+#              xlab="Easting", ylab="Northing")
+#   
+#   #pu <- par('usr')
+#   
+#   #text(pu[1] + (pu[2]-pu[1])*0.9, pu[3] + (pu[4] - pu[3])*0.9,
+#   #     paste0("POT5 threshold\n", sw, "% inundation"),
+#   #     adj=c(1,0.5))
+#   dev.off()
+# }
 ```
-
-

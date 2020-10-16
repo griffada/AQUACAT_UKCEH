@@ -28,7 +28,7 @@ if(substr(osVersion,1,3) == "Win"){
 
 threshDayExcList <- readRDS(paste0(data_wd, subfold,
                             "threshDayExcList_RCM", RCM, suffix, ".rds"))
-#5 lists of NH lists
+#5 lists of NH lists, one for each threshold
 
 thresMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
                            RCM, suffix, ".rds"))
@@ -48,14 +48,14 @@ for(i in 1:5){
 inunMat <- matrix(0, nrow=NT, ncol=ND)
 inunDays <- matrix(0, nrow=NT, ncol=NH)
 
-for(j in 1:NT){  # for each threshold value
+for(j in 1:NT){  # for each threshold value j
   #print(threshName[j])
-  for(k in 1:NH){ # at each river network gridcell
+  for(k in 1:NH){ # at each river network gridcell k
     tde_jk <- threshDayExcList[[j]][[k]]
     
     for(n in 1:length(tde_jk)){
-      tde <- tde_jk[n] # which days was it exceeded
-      inunMat[j,tde] <- inunMat[j,tde] + 1
+      tde <- tde_jk[n] # which days was k exceeded past j
+      inunMat[j,tde] <- inunMat[j,tde] + 1 # add 1 to all those locations.
       
     }
     

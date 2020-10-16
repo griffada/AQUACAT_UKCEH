@@ -47,7 +47,7 @@ library(tidyverse)
 ### DATA ###--------------------------------------------------------------
 
 #Hydrometric areas map
-HA <- readOGR(dsn="~/FEH_C/HydrometricAreas/temp", layer="hyd_areas",
+HA <- readOGR(dsn=paste0(data_wd,"hydrometricAreas"), layer="hyd_areas",
               stringsAsFactors=FALSE)
 HA@data$HA_NUM <- as.numeric(HA@data$HA_NUM)
 

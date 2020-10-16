@@ -1,74 +1,4 @@
-[1] "2020-10-09 15:24:13 BST"
-[1] "2020-10-09 15:24:13 BST"
-[1] "SETUP DONE."
-Time difference of 24.00252 secs
-[1] "STEP 1 COMPLETE"
-Time difference of 8.513046 secs
-[1] "STEP 2 COMPLETE"
-Time difference of 0.03830242 secs
-NULL
-[1] "STEP 4 COMPLETE"
-Time difference of 1.345266 mins
-[1] "ping"
-nion
-
-Loading required package: Lmoments
-Loading required package: distillery
-Registered S3 methods overwritten by 'extRemes':
-  method            from  
-  plot.declustered  texmex
-  print.declustered texmex
-
-Attaching package: ‘extRemes’
-
-The following objects are masked from ‘package:stats’:
-
-    qqnorm, qqplot
-
-── Attaching packages ─────────────────────────────────────── tidyverse 1.3.0 ──
-✔ tibble  3.0.3     ✔ purrr   0.3.3
-✔ tidyr   1.1.1     ✔ stringr 1.4.0
-✔ readr   1.3.1     ✔ forcats 0.5.0
-── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-✖ dplyr::filter() masks stats::filter()
-✖ dplyr::lag()    masks stats::lag()
-Loading required package: sp
-
-Attaching package: ‘raster’
-
-The following object is masked from ‘package:tidyr’:
-
-    extract
-
-The following object is masked from ‘package:dplyr’:
-
-    select
-
-Loading required package: spam
-Loading required package: dotCall64
-Loading required package: grid
-Spam version 2.5-1 (2019-12-12) is loaded.
-Type 'help( Spam)' or 'demo( spam)' for a short introduction 
-and overview of this package.
-Help for individual functions is also obtained by adding the
-suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
-
-Attaching package: ‘spam’
-
-The following objects are masked from ‘package:base’:
-
-    backsolve, forwardsolve
-
-Loading required package: maps
-
-Attaching package: ‘maps’
-
-The following object is masked from ‘package:purrr’:
-
-    map
-
-See https://github.com/NCAR/Fields for
- an extensive vignette, other supplements and source code 
+105 01 present
 rgdal: version: 1.2-20, (SVN revision 725)
  Geospatial Data Abstraction Library extensions to R successfully loaded
  Loaded GDAL runtime: GDAL 1.11.3, released 2015/09/16
@@ -77,3 +7,39 @@ rgdal: version: 1.2-20, (SVN revision 725)
  Loaded PROJ.4 runtime: Rel. 4.8.0, 6 March 2012, [PJ_VERSION: 480]
  Path to PROJ.4 shared files: (autodetected)
  Linking to sp version: 1.4-1 
+Error: eventdf_ exists. finishing 105.
+Execution halted
+106 01 present
+rgdal: version: 1.2-20, (SVN revision 725)
+ Geospatial Data Abstraction Library extensions to R successfully loaded
+ Loaded GDAL runtime: GDAL 1.11.3, released 2015/09/16
+ Path to GDAL shared files: /usr/share/gdal
+ GDAL binary built with GEOS: TRUE 
+ Loaded PROJ.4 runtime: Rel. 4.8.0, 6 March 2012, [PJ_VERSION: 480]
+ Path to PROJ.4 shared files: (autodetected)
+ Linking to sp version: 1.4-1 
+Error: returnlevels already exists. ending 106.
+Execution halted
+107 01 present
+  loc = col_double(),
+  Easting = col_double(),
+  Northing = col_double(),
+  thresh = col_double(),
+  DayS = col_double(),
+  val = col_double(),
+  gpp = col_double(),
+  ecdf = col_double(),
+  gev = col_double()
+)
+108 01 present
+Warning messages:
+1: In read.table(file = file, header = header, sep = sep, quote = quote,  :
+  line 2 appears to contain embedded nulls
+2: In read.table(file = file, header = header, sep = sep, quote = quote,  :
+  line 5 appears to contain embedded nulls
+3: In scan(file = file, what = what, sep = sep, quote = quote, dec = dec,  :
+  embedded nul(s) found in input
+Error in `[.data.frame`(threshMat, "X2") : undefined columns selected
+Calls: unlist -> [ -> [.data.frame
+Execution halted
+Complete

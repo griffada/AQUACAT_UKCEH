@@ -11,23 +11,19 @@
 
 ##### SETUP #####------------------------------------------------------------
 
+library(fields)
 library(ncdf4)
 library(raster)
-library(fields)
-
-threshVal <- c(5/365, 2/365, 1/365, 0.2/365, 0.1/365)
-threshName <- c("POT5", "POT2", "POT1", "Q5", "Q10")
-NT <- length(threshVal)
+library(knitr)
+library(kableExtra)
+library(dplyr)
 
 
-##### DATA #####------------------------------------------------------------
 if(substr(osVersion,1,3) == "Win"){
-  wd <- "S:/"
+  source("S:/CodeABG/setup_script_00.R")
 }else{
-  wd <- "/prj/aquacat/"
+  source("/prj/aquacat/CodeABG/setup_script_00.R")
 }
-
-ncname <- "run_hmfg2g/outputs/dmflow_RCM01_198012_201011_out.nc" #2GB
 
 #### FUNCTIONS ####--------------------------------------
 
@@ -156,9 +152,9 @@ eventPlotterNoMap <- function(flow_tab, threshold_tab, base_map,
 ### TESTING ### --------------------------
 if(FALSE){
   
-  threshGrid <- raster(x=paste0(wd, "CodeABG/InterimData/",
+  threshGrid <- raster(x=paste0(wd_id,
                                 threshName[2], "_threshGrid2.asc"), layer=1)
-  netcdf <- nc_open(paste0(wd, ncname))
+  netcdf <- nc_open(ncname)
   V <- values(threshGrid)
   tg <- t(matrix(V, nrow=1000, ncol=700))
   var <- "dmflow"

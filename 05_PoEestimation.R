@@ -188,9 +188,9 @@ nc_close(ncin)
 print(Sys.time())
 ######
 #
-# CONVERTION FROM PoE IN DAYS (p) TO PoE IN YEARS (b): p = 1 - (b)^(1/365.25)
+# CONVERTION FROM PoE IN DAYS (p) TO PoE IN YEARS (b): p = 1 - (1-b)^(1/365.25)
 #
-# b = (1-p)^(365.25)
+# b = 1 - (1-p)^(365.25)
 #
 #####
 

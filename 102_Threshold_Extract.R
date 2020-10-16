@@ -38,6 +38,8 @@ if(file.exists(paste0(data_wd, subfold, "threshDayExcList_RCM", RCM, suffix,".rd
 threshGridList <- list()
 
 threshDayExcList <- vector("list", length(threshVal))
+names(threshDayExcList) <- threshName
+
 
 ST <-  Sys.time()
 ncin <- nc_open(ncname, readunlim=FALSE) 
@@ -85,6 +87,7 @@ threshGrid <- raster(threshGrid,  # threshgrid might need transposing?
                      )
 
 threshGridList <- lapply(1:length(threshVal), function(i){threshGrid})
+names(threshGridList) <- threshVal
 
 ## Get quantiles for thresholds ##-------------------------------------
 print("loop start")
@@ -132,7 +135,7 @@ if(period=="future"){
                           "threshMat_RCM", RCM, suffix_pres,".rds"))
   # Just load in threshGridList to save to the Future folder
   threshGridList <- readRDS(file=paste0(data_wd, subfold_pres,
-                                        "threshGridList_RCM", RCM, suffix_pres,".rds"))
+                                "threshGridList_RCM", RCM, suffix_pres,".rds"))
   for(n in 1:NH){
     
     if((n < 10) | (n %% 100 == 0)){

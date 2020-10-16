@@ -1,56 +1,29 @@
 Loading required package: sp
 L[1] "Running for threshold POT2 at  pc05 minimum spread."
-[1] "2020-10-08 13:20:06 BST"
-File /prj/aquacat/Data/RCM01_198012_201011/dmflow_copy_RCM01_198012_201011.nc (NC_FORMAT_NETCDF4):
+tCall64
+Loading required package: grid
+Spam version 2.5-1 (2019-12-12) is loaded.
+Type 'help( Spam)' or 'demo( spam)' for a short introduction 
+and overview of this package.
+Help for individual functions is also obtained by adding the
+suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
 
-     1 variables (excluding dimension variables):
-        float dmflow[Easting,Northing,Time]   (Chunking: [13,19,4])  (Compression: shuffle,level 5)
-            units: m3 s-1
-            standard_name: dmflow
-            long_name: Daily mean river flow
-            _FillValue: -999
-            missing_value: -999
+Attaching package: ‘spam’
 
-     3 dimensions:
-        Northing  Size:1000
-            standard_name: Northing
-            axis: Y
-            units: GB National Grid
-        Easting  Size:700
-            standard_name: Easting
-            axis: X
-            units: GB National Grid
-        Time  Size:10800   *** is unlimited ***
-            standard_name: Time
-            axis: T
-            units: days since 1961-1-1 0:0:0
-            calendar: 360_day
-Time difference of 1.135222 secs
-[1] 25
-[1] 50
-[1] 75
-[1] 100
-[1] 125
-[1] 150
-[1] 175
-[1] 200
-[1] 225
-[1] 250
-[1] 275
-[1] 300
-[1] 325
-[1] 350
-[1] 375
-[1] 400
-[1] 425
-(),
-  nor = col_double()
-)
-Parsed with column specification:
-cols(
-  row = col_double(),
-  col = col_double(),
-  HA_NUM = col_double(),
-  HA_NAME = col_character(),
-  REGION = col_character()
-)
+The following objects are masked from ‘package:base’:
+
+    backsolve, forwardsolve
+
+Loading required package: maps
+See https://github.com/NCAR/Fields for
+ an extensive vignette, other supplements and source code 
+rgdal: version: 1.2-20, (SVN revision 725)
+ Geospatial Data Abstraction Library extensions to R successfully loaded
+ Loaded GDAL runtime: GDAL 1.11.3, released 2015/09/16
+ Path to GDAL shared files: /usr/share/gdal
+ GDAL binary built with GEOS: TRUE 
+ Loaded PROJ.4 runtime: Rel. 4.8.0, 6 March 2012, [PJ_VERSION: 480]
+ Path to PROJ.4 shared files: (autodetected)
+ Linking to sp version: 1.4-1 
+Error: eventdf_ exists. finishing 105.
+Execution halted

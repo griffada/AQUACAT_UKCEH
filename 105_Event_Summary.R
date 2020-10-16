@@ -23,9 +23,16 @@ if(substr(osVersion,1,3) == "Win"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
 }
 
+
 thresh1 <- "POT2"
 ws1 <- "pc05"
 print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
+
+if(file.exists(paste0(data_wd,subfold,
+                      "eventdf_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))){
+  stop("eventdf_ exists. finishing 105.")
+}
+
 
 ##### DATA #####------------------------------------------------------------
 
@@ -41,9 +48,8 @@ threshDayExcList <- readRDS( paste0(data_wd, subfold, "threshDayExcList_RCM",
   
 
 # matrix of threshold value (col) at a given cell (row)
-threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM", 
-                             RCM, suffix,".csv"),
-                     stringsAsFactors=FALSE)
+threshMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
+                            RCM, suffix, ".rds"))
 #dim(threshMat) #19914 x 5
 
 
@@ -56,17 +62,17 @@ load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
 ##### GET EVENT #####----------------------------------------------------
 
 # Only using POT2 and 2% inundation minimums.
-jV <- which(threshName==thresh1)
-jI <- which(wsName == ws1)
+jT <- which(threshName==thresh1)
+jW <- which(wsName == ws1)
 
-event2_2 <- eventLList[[jV]][[jI]]
-days2_2 <- eventDayList[[jV]][[jI]]
+event2_2 <- eventLList[[jT]][[jW]]
+days2_2 <- eventDayList[[jT]][[jW]]
 
 
 # prealloc
 eventDataFrame <- matrix(NA, ncol=length(event2_2), nrow=NH)
 
-for(i in 1:length(event2_2)){
+for(i in seq_len(length(event2_2))){
   
   if(i %% 25 == 0){print(i)}
   
