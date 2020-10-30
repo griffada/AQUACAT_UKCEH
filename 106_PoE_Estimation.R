@@ -23,8 +23,10 @@ library(extRemes)
 
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
-}else{
+}else if (substr(osVersion,1,3) == "Fed"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
+}else{
+  source("~/AQUACAT/CodeABG/setup_script_00.R")
 }
 
 thresh1 <- "POT2"

@@ -29,9 +29,12 @@ print(ST <- Sys.time())
 
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
-}else{
+}else if (substr(osVersion,1,3) == "Fed"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
+}else{
+  source("~/AQUACAT/CodeABG/setup_script_00.R")
 }
+
 
 source(paste0(wd, "07b_HTfunctions.R"))
 source(paste0(wd, "07c_texmex_slimline.R"))

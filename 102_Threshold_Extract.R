@@ -21,29 +21,31 @@
 #### SETUP ####----------------------
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
-}else{
+}else if (substr(osVersion,1,3) == "Fed"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
+}else{
+  source("/AQUACAT/CodeABG/setup_script_00.R")
 }
 
+## Does this job need doing? ##
 if(file.exists(paste0(data_wd, subfold, "threshDayExcList_RCM", RCM, suffix,".rds")) &&
    file.exists(paste0(data_wd, subfold, "threshGridList_RCM", RCM, suffix,".rds")) &&
    file.exists(paste0(data_wd, subfold, "threshMat_RCM", RCM, suffix,".rds")) &&
    file.exists(paste0(data_wd, subfold, "threshMat_RCM", RCM, suffix,".csv"))){
-    print("Files already exist for 102. Proceeding to next job.")
-    stop("Stopping.")
+    stop("thresh* files already exist for 102. Proceeding to next job.")
 }else{
    print("Proceeding to job.")
 }
 
-threshGridList <- list()
 
+#prealloc.
+threshGridList <- list()
 threshDayExcList <- vector("list", length(threshVal))
 names(threshDayExcList) <- threshName
 
 
 ST <-  Sys.time()
-ncin <- nc_open(ncname, readunlim=FALSE) 
-# this is a huge file, do not open without reason.
+ncin <- nc_open(ncname, readunlim=FALSE) # this is a huge file, do not open without reason.
 print(Sys.time() - ST)
 print(ncin)
 
@@ -52,19 +54,20 @@ print(ncin)
 ## Get grid of river network ##-------------------
 tStart <- 1
 deltaT <- 1
-ncwide <- ncvar_get(ncin, "dmflow",
-					start=c(1, 1, tStart),
-					count=c(-1, -1, 1))
-
-rn <- which(apply(ncwide, c(1,2),
-                 function(v){sum(v[!is.na(v)] > -1) == deltaT}), arr.ind=T)
-
-rn <- data.frame(row=rn[,1], col=rn[,2])
-east <- ncvar_get(ncin, "Easting")
-north <- ncvar_get(ncin, "Northing")
-rn$east <- east[rn[,1]]
-rn$nor <- north[rn[,2]]
-
+###### Only uncomment if needed #####
+# ncwide <- ncvar_get(ncin, "dmflow",
+# 					start=c(1, 1, tStart),
+# 					count=c(-1, -1, deltaT))
+# 
+# rn <- which(apply(ncwide, c(1,2),
+#                  function(v){sum(v[!is.na(v)] > -1) == deltaT}), arr.ind=T)
+# 
+# rn <- data.frame(row=rn[,1], col=rn[,2])
+# east <- ncvar_get(ncin, "Easting")
+# north <- ncvar_get(ncin, "Northing")
+# rn$east <- east[rn[,1]]
+# rn$nor <- north[rn[,2]]
+# 
 readr::write_csv(data.frame(rn), paste0(data_wd, "hasData_primary.csv"))
 
 NH <- nrow(rn)
@@ -99,13 +102,14 @@ if(period=="present"){
   for(n in 1:NH){
     #print(n)
     # running time diagnosis
-    if((n < 10) | (n %% 50 == 0)){
+    if((n < 10) | (n %% 200 == 0)){
       print(n)
       I <- Sys.time() - ST
       I0 <- Sys.time() - ST0
-      print(paste("Percent remaining", (NH-n)/NH))
-      print(paste("Time remaining", (NH-n)/n * I0))
-      print(paste("Since last readout:", I)); ST <- Sys.time()
+      print(paste("Percent remaining", round((NH-n)/NH ,2)))
+      print(paste("Time remaining", round((NH-n)/n * I0,2)))
+      print(paste("Since last readout:", round(I,2)))
+      ST <- Sys.time()
       print(ST) 
     }
     
@@ -138,13 +142,14 @@ if(period=="future"){
                                 "threshGridList_RCM", RCM, suffix_pres,".rds"))
   for(n in 1:NH){
     
-    if((n < 10) | (n %% 100 == 0)){
+    if((n < 10) | (n %% 200 == 0)){
       print(n)
       I <- Sys.time() - ST
       I0 <- Sys.time() - ST0
-      print(paste("Percent remaining", ((NH-n)/NH)*100))
-      print(paste("Time remaining", (NH-n)/n * I0))
-      print(paste("Since last readout:", I)); ST <- Sys.time()
+      print(paste("Percent remaining", round((NH-n)/NH ,2)))
+      print(paste("Time remaining", round((NH-n)/n * I0,2)))
+      print(paste("Since last readout:", round(I,2)))
+      ST <- Sys.time()
       print(ST) 
     }
     
@@ -180,4 +185,4 @@ saveRDS(threshMat, file=paste0(data_wd, subfold,
 readr::write_csv(x=data.frame(threshMat), 
                  path=paste0(data_wd, subfold, "threshMat_RCM", RCM, suffix,".csv"))
 
-print("Complete")
+print("102 Complete")

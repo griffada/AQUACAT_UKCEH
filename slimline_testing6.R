@@ -30,8 +30,10 @@ print(ST <- Sys.time())
 
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
-}else{
+}else if (substr(osVersion,1,3) == "Fed"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
+}else{
+  source("~/AQUACAT/CodeABG/setup_script_00.R")
 }
 
 #source(paste0(wd, "07b_HTfunctions.R"))
@@ -63,7 +65,7 @@ load(paste0(wd_id, "eventLists03.RDa"))
 NE <- length(eventDayList[[jI]][[jV]]) # POT2, 2% inun.
 
 # timewise maxima at each cell for each event ((NE + 2) x NH)
-eventDF <- readr::read_csv(paste0(data_wd,"/TestData/eventdf_POT2_pc05.csv"),
+eventDF <- readr::read_csv(paste0(data_wd,"TestData/eventdf_POT2_pc05.csv"),
                            col_types=paste0(rep("c",431),collapse="")
                            )
 
@@ -238,9 +240,9 @@ saveRDS(Z, file=paste0(wd_id, "slimline/Z.rds"))
 # 
 # Z <- readRDS(paste0(wd_id, "slimline/Z.rds"))
 
-nSample <- 101  # still a very low number of events.
+nSample <- 20  # still a very low number of events.
 d <- NREG
-mult <- 10
+mult <- 2
 k <- 1
 
 margins_temp <- list("laplace",
@@ -275,6 +277,104 @@ str(step6_test1, max.level=1)
 
 write.csv(step6_test1$MCsample, paste0(wd_id, "slimline/step7_MCSample2.csv"))
 saveRDS(step6_test1, file=paste0(wd_id, "slimline/step6.rds"))
+
+# print(ST <- Sys.time())
+# ncin <- nc_open(ncname) # This file is ~2.5GB on the linux server.
+# print(ncin)
+# print(floor(Sys.time() - ST))
+# 
+# rn_here <- cbind(rn,rn_regions[,3:5]) %>%
+#   dplyr::filter(REGION=="NW") %>%
+#   dplyr::select(row,col,east,nor)
+# 
+# NE <- nrow(step6$MCsample)
+# NH <- ncol(step6$MCsample)
+# 
+# rarityDF_HT <- expand.grid("eventNo" = 1:NE,
+#                         "loc" = 1:NH)
+# 
+# rarityDF_HT$Easting <- rn_here[rarityDF_HT[, 2], 3]
+# rarityDF_HT$Northing <- rn_here[rarityDF_HT[, 2], 4]
+# rarityDF_HT$thresh <- NA
+# rarityDF_HT$val <- NA
+# rarityDF_HT$gpp <- NA
+# rarityDF_HT$ecdf <- NA
+# rarityDF_HT$gev <- NA
+# 
+# 
+# logit <- function(x){log(x/(1-x))}
+# invlogit <- function(y){1/(1 + exp(-1*y))}
+# 
+# gringorten <- function(v){
+#   ((length(v) + 1 - rank(v)) - 0.44)/(length(v) + 0.12)
+# }
+# 
+# weibull <- function(v){
+#   (length(v) + 1 - rank(v))/(length(v) + 1)
+# }
+# 
+# 
+# ST0 <- proc.time()
+# ST <- proc.time()
+# print("loop start")
+# for(n in 1:NH){ # for eacl location N
+#   if(n < 10 |(n %% 200 == 0)){
+#     print(paste(n, "out of", NH))
+#   }
+#   
+#   i <- rn_here[n,1]
+#   j <- rn_here[n,2]
+#   # Pull out spaceslice
+#   tSlice <- ncvar_get(ncin, varid="dmflow",
+#                       start=c(i, j,  1),
+#                       count=c(1, 1, -1))
+#   
+#   tSliceEvent <- unname(unlist(step6$MCsample[n, -(1:4)]))
+#   
+#   W <- which(rn_regions$REGION=="NW")[1:NH]
+#   
+#   thresh1 <- thresh0[W]
+#   
+#   threshval <- thresh1[n] # POT2 column
+#   
+#   WU <- which(rarityDF_HT$loc == W[n])
+#   
+#   rarityDF_HT$thresh[WU] <- threshval
+#   rarityDF_HT$val[WU] <- tSliceEvent
+#   
+#   # get ecdf and estimate PoE
+#   
+#   ecdfSlice <- ecdf(tSlice)
+#   poeEvent <- 1 - ecdfSlice(tSliceEvent)
+#   
+#   
+#   # Weibull or Gringorten plotting position
+#   
+#   grSlice <- gringorten(tSlice)
+#   grEvent <- sapply(tSliceEvent,
+#                     function(x){grSlice[which.min(abs(tSlice - x))]})
+#   
+#   rarityDF_HT$gpp[WU] <- grEvent
+#   rarityDF_HT$ecdf[WU] <- poeEvent
+#   
+#   # GEV fitted to whole spaceslice
+#   FFGEV <- fevd(x=tSlice,
+#                 type='GEV')$results$par
+#   QFGEV <- 1- pevd(q=tSliceEvent,
+#                    loc=FFGEV[1],
+#                    scale=FFGEV[2],
+#                    shape=FFGEV[3],
+#                    type='GEV')
+#   
+#   rarityDF_HT$gev[WU] <- QFGEV
+#   
+#   if(n %% 200 == 0){
+#     print(floor(proc.time() - ST0)[1:3])
+#     print(floor(proc.time() -  ST)[1:3])
+#   }
+#   ST <- proc.time()
+# }
+
 
 print("STEP 6 COMPLETE.")
 print(Sys.time() - ST)

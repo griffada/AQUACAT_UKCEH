@@ -74,23 +74,23 @@ copy_to(rl_db,
 # dbListFields(my_db, "presmin")
 
 ##### TUTORIAL STUFF #####----------------------------------------------------
-if(FALSE){
-  setwd("~/AQUACAT_C")
-  
-  my_db_file <- "./bodc_sea_level.sqlite"
-  my_db <- src_sqlite(my_db_file, create=TRUE)
-  my_db
-  
-  SH <- readr::read_csv("./Sheerness_19861024_20180430.csv",
-                        col_types="cccddcccccdc")
-  
-  copy_to(my_db, SH, temporary=FALSE, overwrite=TRUE)
-  
-  my_db
-  
-  my_sea_level <- DBI::dbConnect(RSQLite::SQLite(), "./bodc_sea_level.sqlite")
-  src_dbi(my_sea_level)
-  DBI::dbDisconnect(my_sea_level)
-  
-  DBI::dbDisconnect(my_db)
-}
+# if(FALSE){
+#   setwd("~/AQUACAT_C")
+#   
+#   my_db_file <- "./bodc_sea_level.sqlite"
+#   my_db <- src_sqlite(my_db_file, create=TRUE)
+#   my_db
+#   
+#   SH <- readr::read_csv("./Sheerness_19861024_20180430.csv",
+#                         col_types="cccddcccccdc")
+#   
+#   copy_to(my_db, SH, temporary=FALSE, overwrite=TRUE)
+#   
+#   my_db
+#   
+#   my_sea_level <- DBI::dbConnect(RSQLite::SQLite(), "./bodc_sea_level.sqlite")
+#   src_dbi(my_sea_level)
+#   DBI::dbDisconnect(my_sea_level)
+#   
+#   DBI::dbDisconnect(my_db)
+# }

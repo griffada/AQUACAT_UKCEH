@@ -19,8 +19,16 @@
 
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
-}else{
+}else if (substr(osVersion,1,3) == "Fed"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
+}else{
+  source("~/AQUACAT/CodeABG/setup_script_00.R")
+}
+
+if(file.exists(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))){
+  stop("eventLists alread exist for 104. Proceeding to next job.")
+}else{
+  print("Proceeding to job.")
 }
 
 ##### DATA #####------------------------------------------------------------

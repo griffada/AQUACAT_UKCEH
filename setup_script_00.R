@@ -40,11 +40,15 @@ if(as.numeric(RCM) < 0 | as.numeric(RCM) > 16){
 }
 #### CORE PACKAGES ---------------------------------------------------
 print(Sys.time())
+options("rgdal_show_exportToProj4_warnings"="none")
+suppressMessages({
 library(ncdf4)
 library(raster)
 library(fields)
 library(rgdal)
 library(readr)
+})
+
 
 ### SET WORKING DIRECTORY ###
 if (substr(osVersion,1,3) == "Win") {
@@ -54,13 +58,18 @@ if (substr(osVersion,1,3) == "Win") {
   data_wd <- "S:/Data/"
   g2g_wd <- "S:/run_hmfg2g/outputs/"
   
-}else{
+}else if (substr(osVersion,1,3) == "Fed"){
   
   wd <- "/prj/aquacat/CodeABG/"
   wd_id <- "/prj/aquacat/CodeABG/InterimData/"
   data_wd <- "/prj/aquacat/Data/"
   g2g_wd <- "/prj/aquacat/run_hmfg2g/outputs/"
   
+}else{
+  wd <- "~/AQUACAT/CodeABG/"
+  wd_id <- "~/AQUACAT/CodeABG/InterimData/"
+  data_wd <- "~/AQUACAT/Data/"
+  g2g_wd <- "~/AQUACAT/run_hmfg2g/outputs/"
 }
 
 if(!dir.exists(paste0(data_wd, "RCM", RCM, suffix))){

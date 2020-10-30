@@ -19,13 +19,19 @@
 
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
-}else{
+}else if (substr(osVersion,1,3) == "Fed"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
+}else{
+  source("~/AQUACAT/CodeABG/setup_script_00.R")
 }
+
 
 
 thresh1 <- "POT2"
 ws1 <- "pc05"
+# Only using POT2 and 2% inundation minimums.
+jT <- which(threshName==thresh1)
+jW <- which(wsName == ws1)
 print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
 
 if(file.exists(paste0(data_wd,subfold,
@@ -61,29 +67,24 @@ load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
 
 ##### GET EVENT #####----------------------------------------------------
 
-# Only using POT2 and 2% inundation minimums.
-jT <- which(threshName==thresh1)
-jW <- which(wsName == ws1)
-
-event2_2 <- eventLList[[jT]][[jW]]
-days2_2 <- eventDayList[[jT]][[jW]]
-
+eventz <- eventLList[[jT]][[jW]]
+dayz <- eventDayList[[jT]][[jW]]
 
 # prealloc
-eventDataFrame <- matrix(NA, ncol=length(event2_2), nrow=NH)
+eventDataFrame <- matrix(NA, ncol=length(eventz), nrow=NH)
 
-for(i in seq_len(length(event2_2))){
+for(i in seq_len(length(eventz))){
   
   if(i %% 25 == 0){print(i)}
   
-  L <- event2_2[i]
-  D <- days2_2[i]
+  L <- eventz[i]
+  D <- dayz[i]
   
   #space-slice
   vals <- ncvar_get(ncin,
                     "dmflow",
-                    start=c(1, 1, days2_2[i]),
-                    count=c(-1, -1, event2_2[i]))
+                    start=c(1, 1, dayz[i]),
+                    count=c(-1, -1, eventz[i]))
 
   #maxima per cell for each event
   valsmax <- apply(vals, c(1, 2),

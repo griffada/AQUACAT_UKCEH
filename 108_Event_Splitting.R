@@ -12,8 +12,10 @@
 
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
-}else{
+}else if (substr(osVersion,1,3) == "Fed"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
+}else{
+  source("~/AQUACAT/CodeABG/setup_script_00.R")
 }
 
 regions <- c("ANG", "NE", "NW", "SCO", "SE", "SEV", "SW", "THA", "TRE", "WAL")
@@ -35,6 +37,9 @@ if(length(args)==3){
 thresh1 <- "POT2" # Important constants to select.
 ws1 <- "pc05"
 print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
+
+jV <- which(threshName==thresh1)
+jI <- which(wsName == ws1)
 
 library(readr)
 library(dplyr)
@@ -60,10 +65,9 @@ threshDayExcList <- readRDS( paste0(data_wd, subfold, "threshDayExcList_RCM",
 
 
 # matrix of threshold value (col) at a given cell (row)
-threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM", 
-                             RCM, suffix,".rds"),
-                      stringsAsFactors=FALSE)
-thresh0 <- unlist(threshMat['X2'], use.names=FALSE)
+threshMat <- readRDS(paste0(data_wd, subfold,"threshMat_RCM", 
+                             RCM, suffix,".rds"))
+thresh0 <- unlist(threshMat[,which(threshName==thresh1)], use.names=FALSE)
 #dim(threshMat) #19914 x 5
 
 

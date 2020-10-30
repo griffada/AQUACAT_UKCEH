@@ -15,8 +15,10 @@
 
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
-}else{
+}else if (substr(osVersion,1,3) == "Fed"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
+}else{
+  source("~/AQUACAT/CodeABG/setup_script_00.R")
 }
 
 ##### SETUP #####---------------------------------------------------
@@ -70,10 +72,6 @@ present <- readr::read_csv(paste0(data_wd, subfold, "returnlevels_",
 
 
 ##### COPULA FUNCTIONS #####---------------------------------------------------
-
-# Get event set
-
-# select event
 
 tailsGen <- function(n, low=1, pool=present$gpp, maxit=1000, betapar=c(1,1)){
   # draw new probabilities of exceedence from pool, allowing minumum lower bound
@@ -157,7 +155,6 @@ generateNewEvent <- function(eventSet=present, NE=285, NH=19914,
 print("Determining tail distribution")
 
 FF <- fitdist(present$gpp, "beta", method="mle")
-
 T3 <- tailsGen(1, pool=present$gpp, maxit=1000, betapar=FF$estimate)
 
 # Number of new events to simulate
@@ -177,8 +174,74 @@ readr::write_csv(data.frame(newEventMat),
                  paste0(data_wd, subfold, "NewEventEC_",
                             thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 print(Sys.time())
-# Roll new tails
 
-# Apply to ordered event
 
-# save as new event
+# Convert rp to flow and vice versa.
+
+rarityDF$Easting <- rn[rarityDF[, jV], 1]
+rarityDF$Northing <- rn[rarityDF[, jV], 2]
+rarityDF$thresh <- NA
+rarityDF$DayS <- eventDayList[[jV]][[jI]][rarityDF[, 1]]
+rarityDF$val <- NA
+rarityDF$gpp <- NA
+rarityDF$ecdf <- NA
+rarityDF$gev <- NA
+
+ST0 <- proc.time()
+ST <- proc.time()
+print("loop start")
+for(n in 1:NH){
+  if(n %% 200 == 0){
+    print(paste(n, "out of", NH))
+  }
+  
+  
+  i <- rn[n,1]
+  j <- rn[n,2]
+  # Pull out spaceslice
+  tSlice <- ncvar_get(ncin, varid="dmflow",
+                      start=c(i, j,  1),
+                      count=c(1, 1, -1))
+  
+  tSliceEvent <- unname(unlist(eventDF[n, -(1:2)]))
+  
+  threshval <- threshMat[n, jV] # POT2 column
+  
+  
+  
+  rarityDF$thresh[which(rarityDF$loc == n)] <- threshval
+  rarityDF$val[which(rarityDF$loc == n)] <- tSliceEvent
+  
+  # get ecdf and estimate PoE
+  
+  ecdfSlice <- ecdf(tSlice)
+  poeEvent <- 1 - ecdfSlice(tSliceEvent)
+  
+  
+  # Weibull or Gringorten plotting position
+  
+  grSlice <- gringorten(tSlice)
+  grEvent <- sapply(tSliceEvent,
+                    function(x){grSlice[which(tSlice == x)[1]]})
+  
+  rarityDF$gpp[which(rarityDF$loc == n)] <- grEvent
+  rarityDF$ecdf[which(rarityDF$loc == n)] <- poeEvent
+  
+  # GEV fitted to whole spaceslice
+  FFGEV <- fevd(x=tSlice,
+                type='GEV')$results$par
+  QFGEV <- 1- pevd(q=tSliceEvent,
+                   loc=FFGEV[1],
+                   scale=FFGEV[2],
+                   shape=FFGEV[3],
+                   type='GEV')
+  
+  rarityDF$gev[which(rarityDF$loc==n)] <- QFGEV
+  
+  if(n %% 200 == 0){
+    print(floor(proc.time() - ST0)[1:3])
+    print(floor(proc.time() -  ST)[1:3])
+  }
+  ST <- proc.time()
+}
+colnames(HTevents)[-(1:4)] <- paste0("E",seq_len(ncol(HTevents)-4))

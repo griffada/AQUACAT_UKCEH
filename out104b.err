@@ -1,0 +1,31 @@
+nohup: ignoring input
+Loading required package: Lmoments
+Loading required package: distillery
+
+Attaching package: ‘extRemes’
+
+The following objects are masked from ‘package:stats’:
+
+    qqnorm, qqplot
+
+
+Attaching package: ‘pastecs’
+
+The following object is masked from ‘package:raster’:
+
+    extract
+
+Error in if (ipars1["scale"] <= 0) ipars1["scale"] <- 1e-08 : 
+  missing value where TRUE/FALSE needed
+In addition: There were 50 or more warnings (use warnings() to see the first 50)
+Error in if (ipars1["scale"] <= 0) ipars1["scale"] <- 1e-08 : 
+  missing value where TRUE/FALSE needed
+Error in if (ipars1["scale"] <= 0) ipars1["scale"] <- 1e-08 : 
+  missing value where TRUE/FALSE needed
+Error in if (fn == fp) smallest <- prev else smallest <- c(prev, now)[!c(prev,  : 
+  missing value where TRUE/FALSE needed
+In addition: There were 50 or more warnings (use warnings() to see the first 50)
+Error in if (fn == fp) smallest <- prev else smallest <- c(prev, now)[!c(prev,  : 
+  missing value where TRUE/FALSE needed
+In addition: There were 50 or more warnings (use warnings() to see the first 50)
+There were 50 or more warnings (use warnings() to see the first 50)
