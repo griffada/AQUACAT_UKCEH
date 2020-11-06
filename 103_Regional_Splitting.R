@@ -83,8 +83,14 @@ for(i in 1:length(pts$HA_NUM)){
     pts$REGION[i] <- "NW"
   }else if(pts$HA_NUM[i] > 37 & pts$HA_NUM[i] < 40){
     pts$REGION[i] <- "THA"
+  }else if(pts$HA_NUM[i] %in% c(1:9, 90:97, 105:108)){
+    pts$REGION[i] <- "NSC"
+  }else if(pts$HA_NUM[i] %in% 10:20){
+    pts$REGION[i] <- "ESC"
+  }else if(pts$HA_NUM[i] %in% c(78:85, 89)){
+    pts$REGION[i] <- "SSC"
   }else{
-    pts$REGION[i] <- "SCO"
+    pts$REGION[i] <- "UNK"
   }
 }
 

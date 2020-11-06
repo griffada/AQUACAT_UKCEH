@@ -21,14 +21,18 @@ jT <- which(threshName==thresh1)
 jW <- which(wsName == ws1)
 print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
 
-
 obs_events <- readr::read_csv(paste0(data_wd,subfold,
                       "eventdf_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
-thresMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
-                           RCM, suffix, ".rds"))
+NE <- ncol(obs_events) - 4
 
-partable <- readRDS(paste0(wd_id, "parTable1.RDa"))
+thresMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM", RCM, suffix, ".rds"))
+
+load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
+
+partable <- readr::read_csv(paste0(data_wd,subfold, 
+                           "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"))
+
 colnames(partable)[1] <- "meanint"
 # one event per column, from col 5.
 
@@ -37,12 +41,12 @@ rarityDF <- data.frame(eventNo = numeric(),
                          Easting = numeric(),
                          Northing = numeric(), 
                          thresh = numeric(),
+                         DayS = numeric(),
                          val = numeric(),
                          gpa_apoe = numeric(),
                          rp_years = numeric())
 
 for(h in 1:NH){
-  
   thr <- thresMat[h,jT]
   meanInt <- partable$meanint[h]
   scaleH <- partable$scale[h]
@@ -64,12 +68,12 @@ for(h in 1:NH){
                            Easting = rn[h, 1],
                            Northing = rn[h, 2], 
                            thresh = thr,
+                           DayS = eventDayList[[jT]][[jW]],
                            val = obs_events_h,
                            gpa_apoe = at_site_apoe,
                            rp_years = rp_ver)
     
   rarityDF <- rbind(rarityDF, rarityTemp)
-
 }
 
 

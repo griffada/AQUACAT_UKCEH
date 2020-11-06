@@ -21,9 +21,10 @@ jT <- which(threshName==thresh1)
 jW <- which(wsName == ws1)
 print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
 
-
 ec_events <- readr::read_csv(paste0(data_wd,subfold,
                       "NewEventEC_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+
+NE <- ncol(ec_events) - 4
 
 thresMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
                            RCM, suffix, ".rds"))
@@ -41,9 +42,6 @@ rarityDF <- data.frame(eventNo = numeric(),
                          gpa_apoe = numeric(),
                          rp_years = numeric())
 
-
-
-
 for(h in 1:NH){
   
   thr <- thresMat[h,jT]
@@ -51,15 +49,15 @@ for(h in 1:NH){
   scaleH <- partable$scale[h]
   shapeH <- partable$shape[h]
 
-  obs_events_h <- obs_events[h,-(1:4)]
+  ec_events_h <- ifelse(ec_events[h, ] <= 2/360, ec_events[h,]*360/2, NA)
+
+  at_site_levelE <- qevd(as.numeric(ec_events_h), threshold=thr,
+                           scale=scaleH, shape=shapeH, type='GP', lower.tail=F)
   
-  at_site_poeE <- 1 - pevd(as.numeric(obs_events_h), threshold=thr,
-                           scale=scaleH, shape=shapeH, type='GP')
-  
-  rp_ver <- ifelse(at_site_poeE > 1-(1e-8), NA, meanInt/at_site_poeE)  
+  rp_ver <- meanInt/ec_events_h
             # expected rate per year given POT and GPA PoE.
   
-  at_site_apoe <- ifelse(is.na(rp_ver1E), NA, 1 - exp(-at_site_poeE/meanInt))  
+  at_site_apoe <- ifelse(is.na(rp_ver), NA, 1 - exp(-ec_events_h/meanInt))  
                 # Poisson assumption
   
   rarityTemp <- data.frame(eventNo = 1:NE,
@@ -67,13 +65,17 @@ for(h in 1:NH){
                            Easting = rn[h, 1],
                            Northing = rn[h, 2], 
                            thresh = thr,
-                           val = obs_events_h,
+                           val = at_site_levelE,
                            gpa_apoe = at_site_apoe,
-                           rp_years = rp_ver)
+                           rp_years = rp_ver,
+                           ec_poe = ec_events_h)
     
   rarityDF <- rbind(rarityDF, rarityTemp)
 
 }
 
-
-saveRDS(rarityDF, paste0(wd_id, "ec_rps.rds"))
+readr::write_csv(x=rarityDF,
+                 path=paste0(data_wd, subfold, "returnlevelsEC_",
+                             thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+nc_close(ncin)
+print(Sys.time())

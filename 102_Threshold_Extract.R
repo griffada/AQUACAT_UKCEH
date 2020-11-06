@@ -45,7 +45,8 @@ names(threshDayExcList) <- threshName
 
 
 ST <-  Sys.time()
-ncin <- nc_open(ncname, readunlim=FALSE) # this is a huge file, do not open without reason.
+ncin <- nc_open(ncname, readunlim=FALSE)
+  # this is a huge file, do not open without reason.
 print(Sys.time() - ST)
 print(ncin)
 
@@ -92,12 +93,16 @@ threshGrid <- raster(threshGrid,  # threshgrid might need transposing?
 threshGridList <- lapply(1:length(threshVal), function(i){threshGrid})
 names(threshGridList) <- threshVal
 
+partable <- data.frame(loc=numeric(), threshold=numeric(),
+                       scale=numeric(), shape=numeric())
+
 ## Get quantiles for thresholds ##-------------------------------------
 print("loop start")
 ST <- Sys.time()
 print(ST)
 ST0 <- ST
 print(paste("NH =", NH))
+
 if(period=="present"){
   for(n in 1:NH){
     #print(n)
@@ -115,22 +120,42 @@ if(period=="present"){
     
     i <- rn[n,1]
     j <- rn[n,2]
-    tSlice <- ncvar_get(ncin, varid="dmflow",
+    tSlice <- as.vector(ncvar_get(ncin, varid="dmflow",
                          start=c(i, j,  1),
-                         count=c(1, 1, -1))
+                         count=c(1, 1, -1)))
     # find quantile for threshold
-    thresh <- quantile(as.vector(tSlice), prob=c(1 - threshVal), na.rm=T) #vec
+    thresh <- quantile(tSlice, prob=c(1 - threshVal), na.rm=T) #vec
     threshMat[n,] <- thresh
     for(k in 1:NT){
   	# add threshold k at position (i,j) to raster k
       threshGridList[[k]][i,j] <- thresh[k]
       # save which days cell n was exceeded.
       threshDayExcList[[k]][[n]] <- which(tSlice > thresh[k])
+      
+      o <- try({
+        
+        ep1 <- (extractPeaks(vecObs=tSlice, mintimeDiff=7) == 1) & (tSlice > thresh[k])
+        peak_vals <- tSlice[ep1]
+        whattime <- which(ep1)
+        meanint <- mean(whattime[-1] - whattime[-length(whattime)])/360
+        at_site_gpa <- fevd(x=peak_vals,
+                            threshold = thresh[k], type="GP")$results$par
+        
+        partable[h,] <- list(meanint, thresh[k], at_site_gpa[1], at_site_gpa[2])
+        
+        1
+      })
+      if(inherits(o, "try-error")){
+        peak_vals <- blockmaxxer(data.frame(tSlice),blocks=rep(1:30,each=360))
+        at_site_gpa <- pargpa(lmoms(peak_vals))
+        
+        partable[h,] <- list(1, at_site_gpa$para[1],
+                             at_site_gpa$para[2], at_site_gpa$para[3])
+      }
     }
   }
-
-  
 }
+
 if(period=="future"){
   suffix_pres <- "_198012_201011"
   subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
@@ -155,10 +180,34 @@ if(period=="future"){
     
     i <- rn[n,1]
     j <- rn[n,2]
-    tSlice <- ncvar_get(ncin, varid="dmflow",
-                        start=c(i,j,1), count=c(1,1,-1))
+    tSlice <- as.vector(ncvar_get(ncin, varid="dmflow",
+                        start=c(i,j,1), count=c(1,1,-1)))
     for(k in 1:NT){
       threshDayExcList[[k]][[n]] <- which(tSlice > threshMat[n,k])
+      
+      o <- try({
+        
+        ep1 <- (extractPeaks(vecObs=tSlice, mintimeDiff=7) == 1) & 
+          (tSlice > threshMat[n,k])
+        peak_vals <- tSlice[ep1]
+        whattime <- which(ep1)
+        meanint <- mean(whattime[-1] - whattime[-length(whattime)])/360
+        at_site_gpa <- fevd(x=peak_vals,
+                            threshold = threshMat[n,k], type="GP")$results$par
+        
+        partable[h,] <- list(meanint, threshMat[n,k],
+                             at_site_gpa[1], at_site_gpa[2])
+        
+        1
+      })
+      if(inherits(o, "try-error")){
+        peak_vals <- blockmaxxer(data.frame(tSlice),blocks=rep(1:30,each=360))
+        
+        at_site_gpa <- pargpa(lmoms(peak_vals))
+        
+        partable[h,] <- list(1, at_site_gpa$para[1],
+                             at_site_gpa$para[2], at_site_gpa$para[3])
+      }
     }
   }
 }
@@ -166,14 +215,6 @@ if(period=="future"){
 nc_close(ncin)
 
 ## Save outputs ##-----------------------------------------------------
-# for(i in 1:NT){
-#   writeRaster(threshGridList[[i]],
-#               filename=paste0(wd, "InterimData/", threshName[i], 
-#                               "_threshGrid2.asc"),
-#               format="ascii",
-#               overwrite=TRUE)
-# }
-# 
 
 # Note this will make copies of some objects in the Future case, but this is safer
 saveRDS(threshDayExcList, file=paste0(data_wd, subfold,
@@ -184,5 +225,8 @@ saveRDS(threshMat, file=paste0(data_wd, subfold,
                                "threshMat_RCM", RCM, suffix,".rds"))
 readr::write_csv(x=data.frame(threshMat), 
                  path=paste0(data_wd, subfold, "threshMat_RCM", RCM, suffix,".csv"))
+readr::write_csv(partable, paste0(data_wd,subfold, 
+                                  "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"))
 
+warnings()
 print("102 Complete")

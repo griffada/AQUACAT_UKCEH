@@ -276,7 +276,13 @@ str(step6_test1, max.level=1)
 #step6_test1 <- readRDS(file=paste0(wd_id, "slimline/step6.rds"))
 
 write.csv(step6_test1$MCsample, paste0(wd_id, "slimline/step7_MCSample2.csv"))
-saveRDS(step6_test1, file=paste0(wd_id, "slimline/step6.rds"))
+
+step7 <- t(step6_test1$MCsample[,-1])
+colnames(step7) <- unlist(step6_test1$MCsample[,1])
+step7 <- cbind(rn[r1,], step7)
+
+
+saveRDS(step7, file=paste0(wd_id, "slimline/step6.rds"))
 
 # print(ST <- Sys.time())
 # ncin <- nc_open(ncname) # This file is ~2.5GB on the linux server.
