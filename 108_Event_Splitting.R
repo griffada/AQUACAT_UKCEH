@@ -18,7 +18,7 @@ if(substr(osVersion,1,3) == "Win"){
   source("~/AQUACAT/CodeABG/setup_script_00.R")
 }
 
-regions <- c("ANG", "NE", "NW", "SCO", "SE", "SEV", "SW", "THA", "TRE", "WAL")
+regions <- c("ANG", "ESC", "NE", "NSC", "NW", "SE", "SEV", "SSC", "SW", "THA", "TRE", "WAL")
 
 if(length(args)==3){
   RCM <- sprintf("%02d", as.numeric(args[1]))
@@ -28,9 +28,9 @@ if(length(args)==3){
   }else if (period=="future"){
     suffix <- "_205012_201011"
   }
-  REG <- args[3]
+  REG <- args[3]s
   if(!any(REG == regions)){
-    stop("incorrect call: Rscript 108_eventSplitting.R gcm period region - Region must be one of: ANG, NE, NW, SCO, SE, SEV, SW, THA, TRE, WAL.")
+    stop("incorrect call: Rscript 108_eventSplitting.R gcm period region - Region must be one of: ANG, ESC, NE, NW, NSC, SE, SEV, SSC, SW, THA, TRE, WAL.")
   }
 }
 

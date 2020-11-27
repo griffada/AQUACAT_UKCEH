@@ -1,0 +1,973 @@
+---
+title: "Testing Bias Correction"
+author: "Adam Griffin; UKCEH"
+date: "17/11/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rgdal)
+library(ncdf4)
+library(extRemes)
+library(ilaprosUtils)
+library(fields)
+library(rnrfa)
+library(zoo)
+library(dplyr)
+library(lmomco)
+library(readr)
+library(reshape2)
+library(lubridate)
+
+findHydrolYr <- function(datetimes){
+  # returns the hydrological year and DOY (starts at 9am, 1st October)
+  # e.g. the 2018-19 hydrol year is denoted 2019.
+  # the hydrol day that starts at 9am 3rd May is denoted 3rd May (or DOY equiv)
+  require(lubridate)
+  datetimes <- as.Date(datetimes)
+  y <- lubridate::year(datetimes)
+  doy <- lubridate::yday(datetimes)
+  doy[lubridate::hour(datetimes) < 9] <- doy[lubridate::hour(datetimes) < 9] - 1
+  y[lubridate::month(datetimes) > 9] <- y[lubridate::month(datetimes) > 9] + 1
+  startwy <- as.Date(paste0(y-1,"-10-01 09:00:00"))
+  nday <- as.numeric(datetimes - startwy)
+  return(data.frame(DOY=nday, yr=y))
+}
+```
+In this document we analyse the difference between including and excluding the bias correction on gridded data making use of UKCP18 meteorological inputs.
+
+Here the bias correction used is that of Guillod et al. (2018), which has been applied in a pooled approach(using all the RCM members to generate the bias correction factor together) and a seperate approach (seperate correction factors for each RCM)
+
+
+## Data Exploration
+```{r files}
+wd <- paste0("//nercwlsmb01/prj/ukscape2.2",
+             "/run_gb_hmfg2g_ukcp18rcm12km/outputs/baseline_PEi_198012_201011")
+
+D <- dir(wd, pattern="dmamflow_out.nc", recursive=T, full.names=T)
+D_TBC <- D[grepl("T", sapply(D, function(x){strsplit(x,"/")[[1]][9]}))]
+D_FBC <- D[grepl("F", sapply(D, function(x){strsplit(x,"/")[[1]][9]}))]
+
+Enc <- paste0("//nercwlsmb01/prj/ukscape2.2",
+              "/run_gb_hmfg2g_ukcp18rcm12km/outputs/simobs/dmamflow_out.nc")
+
+rcm_nos <- c(1,4,5,6,7,8,9,10,11,12,13,15)
+
+CATAL <- catalogue()
+CATAL <- CATAL[CATAL$`nrfa-mean-flow`,]
+
+statlocs <- read_delim("./catcoords_istat_jstat_01000.txt", delim="\t", col_types=cols(
+  gauge = col_double(),
+  istat = col_double(),
+  jstat = col_double()
+))
+statlocs$jstat <- statlocs$jstat - 250
+```
+
+First we will open the files and see what kind of data it is: predominantly netCDF files.
+```{r read-in}
+NCIN <- nc_open(D[1])
+print(NCIN)
+
+dmamax <- ncvar_get(NCIN, "dmamflow")
+nor <- ncvar_get(NCIN, "Northing")
+eas <- ncvar_get(NCIN, "Easting")
+
+CATAL <- CATAL[CATAL$northing < 1000000 & CATAL$northing > 0 &
+                 CATAL$easting < 700000 & CATAL$easting > 0 & 
+                 CATAL$id %in% statlocs$gauge,]
+
+print(nrow(CATAL))
+
+
+rn <- which((!is.na(dmamax[,,2])) & (dmamax[,,2] > -1), arr.ind=T)
+rn_pos <- cbind(nor[rn[,2]], eas[rn[,1]])
+
+dim(dmamax)
+str(dmamax)
+summary(dmamax)
+#dmamax[250:260, 80:90,2]
+image.plot(x=eas, y=rev(nor), dmamax[,1000:1,2])
+nc_close(NCIN)
+```
+
+Here we have time series of annual maxima based on daily flow for each gridpoint.
+
+We're going to compare this to the daily mean flow for gauged stations in the UK. Note this is different from the standard AMAX calculations which use instantaneous peak flow to determine flood frequency curves. However, since the G2G outputs are at a daily resolution, this is the most comparable approach.
+
+
+## DM AMAX Extraction
+
+First we extract the AMAX values from the gauged daily flow from the NRFA API, and the corresponding amax from the relevant gridpoints in the RCM outputs.
+```{r am-extract, eval=T}
+am_summ_obs <- data.frame(station=numeric(),
+                          year=numeric(),
+                          value=numeric())
+##### OBS #####
+for(k in 1:nrow(CATAL)){
+  if(k %% 100 == 0){print(k)}
+  stn1 <- CATAL$id[k]
+
+  gdf1 <- gdf(stn1)
+  gdf_hyyr <- findHydrolYr(index(gdf1))
+  gdf1 <- cbind(as.vector(gdf1), gdf_hyyr)
+  colnames(gdf1)[1] <- "gdf"
+  suppressMessages({
+    gdf2 <- gdf1 %>%
+          dplyr::filter(yr >= 1981 & yr <= 2010) %>% 
+          group_by(yr) %>%
+          summarise(value=max(gdf, na.rm=T))
+  })
+  gdf2$station <- stn1
+  am_summ_obs <- rbind(am_summ_obs, gdf2[,c(3,1,2)])
+}
+
+rn1 <- matrix(NA, nrow=nrow(CATAL), ncol=2)
+for(k in 1:nrow(CATAL)){
+  if(k%%100==0){print(k)}
+  pos <- c(CATAL$northing[k], CATAL$easting[k])
+  rn1[k, ] <- unlist(statlocs[statlocs$gauge==CATAL$id[k], ][2:3], use.names=F)
+}
+
+##### SIMOBS #####
+colnames(am_summ_obs) <- c("station", "year", "value")
+
+am_sim_obs <- data.frame(station=numeric(),
+                         year=numeric(),
+                         value=numeric())
+
+NCSIMOBS <- nc_open(Enc)
+dmamax_simobs <- ncvar_get(NCSIMOBS, "dmamflow")
+for(k in 1:nrow(CATAL)){
+  if(k %% 100 == 0){print(k)}
+  stn1 <- CATAL$id[k]
+  am_k <- dmamax_simobs[rn1[k, 1],rn1[k, 2], ]
+  df <-data.frame(station=stn1,
+                  year=1981:2010,
+                  value=am_k)
+
+  am_sim_obs <- rbind(am_sim_obs, df)
+}
+
+#wider version
+AM <- dcast(am_summ_obs, station~year, value.var="value")
+AMSIM <- dcast(am_sim_obs, station~year, value.var="value")
+
+write_csv(am_summ_obs, "S:/Data/BiasCorrection/am_obs.csv")
+write_csv(am_sim_obs,  "S:/Data/BiasCorrection/am_sim_obs.csv")
+```
+
+Here we extract the DM AMAX values for all the stations we can, any with a DMF time series on the NRFA. We take the nearest gridpoint to the station as a comparison, and take the annual maxima of the daily mean flow in each year (no accounting for missing data in the DMF at this point.)
+```{r, eval=T}
+am_summ_TBC <- data.frame(rcm=numeric(),
+                          station=numeric(),
+                          year=numeric(),
+                          value=numeric())
+am_summ_FBC <- data.frame(rcm=numeric(),
+                          station=numeric(),
+                          year=numeric(),
+                          value=numeric())
+
+#CATAL
+
+
+      
+##### RCMS #####
+for(j in seq_len(length(rcm_nos))){
+  for(l in 1:2){
+    if(l == 1){ 
+      NCIN <- nc_open(D_TBC[j])
+      print(D_TBC[j])
+    }else{
+      NCIN <- nc_open(D_FBC[j])
+      print(D_FBC[j])
+    }
+    dmamax <- ncvar_get(NCIN, "dmamflow")
+    
+    for(k in 1:nrow(CATAL)){
+      stn1 <- CATAL$id[k]
+      am_k <- dmamax[rn1[k,1],rn1[k,2],]
+      df <-data.frame(rcm=rcm_nos[j],
+                  station=stn1,
+                  year=1981:2010,
+                  value=am_k)
+    
+      if(l == 1){
+        am_summ_TBC <- rbind(am_summ_TBC, df)
+      }else{
+        am_summ_FBC <- rbind(am_summ_FBC, df)
+      }
+    }
+  }
+}
+readr::write_csv(x=am_summ_TBC, path="S:/Data/BiasCorrection/am_TBC.csv")
+readr::write_csv(x=am_summ_FBC, path="S:/Data/BiasCorrection/am_FBC.csv")
+```
+
+```{r reloader, echo=F}
+# This just skirts round having to re-run the above chunk, as it's time-consuming.
+if(file.exists("S:/Data/BiasCorrection/am_obs.csv")){
+  am_summ_obs <- read_csv("S:/Data/BiasCorrection/am_obs.csv", 
+                          col_types=cols(
+                            station = col_double(),
+                            year = col_double(),
+                            value = col_double()
+                          ))
+}
+
+if(file.exists("S:/Data/BiasCorrection/am_TBC.csv")){
+  am_summ_TBC <- read_csv("S:/Data/BiasCorrection/am_TBC.csv",
+                          col_types=cols(
+                            rcm = col_double(),
+                            station = col_double(),
+                            year = col_double(),
+                            value = col_double()
+                          ))
+}
+
+if(file.exists("S:/Data/BiasCorrection/am_FBC.csv")){
+  am_summ_FBC <- read_csv("S:/Data/BiasCorrection/am_FBC.csv",
+                          col_types=cols(
+                            rcm = col_double(),
+                            station = col_double(),
+                            year = col_double(),
+                            value = col_double()
+                          ))
+}
+
+if(file.exists("S:/Data/BiasCorrection/am_sim_obs.csv")){
+  am_sim_obs <- read_csv("S:/Data/BiasCorrection/am_sim_obs.csv",
+                          col_types=cols(
+                            station = col_double(),
+                            year = col_double(),
+                            value = col_double()
+                          ))
+}
+```
+
+## AMAX analysis
+We can't expect the AMAX values to match up between RCMs and the observations, but we can check average differences between the same RCM with and without bias correction (TBC and FBC, respectively), and we can compare GLO fits; we restrict the observed DM AMAX to hydrological years 1981-2010.
+
+```{r compare, eval=T}
+am_glo_obs <- data.frame(station=numeric(),
+                         reclen=numeric(),
+                         loc=numeric(),
+                         sca=numeric(),
+                         sha=numeric(),
+                         QMED=numeric(),
+                         Q20=numeric(),
+                         Q50=numeric())
+
+am_glo_simobs <- data.frame(station=numeric(),
+                         reclen=numeric(),
+                         loc=numeric(),
+                         sca=numeric(),
+                         sha=numeric(),
+                         QMED=numeric(),
+                         Q20=numeric(),
+                         Q50=numeric())
+
+am_glo_TBC <- data.frame(rcm=numeric(),
+                         station=numeric(),
+                         reclen=numeric(),
+                         loc=numeric(),
+                         sca=numeric(),
+                         sha=numeric(),
+                         QMED=numeric(),
+                         Q20=numeric(),
+                         Q50=numeric())
+
+am_glo_FBC <- data.frame(rcm=numeric(),
+                         station=numeric(),
+                         reclen=numeric(),
+                         loc=numeric(),
+                         sca=numeric(),
+                         sha=numeric(),
+                         QMED=numeric(),
+                         Q20=numeric(),
+                         Q50=numeric())
+
+qt <- 1 - 1/c(2,20,50)
+for(i in 1:nrow(CATAL)){
+  if(i %% 100 == 0){print(CATAL$id[i])}
+  try({
+    am_temp <- am_summ_obs %>% dplyr::filter(station==CATAL$id[i])
+    am_glo_obs[i, 1:5] <- c(CATAL$id[i],
+                            length(unique(am_temp$year)),
+                            parglo(lmoms(am_temp$value))$para)
+    am_glo_obs[i, 6:8]  <- quaglo(qt, parglo(lmoms(am_temp$value)))
+  }, silent=T)
+  
+  try({
+    am_temp <- am_sim_obs %>% dplyr::filter(station==CATAL$id[i])
+    am_glo_simobs[i, 1:5] <- c(CATAL$id[i],
+                               length(unique(am_temp$year)),
+                               parglo(lmoms(am_temp$value))$para)
+    am_glo_simobs[i,6:8]  <- quaglo(qt, parglo(lmoms(am_temp$value)))
+  }, silent=T)
+  
+  for(j in 1:length(rcm_nos)){
+    try({
+    am_temp <- am_summ_TBC %>% dplyr::filter(station==CATAL$id[i] & rcm==rcm_nos[j])
+    am_glo_TBC[(i-1)*length(rcm_nos) + j, 1:6] <- c(rcm_nos[j], CATAL$id[i],
+                                                    length(unique(am_temp$year)),
+                                                    parglo(lmoms(am_temp$value))$para)
+    am_glo_TBC[(i-1)*length(rcm_nos) + j, 7:9]  <- quaglo(qt, parglo(lmoms(am_temp$value)))
+    
+    am_temp <- am_summ_FBC %>% dplyr::filter(station==CATAL$id[i] & rcm==rcm_nos[j])
+    am_glo_FBC[(i-1)*length(rcm_nos) + j, 1:6] <- c(rcm_nos[j], CATAL$id[i],
+                                                    length(unique(am_temp$year)),
+                                                    parglo(lmoms(am_temp$value))$para)
+    am_glo_FBC[(i-1)*length(rcm_nos) + j, 7:9]  <- quaglo(qt, parglo(lmoms(am_temp$value)))
+    }, silent=T)
+  }
+}
+write_csv(am_glo_obs, path="S:/Data/BiasCorrection/glo_obs.csv")
+write_csv(am_glo_simobs, path="S:/Data/BiasCorrection/glo_simobs.csv")
+write_csv(am_glo_TBC, path="S:/Data/BiasCorrection/glo_TBC.csv")
+write_csv(am_glo_FBC, path="S:/Data/BiasCorrection/glo_FBC.csv")
+```
+
+```{r reloader2, echo=F}
+# This just skirts round having to re-run the above chunk, as it's time-consuming.
+if(file.exists("S:/Data/BiasCorrection/glo_obs.csv")){
+  am_glo_obs <- read_csv("S:/Data/BiasCorrection/glo_obs.csv", 
+                          col_types=cols(
+                             station = col_double(),
+                             loc=col_double(),
+                             sca=col_double(),
+                             sha=col_double(),
+                             QMED=col_double(),
+                             Q20=col_double(),
+                             Q50=col_double()
+                          ))
+}
+if(file.exists("S:/Data/BiasCorrection/glo_TBC.csv")){
+  am_glo_TBC <- read_csv("S:/Data/BiasCorrection/glo_TBC.csv",
+                          col_types=cols(
+                             rcm = col_double(),
+                             station = col_double(),
+                             loc=col_double(),
+                             sca=col_double(),
+                             sha=col_double(),
+                             QMED=col_double(),
+                             Q20=col_double(),
+                             Q50=col_double()
+                          ))
+}
+if(file.exists("S:/Data/BiasCorrection/glo_FBC.csv")){
+  am_glo_FBC <- read_csv("S:/Data/BiasCorrection/glo_FBC.csv",
+                          col_types=cols(
+                             rcm = col_double(),
+                             station = col_double(),
+                             loc=col_double(),
+                             sca=col_double(),
+                             sha=col_double(),
+                             QMED=col_double(),
+                             Q20=col_double(),
+                             Q50=col_double()
+                          ))
+}
+if(file.exists("S:/Data/BiasCorrection/glo_simobs.csv")){
+  am_glo_simobs <- read_csv("S:/Data/BiasCorrection/glo_simobs.csv", 
+                          col_types=cols(
+                             station = col_double(),
+                             loc=col_double(),
+                             sca=col_double(),
+                             sha=col_double(),
+                             QMED=col_double(),
+                             Q20=col_double(),
+                             Q50=col_double()
+                          ))
+}
+```
+
+Here's a quick summary of the data: this very quick method does lead to some discrepencies, since I did not manually align the stations to the correct gridpoints in all cases. On the whole, both with an without bias correction (averaged across all ensemble members) show a negative bias (underestimating compared to observed).
+```{r med}
+AM <- dcast(am_summ_obs, station~year, value.var="value")
+AMSIM <- dcast(am_sim_obs, station~year, value.var="value")
+U_am <- unique(am_summ_obs$station)
+U_sim <- unique(am_sim_obs$station)
+U_obs <- unique(am_glo_obs$station) #1323
+U_tbc <- unique(am_glo_TBC$station) #1511
+U_fbc <- unique(am_glo_FBC$station)
+CID <- CATAL$id
+V <- Reduce(intersect, list(U_am, U_sim, U_obs, U_tbc, U_fbc, CID)) #1322
+sapply(list(U_am, U_sim, U_obs, U_tbc, U_fbc, CID, V), length)
+
+
+am_glo_simobs <- am_glo_simobs %>% dplyr::filter(station %in% V)
+am_glo_obs <-    am_glo_obs %>% dplyr::filter(station %in% V)
+am_glo_TBC <-    am_glo_TBC %>% dplyr::filter(station %in% V)
+am_glo_FBC <-    am_glo_FBC %>% dplyr::filter(station %in% V)
+#am_summ_obs <-   am_summ_obs %>% dplyr::filter(station %in% V)
+
+
+CATAL0 <- CATAL[CATAL$id %in% V, ] #1402 rows
+AM <- AM[AM$station %in% V,] #1402 rows
+QM <- apply(AM[,-1], 1, 
+            function(x){ifelse(!sum(is.na(x))<25, NA, median(x, na.rm=T))})
+QM <- cbind(AM$station, QM)
+
+AMSIM <- AMSIM[AMSIM$station %in% V, ]
+QS <- apply(AMSIM[,-1], 1,
+            function(x){ifelse(!sum(is.na(x))<25, NA, median(x, na.rm=T))})
+QS <- cbind(AMSIM$station, QS)
+
+dTBC <- am_glo_TBC %>% group_by(station) %>% summarise(qmed1 = mean(QMED, na.rm=T))
+dFBC <- am_glo_FBC %>% group_by(station) %>% summarise(qmed1 = mean(QMED, na.rm=T))
+```
+
+### QMED between ensemble members
+```{r, echo=F}
+QT_wide <- am_glo_TBC %>%
+  select(station, rcm, QMED) %>% 
+  dcast(., station~rcm, value.var="QMED")
+QT_wide2 <- sapply(2:13, function(i){(QT_wide[,i] - QM[,2])/(QM[,2])})
+#summary(QT_wide2)
+AA <- apply(QT_wide2, 2, function(x){table(sign(x))/length(x)})
+
+
+QT_wide <- am_glo_FBC %>%
+  select(station, rcm, QMED) %>% 
+  dcast(., station~rcm, value.var="QMED")
+QT_wide2 <- sapply(2:13, function(i){(QT_wide[,i] - QM[,2])/(QM[,2])})
+#summary(QT_wide2)
+AA2 <- apply(QT_wide2, 2, function(x){table(sign(x))/length(x)})
+
+QS_wide <- (QS[,2] - QM[,2]) / QM[,2]
+
+RA <- rbind(AA,AA2)
+rownames(RA) <- c("UNDEREST TBC", "OVEREST TBC", "UNDEREST FBC", "OVEREST FBC")
+colnames(RA) <- c(paste0("RCM_", rcm_nos))
+print(rowSums(RA)/12)
+
+knitr::kable(RA, digits=3)
+print(table(sign(QS_wide))/length(QS_wide))
+```
+
+### Q20 between ensemble members
+```{r qtwenty}
+Q20_wide <- am_glo_TBC %>% 
+  select(station, rcm, Q20) %>%
+  dcast(., station~rcm, value.var="Q20")
+Q20_wide_obs <- data.frame(am_glo_obs %>% select(station, Q20))
+Q20_wide2 <- sapply(2:13,
+              function(i){(Q20_wide[,i] - Q20_wide_obs[,2]) / Q20_wide_obs[,2]})
+#summary(Q20_wide2)
+AA <- apply(Q20_wide2, 2, function(x){table(sign(x))/length(x)})
+
+
+Q20_wide <- am_glo_FBC %>% select(station, rcm, Q20)
+Q20_wide_obs <- data.frame(am_glo_obs %>% select(station, Q20))
+Q20_wide <- dcast(Q20_wide, station~rcm, value.var="Q20")
+Q20_wide2 <- sapply(2:13, function(i){(Q20_wide[,i] - Q20_wide_obs[,2]) / Q20_wide_obs[,2]})
+#summary(Q20_wide2)
+AA2 <- apply(Q20_wide2, 2, function(x){table(sign(x))/length(x)})
+
+Q20_wide_sim <- data.frame(am_glo_simobs %>% select(station, Q20))
+Q20S_wide <- (Q20_wide_sim[,2] - Q20_wide_obs[,2]) / Q20_wide_obs[,2]
+
+RA <- rbind(AA,AA2)
+rownames(RA) <- c("UNDEREST TBC", "OVEREST TBC", "UNDEREST FBC", "OVEREST FBC")
+colnames(RA) <- c(paste0("RCM_", rcm_nos))
+#RA[,ncol(RA)+1] <- rowSums(RA)/12
+
+knitr::kable(RA, digits=3)
+print(table(sign(Q20S_wide))/length(Q20S_wide))
+```
+
+### Q50 between ensemble members
+```{r qfifty}
+Q50_wide <- am_glo_TBC %>% select(station, rcm, Q50)
+Q50_wide_obs <- data.frame(am_glo_obs %>% select(station, Q50))
+Q50_wide <- dcast(Q50_wide, station~rcm, value.var="Q50")
+Q50_wide2 <- sapply(2:13, function(i){(Q50_wide[,i] - Q50_wide_obs[,2]) / Q50_wide_obs[,2]})
+#summary(Q50_wide2)
+AA <- apply(Q50_wide2, 2, function(x){table(sign(x))/length(x)})
+
+Q50_wide <- am_glo_FBC %>% select(station, rcm, Q50)
+Q50_wide_obs <- data.frame(am_glo_obs %>% select(station, Q50))
+Q50_wide <- dcast(Q50_wide, station~rcm, value.var="Q50")
+Q50_wide2 <- sapply(2:13, function(i){(Q50_wide[,i] - Q50_wide_obs[,2]) / Q50_wide_obs[,2]})
+#summary(Q50_wide2)
+AA2 <- apply(Q50_wide2, 2, function(x){table(sign(x))/length(x)})
+
+
+Q50_wide_sim <- data.frame(am_glo_simobs %>% select(station, Q50))
+Q50S_wide <- (Q50_wide_sim[,2] - Q50_wide_obs[,2]) / Q50_wide_obs[,2]
+
+RA <- rbind(AA,AA2)
+rownames(RA) <- c("UNDEREST TBC", "OVEREST TBC", "UNDEREST FBC", "OVEREST FBC")
+colnames(RA) <- c(paste0("RCM_", rcm_nos))
+# RA[,ncol(RA)+1] <- rowSums(RA)/12
+
+knitr::kable(RA, digits=3)
+print(table(sign(Q50S_wide))/length(Q50S_wide))
+
+S1 <- summary(am_glo_obs$QMED - am_glo_TBC$QMED)
+S2 <- summary(am_glo_obs$QMED - am_glo_FBC$QMED)
+S3 <- summary(am_glo_obs$QMED - am_glo_simobs$QMED)
+S4 <- summary(am_glo_simobs$QMED - am_glo_FBC$QMED)
+
+S0 <- do.call(rbind, list(S1, S2, S3, S4))
+
+knitr::kable(S0)
+```
+
+## Plots
+
+```{r datavis0, fig.width=10}
+qmed_TBC <- am_glo_TBC %>% dplyr::filter(rcm==1) %>% dplyr::select(QMED)
+qmed_FBC <- am_glo_FBC %>% dplyr::filter(rcm==1) %>% dplyr::select(QMED)
+qmed_obs <- am_glo_obs %>% dplyr::select(QMED)
+qmed_sim <- am_glo_simobs %>% dplyr::select(QMED)
+
+nams <- c("OBS", "TBC", "FBC", "SIM")
+L <- list(unlist(qmed_obs, use.names=F),
+          unlist(qmed_TBC, use.names=F),
+          unlist(qmed_FBC, use.names=F),
+          unlist(qmed_sim, use.names=F))
+
+par(mar=c(3,3,1,0), mgp=c(2,1,0), mfrow=c(4,4))
+
+for(i in 1:4){
+  for(j in 1:4){
+    if(i==j){
+      plot(0,0, xlim=c(-1,1), ylim=c(-1,1), pch=NA)
+      text(0,0,labels=paste0(nams[i], " CV=",
+                             round(sd(L[[i]], na.rm=T)/mean(L[[i]], na.rm=T),3)),
+           cex=2)    #check sd, mean and cor
+    }else if(i < j){
+      hist(L[[i]] - L[[j]],
+           breaks=c(-Inf,-50,-40,-30,-20,-10,0,10,20,30,40,50,Inf),
+           xlim=c(-50,50),
+           main=paste(nams[i], "-", nams[j]))
+    }else{
+      plot(0,0, xlim=c(-1,1), ylim=c(-1,1), pch=NA)
+      text(0,0,labels=paste0("cor=",round(cor(L[[i]],L[[j]]),3)), cex=2, col="darkblue")
+    }
+  }
+}
+
+q20_TBC <- am_glo_TBC %>% dplyr::filter(rcm==1) %>% dplyr::select(Q20)
+q20_FBC <- am_glo_FBC %>% dplyr::filter(rcm==1) %>% dplyr::select(Q20)
+q20_obs <- am_glo_obs %>% dplyr::select(Q20)
+q20_sim <- am_glo_simobs %>% dplyr::select(Q20)
+
+L <- list(unlist(q20_obs, use.names=F),
+          unlist(q20_TBC, use.names=F),
+          unlist(q20_FBC, use.names=F),
+          unlist(q20_sim, use.names=F))
+
+par(mar=c(3,3,1,0), mgp=c(2,1,0), mfrow=c(4,4))
+
+for(i in 1:4){
+  for(j in 1:4){
+    if(i==j){
+      plot(0,0, xlim=c(-1,1), ylim=c(-1,1), pch=NA)
+      text(0,0,labels=paste0(nams[i],
+                             " CV=",
+                             round(sd(L[[i]], na.rm=T)/mean(L[[i]], na.rm=T),3)),
+           cex=2)    #check sd, mean and cor
+    }else if(i < j){
+      hist(L[[i]] - L[[j]],
+           breaks=c(-Inf,-50,-40,-30,-20,-10,0,10,20,30,40,50,Inf),
+           xlim=c(-50,50),
+           main=paste(nams[i], "-", nams[j]))
+    }else{
+      plot(0,0, xlim=c(-1,1), ylim=c(-1,1), pch=NA)
+      text(0,0,labels=paste0("cor=",round(cor(L[[i]],L[[j]]),digits=3)), cex=2, col="darkblue")
+    }
+  }
+}
+
+q50_TBC <- am_glo_TBC %>% dplyr::filter(rcm==1) %>% dplyr::select(Q50)
+q50_FBC <- am_glo_FBC %>% dplyr::filter(rcm==1) %>% dplyr::select(Q50)
+q50_obs <- am_glo_obs %>% dplyr::select(Q50)
+q50_sim <- am_glo_simobs %>% dplyr::select(Q50)
+L <- list(unlist(q50_obs, use.names=F),
+          unlist(q50_TBC, use.names=F),
+          unlist(q50_FBC, use.names=F),
+          unlist(q50_sim, use.names=F))
+
+par(mar=c(3,3,1,0), mgp=c(2,1,0), mfrow=c(4,4))
+
+for(i in 1:4){
+  for(j in 1:4){
+    if(i==j){
+      plot(0,0, xlim=c(-1,1), ylim=c(-1,1), pch=NA)
+      text(0,0,labels=paste0(nams[i], " CV=",
+                             round(sd(L[[i]], na.rm=T)/mean(L[[i]], na.rm=T),digits=3)),
+           cex=2)    #check sd, mean and cor
+    }else if(i < j){
+      hist(L[[i]] - L[[j]],
+           breaks=c(-Inf,-50,-40,-30,-20,-10,0,10,20,30,40,50,Inf),
+           xlim=c(-50,50),
+           main=paste(nams[i], "-", nams[j]))
+    }else{
+      plot(0,0, xlim=c(-1,1), ylim=c(-1,1), pch=NA)
+      text(0,0,labels=paste0("cor=",round(cor(L[[i]],L[[j]]),digits=3)), cex=2, col="darkblue")
+    }
+  }
+}
+
+```
+This plot shows correlation between observed, with (TBC) and without (FBC) bias correction, along with CV for the three sets of time-series for ensemble member 01. Additionally is a small histogram of differences is shown, capped around +/-40.
+
+### Example comparing between ensemble members
+
+We use 76005 on the Eden as an example. We compare the DM AMAX values for QMED, Q20 and Q50 (fitted to GLO via L-moments methods) across all 12 ensemble members.
+
+```{r datavis1A, fig.width=11}
+stn0 <- 76005 #39001
+
+tbc_line <- am_glo_TBC %>% dplyr::filter(station==stn0) %>% select(QMED) %>% unlist(.)
+fbc_line <- am_glo_FBC %>% dplyr::filter(station==stn0) %>% select(QMED) %>% unlist(.)
+obs_line <- am_glo_obs %>% dplyr::filter(station==stn0) %>% select(QMED) %>% unlist(.)
+sim_line <- am_glo_simobs %>% dplyr::filter(station==stn0) %>% select(QMED) %>% unlist(.)
+
+tbc_line20 <- am_glo_TBC %>% dplyr::filter(station==stn0) %>% select(Q20) %>% unlist(.)
+fbc_line20 <- am_glo_FBC %>% dplyr::filter(station==stn0) %>% select(Q20) %>% unlist(.)
+obs_line20 <- am_glo_obs %>% dplyr::filter(station==stn0) %>% select(Q20) %>% unlist(.)
+sim_line20 <- am_glo_simobs %>% dplyr::filter(station==stn0) %>% select(Q20) %>% unlist(.)
+
+tbc_line50 <- am_glo_TBC %>% dplyr::filter(station==stn0) %>% select(Q50) %>% unlist(.)
+fbc_line50 <- am_glo_FBC %>% dplyr::filter(station==stn0) %>% select(Q50) %>% unlist(.)
+obs_line50 <- am_glo_obs %>% dplyr::filter(station==stn0) %>% select(Q50) %>% unlist(.)
+sim_line50 <- am_glo_simobs %>% dplyr::filter(station==stn0) %>% select(Q50) %>% unlist(.)
+
+#range(sim_line50)
+print((sim_line50 - obs_line50)/obs_line50)
+
+# Plot of relative difference in QMED, Q20 and Q50 on average between RCMs
+
+#png("./kingston.png", width=160, height=100, units='mm', res=300, pointsize=11)
+par(mar=c(3,3,1,1), mgp=c(2,1,0), mfrow=c(3,1))
+
+plot(1:length(rcm_nos), rep(0,length(rcm_nos)), pch=1, col="black", 
+     xaxt='n', xlab="", ylab="Difference in QMED (%)", ylim=c(-1,1))
+points(1:length(rcm_nos), (tbc_line-obs_line)/obs_line, col="orange", pch=2)
+points(1:length(rcm_nos), (fbc_line-obs_line)/obs_line, col="purple", pch=6)
+points(1:length(rcm_nos), rep((sim_line-obs_line)/obs_line, length(rcm_nos)),
+       col="darkgreen", pch=4)
+axis(1, at=1:length(rcm_nos), labels=rcm_nos)
+legend("topleft", legend=c("OBS", "TBC", "FBC", "SIM"),
+       col=c("black", "orange", "purple", "darkgreen"), pch=c(1,2,6,4))
+
+plot(1:length(rcm_nos), rep(0,length(rcm_nos)), pch=1, col="black", 
+     xaxt='n', xlab="", ylab="Difference in Q20 (%)", ylim=c(-1,1))
+points(1:length(rcm_nos), (tbc_line20-obs_line20)/obs_line20, col="orange", pch=2)
+points(1:length(rcm_nos), (fbc_line20-obs_line20)/obs_line20, col="purple", pch=6)
+points(1:length(rcm_nos), rep((sim_line20-obs_line20)/obs_line20, length(rcm_nos)),
+       col="darkgreen", pch=4)
+axis(1, at=1:length(rcm_nos), labels=rcm_nos)
+
+plot(1:length(rcm_nos), rep(0,length(rcm_nos)), pch=1, col="black", 
+     xaxt='n', xlab="Ensemble Member", ylab="Difference in Q50 (%)", ylim=c(-1,1))
+points(1:length(rcm_nos), (tbc_line50-obs_line50)/obs_line50, col="orange", pch=2)
+points(1:length(rcm_nos), (fbc_line50-obs_line50)/obs_line50, col="purple", pch=6)
+points(1:length(rcm_nos), rep((sim_line50-obs_line50)/obs_line50, length(rcm_nos)),
+       col="darkgreen", pch=4)
+axis(1, at=1:length(rcm_nos), labels=rcm_nos)
+#dev.off()
+
+png("./eden2.png", width=160, height=100, units='mm', res=300, pointsize=11)
+par(mar=c(3,3,1,1), mgp=c(2,1,0), mfrow=c(3,1))
+
+plot(0:length(rcm_nos), rep(0,length(rcm_nos)+1), pch=1, col="black", 
+     xaxt='n', xlab="", ylab="Difference in QMED (%)", ylim=c(-1,1))
+points(1:length(rcm_nos), (tbc_line-obs_line)/obs_line, col="orange", pch=2)
+points(1:length(rcm_nos), (fbc_line-obs_line)/obs_line, col="purple", pch=6)
+points(1:length(rcm_nos), rep((sim_line-obs_line)/obs_line, length(rcm_nos)),
+       col="darkgreen", pch=4)
+axis(1, at=1:length(rcm_nos), labels=rcm_nos)
+legend("topleft", legend=c("OBS", "TBC", "FBC", "SIM"),
+       col=c("black", "orange", "purple", "darkgreen"), pch=c(1,2,6,4))
+
+plot(0:length(rcm_nos), rep(0,length(rcm_nos)+1), pch=1, col="black", 
+     xaxt='n', xlab="", ylab="Difference in Q20 (%)", ylim=c(-1,1))
+points(1:length(rcm_nos), (tbc_line20-obs_line20)/obs_line20, col="orange", pch=2)
+points(1:length(rcm_nos), (fbc_line20-obs_line20)/obs_line20, col="purple", pch=6)
+points(1:length(rcm_nos), rep((sim_line20-obs_line20)/obs_line20, length(rcm_nos)),
+       col="darkgreen", pch=4)
+axis(1, at=1:length(rcm_nos), labels=rcm_nos)
+
+plot(0:length(rcm_nos), rep(0,length(rcm_nos)+1), pch=1, col="black", 
+     xaxt='n', xlab="Ensemble Member", ylab="Difference in Q50 (%)", ylim=c(-1,1))
+points(1:length(rcm_nos), (tbc_line50-obs_line50)/obs_line50, col="orange", pch=2)
+points(1:length(rcm_nos), (fbc_line50-obs_line50)/obs_line50, col="purple", pch=6)
+points(1:length(rcm_nos), rep((sim_line50-obs_line50)/obs_line50, length(rcm_nos)),
+       col="darkgreen", pch=4)
+axis(1, at=1:length(rcm_nos), labels=rcm_nos)
+dev.off()
+```
+
+```{r datavis1, fig.width=11, echo=F}
+stn0 <- 39001
+
+tbc_line <- am_glo_TBC %>% dplyr::filter(station==stn0) %>% select(QMED) %>% unlist(.)
+fbc_line <- am_glo_FBC %>% dplyr::filter(station==stn0) %>% select(QMED) %>% unlist(.)
+obs_line <- am_glo_obs %>% dplyr::filter(station==stn0) %>% select(QMED) %>% unlist(.)
+sim_line <- am_glo_simobs %>% dplyr::filter(station==stn0) %>% select(QMED) %>% unlist(.)
+
+tbc_line20 <- am_glo_TBC %>% dplyr::filter(station==stn0) %>% select(Q20) %>% unlist(.)
+fbc_line20 <- am_glo_FBC %>% dplyr::filter(station==stn0) %>% select(Q20) %>% unlist(.)
+obs_line20 <- am_glo_obs %>% dplyr::filter(station==stn0) %>% select(Q20) %>% unlist(.)
+sim_line20 <- am_glo_simobs %>% dplyr::filter(station==stn0) %>% select(Q20) %>% unlist(.)
+
+tbc_line50 <- am_glo_TBC %>% dplyr::filter(station==stn0) %>% select(Q50) %>% unlist(.)
+fbc_line50 <- am_glo_FBC %>% dplyr::filter(station==stn0) %>% select(Q50) %>% unlist(.)
+obs_line50 <- am_glo_obs %>% dplyr::filter(station==stn0) %>% select(Q50) %>% unlist(.)
+sim_line50 <- am_glo_simobs %>% dplyr::filter(station==stn0) %>% select(Q50) %>% unlist(.)
+
+#range(sim_line50)
+print((sim_line50 - obs_line50)/obs_line50)
+
+# Plot of relative difference in QMED, Q20 and Q50 on average between RCMs
+
+#png("./kingston.png", width=160, height=100, units='mm', res=300, pointsize=11)
+par(mar=c(3,3,1,1), mgp=c(2,1,0), mfrow=c(3,1))
+
+plot(0:length(rcm_nos), rep(0,length(rcm_nos)+1), pch=1, col="black", 
+     xaxt='n', xlab="", ylab="Difference in QMED (%)", ylim=c(-1,2))
+points(1:length(rcm_nos), (tbc_line-obs_line)/obs_line, col="orange", pch=2)
+points(1:length(rcm_nos), (fbc_line-obs_line)/obs_line, col="purple", pch=6)
+points(1:length(rcm_nos), rep((sim_line-obs_line)/obs_line, length(rcm_nos)),
+       col="darkgreen", pch=4)
+axis(1, at=1:length(rcm_nos), labels=rcm_nos)
+legend("topleft", legend=c("OBS", "TBC", "FBC", "SIM"),
+       col=c("black", "orange", "purple", "darkgreen"), pch=c(1,2,6,4))
+
+plot(0:length(rcm_nos), rep(0,length(rcm_nos)+1), pch=1, col="black", 
+     xaxt='n', xlab="", ylab="Difference in Q20 (%)", ylim=c(-1,2))
+points(1:length(rcm_nos), (tbc_line20-obs_line20)/obs_line20, col="orange", pch=2)
+points(1:length(rcm_nos), (fbc_line20-obs_line20)/obs_line20, col="purple", pch=6)
+points(1:length(rcm_nos), rep((sim_line20-obs_line20)/obs_line20, length(rcm_nos)),
+       col="darkgreen", pch=4)
+axis(1, at=1:length(rcm_nos), labels=rcm_nos)
+
+plot(0:length(rcm_nos), rep(0,length(rcm_nos)+1), pch=1, col="black", 
+     xaxt='n', xlab="Ensemble Member", ylab="Difference in Q50 (%)", ylim=c(-1,2))
+points(1:length(rcm_nos), (tbc_line50-obs_line50)/obs_line50, col="orange", pch=2)
+points(1:length(rcm_nos), (fbc_line50-obs_line50)/obs_line50, col="purple", pch=6)
+points(1:length(rcm_nos), rep((sim_line50-obs_line50)/obs_line50, length(rcm_nos)),
+       col="darkgreen", pch=4)
+axis(1, at=1:length(rcm_nos), labels=rcm_nos)
+#dev.off()
+
+png("./kingston2.png", width=160, height=100, units='mm', res=300, pointsize=11)
+par(mar=c(3,3,1,1), mgp=c(2,1,0), mfrow=c(3,1))
+
+plot(0:length(rcm_nos), rep(0,length(rcm_nos)+1), pch=1, col="black", 
+     xaxt='n', xlab="", ylab="Difference in QMED (%)", ylim=c(-1,2))
+points(1:length(rcm_nos), (tbc_line-obs_line)/obs_line, col="orange", pch=2)
+points(1:length(rcm_nos), (fbc_line-obs_line)/obs_line, col="purple", pch=6)
+points(1:length(rcm_nos), rep((sim_line-obs_line)/obs_line, length(rcm_nos)),
+       col="darkgreen", pch=4)
+axis(1, at=1:length(rcm_nos), labels=rcm_nos)
+legend("topleft", legend=c("OBS", "TBC", "FBC", "SIM"),
+       col=c("black", "orange", "purple", "darkgreen"), pch=c(1,2,6,4))
+
+plot(0:length(rcm_nos), rep(0,length(rcm_nos)+1), pch=1, col="black", 
+     xaxt='n', xlab="", ylab="Difference in Q20 (%)", ylim=c(-1,2))
+points(1:length(rcm_nos), (tbc_line20-obs_line20)/obs_line20, col="orange", pch=2)
+points(1:length(rcm_nos), (fbc_line20-obs_line20)/obs_line20, col="purple", pch=6)
+points(1:length(rcm_nos), rep((sim_line20-obs_line20)/obs_line20, length(rcm_nos)),
+       col="darkgreen", pch=4)
+axis(1, at=1:length(rcm_nos), labels=rcm_nos)
+
+plot(0:length(rcm_nos), rep(0,length(rcm_nos)+1), pch=1, col="black", 
+     xaxt='n', xlab="Ensemble Member", ylab="Difference in Q50 (%)", ylim=c(-1,2))
+points(1:length(rcm_nos), (tbc_line50-obs_line50)/obs_line50, col="orange", pch=2)
+points(1:length(rcm_nos), (fbc_line50-obs_line50)/obs_line50, col="purple", pch=6)
+points(1:length(rcm_nos), rep((sim_line50-obs_line50)/obs_line50, length(rcm_nos)),
+       col="darkgreen", pch=4)
+axis(1, at=1:length(rcm_nos), labels=rcm_nos)
+dev.off()
+```
+This plot shows percentage difference in QMED, Q20 and Q50, with observed as a black circle (always zero), with bias correction in orange, and without in purple. This again highlights the negative bias in nearly all the ensemble members, but that there are differences between them. On the whole, the use of bias correction actually increases underestimation compared to mean daily flow.
+
+### Time series comparison
+
+```{r datavis2, fig.width=11,fig.height=15}
+am_obs1 <- am_summ_obs %>% dplyr::filter(station==76005) %>% select(year, value)
+am_sim1 <- am_sim_obs %>% dplyr::filter(station==76005) %>% select(year, value)
+# Comparison of like-for-like time series
+par(mar=c(3,3,0.1,0.1), mgp=c(2,1,0), mfrow=c(7,2))
+for(i in 1:length(rcm_nos)){
+  am_tbc1 <- am_summ_TBC %>% dplyr::filter(station==76005 & rcm==rcm_nos[i]) %>% select(year, value)
+  am_fbc1 <- am_summ_FBC %>% dplyr::filter(station==76005 & rcm==rcm_nos[i]) %>% select(year, value)
+  
+  plot(am_obs1$year, am_obs1$value, col=1, type='l', xlab=ifelse(i>10,"Year",""),
+       ylab="", ylim=range(am_tbc1$value, am_fbc1$value, am_obs1$value, na.rm=T))
+  lines(am_tbc1$year, am_tbc1$value, col="orange")
+  lines(am_fbc1$year, am_fbc1$value, col="purple")
+  lines(am_sim1$year, am_sim1$value, col="darkgreen")
+  text(1980,450,labels=paste("RCM_", rcm_nos[i]), pos=4)
+} 
+
+plot(0,0, xlim=c(-1,1), ylim=c(-1,1), xaxt="n", yaxt="n", axes=F, xlab="", ylab="")
+legend("center", legend=c("OBS","TBC", "FBC", "SIM"), col=c("black", "orange", "purple", "darkgreen"),
+       lwd=2, border=NA)
+```
+
+Here are the time series for the twelve different ensemble members for station 76005 (Eden). One can see that on average, the time series match reasonably, the 1995 and 2005 calues are much higher in observed than any value in the modelled values. This may explain the underestimation in QT.
+
+### Maps
+
+```{r datavis3, fig.width=16, fig.height=8}
+par(mar=c(0.5,0.5,0.5,0.5), mgp=c(2,1,0))
+uk_outline <- readOGR("C:/Users/adagri/Documents/ResilRiskInds_C/interim_data/uk_outline")
+
+qmed_TBC <- am_glo_TBC %>% group_by(station) %>% summarise(qmed_av=mean(QMED))
+qmed_FBC <- am_glo_FBC %>% group_by(station) %>% summarise(qmed_av=mean(QMED))
+qmed_obs <- am_glo_obs %>% dplyr::select(station, QMED)
+qmed_sim <- am_glo_simobs %>% dplyr::select(station, QMED)
+
+posUK <- CATAL %>% dplyr::filter(id %in% qmed_TBC$station) %>% dplyr::select(id, easting, northing)
+
+Qpc <- (qmed_TBC$qmed_av - qmed_obs$QMED)/qmed_obs$QMED#
+summary(Qpc)
+Qpc[Qpc > 2] <- 2
+Qpc[Qpc < -2] <- -2
+
+Qpc2 <- (Qpc + 2)/4
+
+r2g <- colorRamp(c("red", "white", "darkgreen"))
+r2g2 <- colorRampPalette(c("red", "white", "darkgreen"))(11)
+
+par(mar=c(1,1,3,1), mfrow=c(1,3), mgp=c(2,1,0))
+plot(uk_outline, main="With Bias Correction")
+points(posUK$easting, posUK$northing, cex=0.7, col=rgb(r2g(Qpc2), maxColorValue=256))
+image.plot(Qpc2, add=T, breaks=seq(from=-2,to=2,length.out=12), col=r2g2,
+           legend.only=T)
+
+Qpc <- (qmed_FBC$qmed_av - qmed_obs$QMED)/qmed_obs$QMED
+summary(Qpc)
+Qpc[Qpc > 2] <- 2
+Qpc[Qpc < -2] <- -2
+
+Qpc2 <- (Qpc + 2)/4
+
+plot(uk_outline,  main="Without Bias Correction")
+points(posUK$easting, posUK$northing, cex=0.7, col=rgb(r2g(Qpc2), maxColorValue=256))
+image.plot(Qpc2, add=T, breaks=seq(from=-2,to=2,length.out=12), col=r2g2,
+           legend.only=T)
+
+Qpc <- (qmed_sim$QMED - qmed_obs$QMED)/qmed_obs$QMED
+summary(Qpc)
+Qpc[Qpc > 2] <- 2
+Qpc[Qpc < -2] <- -2
+
+Qpc2 <- (Qpc + 2)/4
+
+plot(uk_outline,  main="simobs")
+points(posUK$easting, posUK$northing, cex=0.7, col=rgb(r2g(Qpc2), maxColorValue=256))
+image.plot(Qpc2, add=T, breaks=seq(from=-2,to=2,length.out=12), col=r2g2,
+           legend.only=T, legend.lab="Fraction change in QMED")
+
+```
+
+```{r, echo=F, fig.width=16, fig.height=8}
+##### Q20
+
+
+qmed_TBC <- am_glo_TBC %>% group_by(station) %>% summarise(qmed_av=mean(Q20))
+qmed_FBC <- am_glo_FBC %>% group_by(station) %>% summarise(qmed_av=mean(Q20))
+qmed_obs <- am_glo_obs %>% dplyr::select(Q20)
+qmed_sim <- am_glo_simobs %>% dplyr::select(Q20)
+
+Qpc <- (qmed_TBC$qmed_av - qmed_obs$Q20)/qmed_obs$Q20
+summary(Qpc)
+Qpc[Qpc > 2] <- 2
+Qpc[Qpc < -2] <- -2
+Qpc2 <- (Qpc + 2)/4
+
+par(mfrow=c(1,3))
+plot(uk_outline, main="With Bias Correction")
+points(posUK$easting, posUK$northing, cex=0.7, col=rgb(r2g(Qpc2), maxColorValue=256))
+image.plot(Qpc2, add=T, breaks=seq(from=-2,to=2,length.out=12), col=r2g2,
+           legend.only=T)
+
+Qpc <- (qmed_FBC$qmed_av - qmed_obs$Q20)/qmed_obs$Q20
+summary(Qpc)
+Qpc[Qpc > 2] <- 2
+Qpc[Qpc < -2] <- -2
+Qpc2 <- (Qpc + 2)/4
+
+plot(uk_outline, main="Without Bias Correction")
+points(posUK$easting, posUK$northing, cex=0.7, col=rgb(r2g(Qpc2), maxColorValue=256))
+image.plot(Qpc2, add=T, breaks=seq(from=-2,to=2,length.out=12), col=r2g2,
+           legend.only=T)
+
+Qpc <- (qmed_sim$Q20 - qmed_obs$Q20)/qmed_obs$Q20
+summary(Qpc)
+Qpc[Qpc > 2] <- 2
+Qpc[Qpc < -2] <- -2
+
+Qpc2 <- (Qpc + 2)/4
+
+plot(uk_outline,  main="simobs")
+points(posUK$easting, posUK$northing, cex=0.7, col=rgb(r2g(Qpc2), maxColorValue=256))
+image.plot(Qpc2, add=T, breaks=seq(from=-2,to=2,length.out=12), col=r2g2,
+           legend.only=T,
+           legend.lab="Fraction change in Q20")
+```
+
+```{r, echo=F, fig.width=16, fig.height=8}
+##### Q50 
+
+qmed_TBC <- am_glo_TBC %>% group_by(station) %>% summarise(qmed_av=mean(Q50))
+qmed_FBC <- am_glo_FBC %>% group_by(station) %>% summarise(qmed_av=mean(Q50))
+qmed_obs <- am_glo_obs %>% dplyr::select(Q50)
+qmed_sim <- am_glo_simobs %>% dplyr::select(Q50)
+
+Qpc <- (qmed_TBC$qmed_av - qmed_obs$Q50)/qmed_obs$Q50
+summary(Qpc)
+Qpc[Qpc > 2] <- 2
+Qpc[Qpc < -2] <- -2
+Qpc2 <- (Qpc + 2)/4
+
+par(mfrow=c(1,3))
+plot(uk_outline, main = "With Bias Correction")
+points(posUK$easting, posUK$northing, cex=0.7, col=rgb(r2g(Qpc2), maxColorValue=256))
+image.plot(Qpc2, add=T, breaks=seq(from=-2,to=2,length.out=12), col=r2g2,
+           legend.only=T)
+
+Qpc <- (qmed_FBC$qmed_av - qmed_obs$Q50)/qmed_obs$Q50
+summary(Qpc)
+Qpc[Qpc > 2] <- 2
+Qpc[Qpc < -2] <- -2
+Qpc2 <- (Qpc + 2)/4
+
+plot(uk_outline, main="Without Bias Correction")
+points(posUK$easting, posUK$northing, cex=0.7, col=rgb(r2g(Qpc2), maxColorValue=256))
+image.plot(Qpc2, add=T, breaks=seq(from=-2,to=2,length.out=12), col=r2g2,
+           legend.only=T)
+
+Qpc <- (qmed_sim$Q50 - qmed_obs$Q50)/qmed_obs$Q50
+summary(Qpc)
+Qpc[Qpc > 2] <- 2
+Qpc[Qpc < -2] <- -2
+
+Qpc2 <- (Qpc + 2)/4
+
+plot(uk_outline,  main="simobs")
+points(posUK$easting, posUK$northing, cex=0.7, col=rgb(r2g(Qpc2), maxColorValue=256))
+image.plot(Qpc2, add=T, breaks=seq(from=-2,to=2,length.out=12), col=r2g2,
+           legend.only=T,
+           legend.lab="Fraction change in Q50")
+# easting and northing
+```
+
+Finally, these six maps are presented to look for any spatial patterns in the difference between the two methods of modelling. Overall, the patterns are very similar in the three cases (QMED, Q20 and Q50 as before). One can see a pattern of overestimation around London and other populated areas of GB, and the greater negative bias.
+
+## Conclusions
+Given this limited investigation, it seems that the bias correction will give less accurate flood frequency estimates compared to observed records.
+
+## References
+ Guillod, B.P., Jones, R.G., Dadson, S.J., Coxon, G., Bussi, G., Freer, J. & Allen, M.R. (2018). A large set of potential past, present and future hydro-meteorological time series for the UK. Hydrology and Earth System Sciences, 22(1), 611-634.

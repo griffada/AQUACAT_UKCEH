@@ -16,7 +16,7 @@ if(substr(osVersion,1,3) == "Win"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
 }
 
-regions <- c("ANG", "NE", "NW", "SCO", "SE", "SEV", "SW", "THA", "TRE", "WAL")
+regions <- c("ANG", "ESC", "NE", "NSC", "NW", "SE", "SEV", "SSC", "SW", "THA", "TRE", "WAL")
 
 if(length(args)==3){
   RCM <- sprintf("%02d", args[1])
@@ -29,7 +29,7 @@ if(length(args)==3){
   REG <- args[3]
   if(!any(REG == regions)){
     stop(paste("incorrect call: Rscript 109_HeffTawn_Modelling.R gcm period region \n",
-    "- Region must be one of: ANG, NE, NW, SCO, SE, SEV, SW, THA, TRE, WAL."))
+    "- Region must be one of: ANG, ESC, NE, NSC, NW, SE, SEV, SSC, SW, THA, TRE, WAL."))
   }
 }
 
@@ -54,9 +54,8 @@ threshDayExcList <- readRDS( paste0(data_wd, subfold, "threshDayExcList_RCM",
 
 
 # matrix of threshold value (col) at a given cell (row)
-threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM", 
-                             RCM, suffix,".rds"),
-                      stringsAsFactors=FALSE)
+threshMat <- readRDS(paste0(data_wd, subfold,"threshMat_RCM", 
+                             RCM, suffix,".rds"))
 #dim(threshMat) #19914 x 5
 
 
@@ -127,7 +126,7 @@ marginfns_temp <- list("laplace",
 
 #Transform DATA into Laplace distribution
 TRANSFORMED <- mexTransform_slim(marginfns=marginfns_temp, mth=mth_in,
-                                  method="mixture", r=NULL)
+                                  method="mixture", r=NULL)$TRANSFORMED
 saveRDS(TRANSFORMED, file=paste0(data_wd, subfold, "transformedData.rds"))
 print("Step 2 completed: Data transform.")
 print(Sys.time() - ST)
@@ -140,24 +139,26 @@ ST <- Sys.time()
 
 COEFFS <- array(NA, dim=c(6,NREG-1,NREG))  # parameters for dep struct
 Z <- array(NA, dim=c(24,NREG-1,NREG))  # Z-scores for dependence structure.
-
+DEPENDENCE <- vector("list", NREG)
 # Compute parametric dependence structure
-DEPENDENCE <- lapply(1:NREG,
-                      function(k){
-                        if (k%%50==0) print(paste0("Dependence at", round(100*k/NREG,2), "%"))
-                        o <- try(mexDependence_slim(dqu=dqu, mth=mth_in, which=k,
-                                                    marginsTransformed=TRANSFORMED))
-                        
-                        if(inherits(o, "try-error")){
-                          if(interactive()) browser()
-                          warning("Error in mexDependence")
-                        }
-                        #str(o)
-                        if(o$errcode > 0){
-                          print("Error code ", o$errcode, " on iter ", k, ".")
-                        }
-                        o
-                      })
+for(k in 1:NREG){
+  if (k%%50==0){
+    print(paste0("Dependence at", round(100*k/NREG,2), "%"))
+  } 
+  o <- try(mexDependence_slim(dqu=dqu, mth=mth_in, which=k,
+                              marginsTransformed=TRANSFORMED))
+  
+  if(inherits(o, "try-error")){
+    if(interactive()) browser()
+    warning("Error in mexDependence")
+  }
+  #str(o)
+  if(o$errcode > 0){
+    print("Error code ", o$errcode, " on iter ", k, ".")
+  }else{
+    DEPENDENCE[[k]] <- o
+  }
+}
 
 saveRDS(DEPENDENCE, file=paste0(data_wd, subfold, "depStruct.rds"))
 saveRDS(COEFFS, file=paste0(data_wd, subfold, "coefficients.rds"))

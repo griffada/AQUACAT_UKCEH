@@ -1,3 +1,14 @@
+#~~~~~~~~~~~~~~~~~~~~~~~
+# Adam Griffin, 2020-06-17
+#
+# Using Heffernan and Tawn model for spatial coherence to generate new events.
+#
+# For aquaCAT, Project 07441.
+# 
+# Created ABG 2020-06-17
+# Pipeline version 2020-09-07
+#
+#~~~~~~~~~~~~~~~~~~~~~~~
 
 #### SETUP ####----------------------------------------------------------
 if(substr(osVersion,1,3) == "Win"){
@@ -20,22 +31,27 @@ jT <- which(threshName==thresh1)
 jW <- which(wsName == ws1)
 print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
 
+regions <- c("ANG", "ESC", "NE", "NSC", "NW", "SE", "SEV", "SSC", "SW", "THA", "TRE", "WAL")
+
+if(length(args)==3){
+  RCM <- sprintf("%02d", args[1])
+  period <- args[2]
+  if(period=="present"){
+    suffix <- "_198012_201011"
+  }else if (period=="future"){
+    suffix <- "_205012_201011"
+  }
+  REG <- args[3]
+  if(!any(REG == regions)){
+    stop(paste("incorrect call: Rscript 109b_HT_PoEEstimation.R gcm period region \n",
+               "- Region must be one of: ANG, ESC, NE, NSC, NW, SE, SEV, SSC, SW, THA, TRE, WAL."))
+  }
+}
+
 
 ##### DATA #####-------------------------------------------------------
 
 #5 lists of NH lists, one for each threshold
-
-# Step 1, get the GPA estimates of return period
-# 1a) Get all values above threshold.
-# 1b) Extract peaks (this may have to be reversed)
-
-# 1c) Fit GPA using L-moments.
-# 1d) Compute prob of exceedence (1-CDF) in 6 months.
-# 1e) Compute annual prob of exceedence (2 periods).
-
-# Here we use the at-site exceedences, not the widespread events.
-
-# Observed Threshold from 102, Threshold Extract.
 
 thresMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
                            RCM, suffix, ".rds"))
@@ -55,6 +71,9 @@ eventDF <- readr::read_csv(paste0(data_wd,subfold, "NewEventHT_",thresh1,"_", ws
                              .default = col_double()
                            ))
 
+
+
+### Prealloc ###--------------------------------------------------------------
 eventDF <- matrix(unlist(eventDF), nrow=nrow(eventDF), ncol=ncol(eventDF))
 
 rarityDF <- eventDF
@@ -65,6 +84,8 @@ rn_regions$locnum <- 1:nrow(rn_regions)
 
 rn_reg <- data.frame(rn_regions) %>% dplyr::filter(REGION == REG)
 
+
+##### PoE Calculation using GPA #####-----------------------------------------
 for(h in 1:nrow(eventDF)){
   if((h %% 200) == 0){
     print(paste(h, "of", nrow(eventDF)))
@@ -81,6 +102,9 @@ for(h in 1:nrow(eventDF)){
   rarityDF[h,-1] <- 1 - rps
   
 }
+
+
+##### OUTPUTS #####-----------------------------------------------------------
 
 rarityDF <- data.frame(rarityDF)
 colnames(rarityDF) <- 
