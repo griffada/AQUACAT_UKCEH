@@ -607,11 +607,12 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
       }
       tick <- rep(FALSE, nsim)
       while(sum(tick)<2){
+      print("ping")
       ui <- runif(nsim , min = max(c(mqu[which], pqu)))
       y <-  marginfns$p2q(ui)
       ymi <- sapply( 1:( dim( z )[[ 2 ]] ) , makeYsubMinusI, z=z, v=dco , y=y )
       tick <- y > apply(ymi,1,max)
-      #print(sum(tick))
+      print(sum(tick))
       ymi <- ymi[tick,]
       y <- y[tick]
       ui <- ui[tick]
@@ -653,9 +654,9 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
     #CondLargest <- sim[,dim(sim)[2]]
     #sim <- sim[,-(ncol(sim))]
     
-    # m <- 1 / ( 1 - pqu ) # Need to estimate pqu quantile
-    # zeta <- 1 - mqu[ which ] # Coles, page 81
-    # pth <- mth[ which ] + cox[ 1 ] / cox[ 2 ] * ( ( m*zeta )^cox[ 2 ] - 1 )
+    m <- 1 / ( 1 - pqu ) # Need to estimate pqu quantile
+    zeta <- 1 - mqu[ which ] # Coles, page 81
+    pth <- mth[ which ] + cox[ 1 ] / cox[ 2 ] * ( ( m*zeta )^cox[ 2 ] - 1 )
     # 
     # datafit <- list( #real = data.frame( data[, which], data[, -which] ),
     #               simulated = sim,
@@ -664,6 +665,7 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
     #res <- list(datafit = datafit)
     #print(CondLargest)
     as.matrix(sim[, order(c(which, c(1:d)[-which]))])
+    #oldClass( res ) <- "predict.mex" # A bit of a lie, but keeps things smooth.
     
     #res
 }

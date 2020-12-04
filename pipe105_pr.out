@@ -1,0 +1,34 @@
+Parsed with column specification:
+cols(
+  meanint = col_double(),
+  threshold = col_double(),
+  scale = col_double(),
+  shape = col_double()
+)
+Error: $ operator is invalid for atomic vectors
+Execution halted
+ETCDF4):
+
+     1 variables (excluding dimension variables):
+        float dmflow[Easting,Northing,Time]   (Chunking: [13,19,4])  (Compression: shuffle,level 5)
+            units: m3 s-1
+            standard_name: dmflow
+            long_name: Daily mean river flow
+            _FillValue: -999
+            missing_value: -999
+
+     3 dimensions:
+        Northing  Size:1000
+            standard_name: Northing
+            axis: Y
+            units: GB National Grid
+        Easting  Size:700
+            standard_name: Easting
+            axis: X
+            units: GB National Grid
+        Time  Size:10800   *** is unlimited ***
+            standard_name: Time
+            axis: T
+            units: days since 1961-1-1 0:0:0
+            calendar: 360_day
+Time difference of 0.5908601 secs

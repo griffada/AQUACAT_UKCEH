@@ -1,0 +1,107 @@
+102 01 present
+Error in paste0(data_wd, subfold, "paramtable_", thresh1, "_RCM", RCM,  : 
+  object 'thresh1' not found
+Calls: file.exists -> paste0
+Execution halted
+103 01 present
+[1] "2020-12-04 09:24:34 GMT"
+geos version: 0.5-5, (SVN revision 640)
+ GEOS runtime version: 3.4.2-CAPI-1.8.2 
+ Linking to sp version: 1.4-1 
+ Polygon checking: TRUE 
+
+Error: hasData_Regions already exists for 103. Proceeding to next job.
+Execution halted
+102 01 future
+Error in paste0(data_wd, subfold, "paramtable_", thresh1, "_RCM", RCM,  : 
+  object 'thresh1' not found
+Calls: file.exists -> paste0
+Execution halted
+Complete
+102 01 present
+Error in paste0(data_wd, subfold, "paramtable_", thresh1, "_RCM", RCM,  : 
+  object 'thresh1' not found
+Calls: file.exists -> paste0
+Execution halted
+103 01 present
+[1] "2020-12-04 09:25:23 GMT"
+geos version: 0.5-5, (SVN revision 640)
+ GEOS runtime version: 3.4.2-CAPI-1.8.2 
+ Linking to sp version: 1.4-1 
+ Polygon checking: TRUE 
+
+Error: hasData_Regions already exists for 103. Proceeding to next job.
+Execution halted
+102 01 future
+Error in paste0(data_wd, subfold, "paramtable_", thresh1, "_RCM", RCM,  : 
+  object 'thresh1' not found
+Calls: file.exists -> paste0
+Execution halted
+Complete
+102 01 present
+41: In log(z) : NaNs produced
+42: In log(z) : NaNs produced
+43: In log(z) : NaNs produced
+44: In log(z) : NaNs produced
+45: In log(z) : NaNs produced
+46: In log(z) : NaNs produced
+47: In log(z) : NaNs produced
+48: In log(z) : NaNs produced
+49: In log(z) : NaNs produced
+50: In log(z) : NaNs produced
+103 01 present
+[1] "2020-12-04 13:16:43 GMT"
+geos version: 0.5-5, (SVN revision 640)
+ GEOS runtime version: 3.4.2-CAPI-1.8.2 
+ Linking to sp version: 1.4-1 
+ Polygon checking: TRUE 
+
+Error: hasData_Regions already exists for 103. Proceeding to next job.
+Execution halted
+102 01 future
+            axis: X
+            units: GB National Grid
+        Time  Size:10800   *** is unlimited ***
+            standard_name: Time
+            axis: T
+            units: days since 1961-1-1 0:0:0
+            calendar: 360_day
+[1] "loop start"
+[1] "2020-12-04 13:16:51 GMT"
+[1] "NH = 19914"
+Complete
+102 01 present
+Loading required package: distillery
+
+Attaching package: ‘extRemes’
+
+The following objects are masked from ‘package:stats’:
+
+    qqnorm, qqplot
+
+Error: thresh* files already exist for 102. Proceeding to next job.
+Execution halted
+103 01 present
+[1] "2020-12-04 13:46:34 GMT"
+geos version: 0.5-5, (SVN revision 640)
+ GEOS runtime version: 3.4.2-CAPI-1.8.2 
+ Linking to sp version: 1.4-1 
+ Polygon checking: TRUE 
+
+Error: hasData_Regions already exists for 103. Proceeding to next job.
+Execution halted
+104 01 present
+Error: eventLists alread exist for 104. Proceeding to next job.
+Execution halted
+105 01 present
+        Easting  Size:700
+            standard_name: Easting
+            axis: X
+            units: GB National Grid
+        Time  Size:10800   *** is unlimited ***
+            standard_name: Time
+            axis: T
+            units: days since 1961-1-1 0:0:0
+            calendar: 360_day
+Time difference of 0.5908601 secs
+Complete

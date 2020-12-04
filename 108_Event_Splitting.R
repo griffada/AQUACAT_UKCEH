@@ -8,6 +8,9 @@
 # Created ABG 2020-07-31
 # Pipeline version ABG 2020-09-07
 #
+# OUTPUTS: regionalEvents_***.csv,
+#          eventdf_region_***.csv
+#
 #~~~~~~~~~~~~~~~~~~~~~~~
 
 if(substr(osVersion,1,3) == "Win"){
@@ -78,38 +81,53 @@ load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
 NE <- length(eventDayList[[jV]][[jI]]) # POT2, 2% inun.
 
 # timewise maxima at each cell for each event ((NE + 2) x NH)
-eventDF <- readr::read_csv(paste0(data_wd,subfold, "eventdf_",thresh1,"_",
-                                  ws1, "_RCM", RCM, suffix, ".csv"))
+obs_events <- readr::read_csv(paste0(data_wd, subfold, "eventflow_OBS_", thresh1,
+                                     "_", ws1, "_RCM", RCM, suffix, ".csv"))
 
-# PoE under different computations with extra data. Tidy format.
-present <- readr::read_csv(paste0(data_wd, subfold, "returnlevels_",
-                              thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+obs_dpe <- readr::read_csv(paste0(data_wd, subfold, "eventdpe_OBS_", thresh1,
+                                       "_", ws1, "_RCM", RCM, suffix, ".csv"))
+  
+obs_ape <- readr::read_csv(paste0(data_wd, subfold, "eventape_OBS_", thresh1,
+                                       "_", ws1, "_RCM", RCM, suffix, ".csv"))
+
+# # PoE under different computations with extra data. Tidy format.
+# present <- readr::read_csv(paste0(data_wd, subfold, "returnlevels_",
+#                               thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
 
 
 ### EVENT SPLITTING ###---------------------------------------------------
 
+
 r1 <- which(rn_regions$REGION == REG) # length = 1437
-event_region <- eventDF[r1,]
-present_region <- present %>% subset(loc %in% r1) 
+obs_events_region <- obs_events[r1, ]
+obs_dpe_region <- obs_dpe[r1, ]
+obs_ape_region <- obs_ape[r1, ]
+#present_region <- present %>% subset(loc %in% r1) 
 thresh_region <- threshMat[r1,]
 
-# Method 2: Only keep events where the threshold is passed somewhere.
+KEEP <- apply(obs_dpe_flow, 2, function(x){any(x > thresh_region)})
 
-present_above <- present_region %>% subset(val > thresh)
-p_a_events <- unique(present_above$eventNo) #79 events
-  print(length(p_a_events))
-present_above2 <- present_region %>% subset(eventNo %in% p_a_events)
+obs_dpe_region <- obs_dpe_region[,KEEP]
+obs_events_region <- obs_events_region[,KEEP]
+obs_ape_region <- obs_ape_region[,KEEP]
 
-write_csv(present_above2, path=paste0(data_wd, subfold, "regionalEvents_",REG,"_RCM", 
+# p_a_events <- unique(present_above$eventNo) #79 events
+#   print(length(p_a_events))
+# present_above2 <- present_region %>% subset(eventNo %in% p_a_events)
+# 
+# event_region <- event_region[, (p_a_events+2)]
+
+### SAVE OUTPUTS ###------------------------------------------------
+
+write_csv(obs_events_region, path=paste0(data_wd, subfold, "eventflow_OBS_region_",
+                                      REG,"_RCM", 
                                       RCM, suffix,".csv"))
 
-event_region <- event_region[, (p_a_events+2)]
+write_csv(obs_dpe_region, path=paste0(data_wd, subfold, "eventdpe_OBS_region_",
+                                      REG,"_RCM", 
+                                      RCM, suffix,".csv"))
 
-write_csv(event_region, path=paste0(data_wd, subfold, "eventdf_region_",REG,"_RCM", 
-                                     RCM, suffix,".csv"))
-
-
-
-
-
+write_csv(obs_ape_region, path=paste0(data_wd, subfold, "eventape_OBS_region_",
+                                    REG,"_RCM", 
+                                    RCM, suffix,".csv"))

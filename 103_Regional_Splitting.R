@@ -8,6 +8,8 @@
 # Created ABG 2020-07-31
 # Pipeline version 2020-09-07
 #
+# OUTPUTS: hasData_Regions.csv
+#
 #~~~~~~~~~~~~~~~~~~~~~~~
 
 library(rgeos)

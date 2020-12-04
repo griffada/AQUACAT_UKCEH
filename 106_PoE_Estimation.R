@@ -3,18 +3,17 @@
 #
 # Estimating probability of exceedence along time series using ecdf and
 # plotting positions.
-# Uses inputs from 104_Event_Extract and 105_timeDF_compile.
+# Uses inputs from 102_Threshold_Extract, 104_Event_Extract and 105_Event_Summary
 
 # Note that for FUTURE estimation of return periods, make use of the present day
 # data (tSlice) to compute the ecdf.
-#
 #
 # For aquaCAT, Project 07441.
 # 
 # Created ABG 2020-06-15
 # Pipeline version ABG 2020-09-07
 #
-# Outputs: present_returnlevels***.csv
+# OUTPUTS: present_returnlevels***.csv
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -42,7 +41,7 @@ subfold <- paste0("RCM", RCM, suffix, "/")
 
 jT <- which(threshName==thresh1)
 jW <- which(wsName == ws1)
-### Functions ###---------------------------------------
+##### FUNCTIONS #####---------------------------------------
 
 logit <- function(x){log(x/(1-x))}
 invlogit <- function(y){1/(1 + exp(-1*y))}
@@ -79,78 +78,93 @@ load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
 
 # timewise maxima at each cell for each event (NE x NH)
 
-#library(data.table)
-#edf <- fread(paste0(wd,"/Data/eventdf_POT2_pc2.csv"), colClasses=rep("numeric",287))
-
-obs_events  <- readr::read_csv(paste0(data_wd,subfold, "eventdf_",thresh1,"_", ws1,
+obs_events  <- readr::read_csv(paste0(data_wd,subfold, "eventflow_OBS_",thresh1,"_", ws1,
                                   "_RCM", RCM, suffix, ".csv"),
                            col_types=cols(.default = col_double()))
 
 NE <- ncol(obs_events) - 4
 
-thresMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM", RCM, suffix, ".rds"))
-
 partable <- readr::read_csv(paste0(data_wd,subfold, 
-                                   "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"))
+                            "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"))
 
 colnames(partable)[1] <- "meanint"
 
 ##### PROB CALCULATION #####-------------------------------------------------
 
 ### prealloc -----------------------
-rarityDF <- data.frame(eventNo = numeric(),
-                       loc = numeric(),
-                       Easting = numeric(),
-                       Northing = numeric(), 
-                       thresh = numeric(),
-                       DayS = numeric(),
-                       val = numeric(),
-                       gpa_apoe = numeric(),
-                       rp_years = numeric())
+# rarityDF <- data.frame(eventNo = numeric(),
+#                        loc = numeric(),
+#                        Easting = numeric(),
+#                        Northing = numeric(), 
+#                        thresh = numeric(),
+#                        DayS = numeric(),
+#                        val = numeric(),
+#                        gpa_apoe = numeric(),
+#                        rp_years = numeric())
+eventDpeFrame <- matrix(NA, ncol=ncol(obs_events), nrow=NH)
+eventApeFrame <- matrix(NA, ncol=ncol(obs_events), nrow=NH)
 
 ST0 <- proc.time()
 ST <- proc.time()
 print("loop start")
 for(h in 1:NH){
+  
+  if((h < 10) | (h %% 200 == 0)){ # time recording
+    print(h)
+    I <- difftime(Sys.time(), ST, units="secs")
+    I0 <- difftime(Sys.time(), ST0, units="secs")
+    print(paste("Percent remaining", 100*round((NH-h)/NH ,2)))
+    print(paste("Time remaining", round((NH-h)/h * I0,2)))
+    print(paste("Since last readout:", round(I,2)))
+    ST <- Sys.time()
+    print(ST) 
+  }
+  
   thr <- thresMat[h,jT]
   meanInt <- partable$meanint[h]
   scaleH <- partable$scale[h]
   shapeH <- partable$shape[h]
   
-  obs_events_h <- obs_events[h,-(1:4)]
+  vals <- ncvar_get(ncin, "dmflow",
+                    start=c(rn$row[h], rn$col[h], 1),
+                    count=c(1, 1, -1))
   
-  at_site_poeE <- 1 - pevd(as.numeric(obs_events_h), threshold=thr,
-                           scale=scaleH, shape=shapeH, type='GP')
+  # DPoE per cell for event maxima based on whole time series.
+  ecd <- ecdf(vals)
+  valsdpe <- 1 - ecd(obs_events[h,])
   
-  rp_ver <- ifelse(at_site_poeE > 1-(1e-8), NA, meanInt/at_site_poeE)  
-  # expected rate per year given POT and GPA PoE.
+  # APoE per cell for event maxima based on either ecdf or gpa
+  wh_ext <- (valsdpe < (2/360))
+  gpa_poe <- (1 - pevd(as.numeric(obs_events[h,]),
+                       threshold=thr, scale=scaleH, shape=shapeH, type='GP'))
   
-  at_site_apoe <- ifelse(is.na(rp_ver1E), NA, 1 - exp(-at_site_poeE/meanInt))  
-  # Poisson assumption
+  at_site_dpe[wh_ext] <- (2/360)*gpa_poe
   
-  rarityTemp <- data.frame(eventNo = 1:NE,
-                           loc = h,
-                           Easting = rn[h, 1],
-                           Northing = rn[h, 2], 
-                           thresh = thr,
-                           DayS = eventDayList[[jT]][[jW]],
-                           val = obs_events_h,
-                           gpa_apoe = at_site_apoe,
-                           rp_years = rp_ver)
+  valsape <- ifelse(wh_ext,
+                    1 - exp(-gpa_poe/meanInt), #gpa scaled to year
+                    1 - exp(-valsdpe/360)) #dpoe scaled to year
   
-  rarityDF <- rbind(rarityDF, rarityTemp)
+  eventDpeFrame[h,]  <- valsdpe
+  eventApeFrame[h,]  <- valsape
 }
 
-readr::write_csv(x=rarityDF,
-                 path=paste0(data_wd, subfold, "returnlevels_",
-                             thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+# eventDpeFrame  <- cbind(rn, eventDpeFrame)
+# eventApeFrame  <- cbind(rn, eventApeFrame)
+# 
+# readr::write_csv(x=rarityDF,
+#                  path=paste0(data_wd, subfold, "returnlevels_",
+#                              thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+
+readr::write_csv(as.data.frame(eventDpeFrame), path=paste0(data_wd,subfold,
+                "eventdpe_OBS_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+readr::write_csv(as.data.frame(eventApeFrame), path=paste0(data_wd,subfold,
+                "eventape_OBS_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 nc_close(ncin)
 print(Sys.time())
 ######
 #
-# CONVERTION FROM PoE IN DAYS (p) TO PoE IN YEARS (b): p = 1 - (1-b)^(1/365.25)
+# CONVERTION FROM PoE IN DAYS (p) TO PoE IN YEARS (b): p = 1 - (1-b)^(360)
 #
-# b = 1- (1-p)^(365.25)
+# b = 1- (1-p)^(1/360)
 #
 #####
-

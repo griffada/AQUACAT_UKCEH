@@ -9,8 +9,7 @@
 # Created ABG 2020-04-27
 # Pipeline version ABG 2020-09-07
 # 
-# Outputs:
-#   eventLists***.Rda = eventLList, eventDayList
+# OUTPUTS: eventLists***.Rda = eventLList, eventDayList
 #
 #####
 

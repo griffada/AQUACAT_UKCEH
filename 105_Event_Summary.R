@@ -1,7 +1,7 @@
 ######
 # Adam Griffin, 2020-04-27
 #
-# Summarising size and time of extreme events.
+# Summarising size and time, and extracting daily PoE of extreme events.
 # 
 # For aquaCAT, Project 07441.
 # 
@@ -9,9 +9,7 @@
 # Pipeline version ABG 2020-09-07
 #
 #
-# Outputs:
-#
-# eventdf_***.csv: dataframe of each event summarised. One event per row.
+# OUTPUTS: eventdf_***.csv: dataframe of each event summarised. One event per row.
 #
 #####
 
@@ -65,6 +63,10 @@ threshMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
 load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
 
 
+paramtable <- readr::read_csv(paste0(data_wd,subfold, 
+                                     "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"))
+
+
 ##### GET EVENT #####----------------------------------------------------
 
 eventz <- eventLList[[jT]][[jW]]
@@ -73,6 +75,8 @@ dayz <- eventDayList[[jT]][[jW]]
 # prealloc
 eventDataFrame <- matrix(NA, ncol=length(eventz), nrow=NH)
 
+
+# Can be more parallel for timewise maxima
 for(i in seq_len(length(eventz))){
   
   if(i %% 25 == 0){print(i)}
@@ -83,26 +87,29 @@ for(i in seq_len(length(eventz))){
   #space-slice
   vals <- ncvar_get(ncin,
                     "dmflow",
-                    start=c(1, 1, dayz[i]),
-                    count=c(-1, -1, eventz[i]))
+                    start=c(1, 1, D),
+                    count=c(-1, -1, L))
+  
+  vals_event <- vals[D+seq_len(L)-1]
 
   #maxima per cell for each event
   valsmax <- apply(vals, c(1, 2),
                    function(x){ifelse(all(is.na(x)),NA,max(x, na.rm=T))})
   
-  vvec <- rep(NA,NH)
+  vvec <- rep(NA, NH)
   for(k in 1:NH){
     # swap from array to vec
-    vvec[k] <- valsmax[rn[k,1],rn[k,2]]
+    vvec[k] <- valsmax[rn$row[k], rn$col[k]]
   }
   eventDataFrame[,i] <- vvec
-  
+
 }
 
+##### SAVE OUTPUTS #####----------------------------------------------------------
 
-##### OUTPUT #####----------------------------------------------------------
-
-eventDataFrame <- cbind(rn, eventDataFrame)
+# eventDataFrame <- cbind(rn, eventDataFrame)
 
 readr::write_csv(as.data.frame(eventDataFrame), path=paste0(data_wd,subfold,
-                  "eventdf_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+                  "eventflow_OBS_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+
+nc_close(ncin)

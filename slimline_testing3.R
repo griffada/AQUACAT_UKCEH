@@ -36,7 +36,7 @@ if(substr(osVersion,1,3) == "Win"){
 }
 
 
-source(paste0(wd, "07b_HTfunctions.R"))
+#source(paste0(wd, "07b_HTfunctions.R"))
 source(paste0(wd, "07c_texmex_slimline.R"))
 
 

@@ -8,7 +8,7 @@
 # Created ABG 2020-06-15
 # Pipeline version ABG 2020-09-07
 #
-# Outputs: NewEventPresentEC_***.csv: data table of events, one event per row.
+# OUTPUTS: NewEventPresentEC_***.csv: data table of events, one event per row.
 #   
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
@@ -33,14 +33,13 @@ thresh1 <- "POT2" #!#!#!#!# Important constants to select.
 ws1 <- "pc05"
 print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
 
-jV <- which(threshName==thresh1)
-jI <- which(wsName == ws1)
+jT <- which(threshName==thresh1)
+jW <- which(wsName == ws1)
 
 # lists of which days different thresholds were exceeded at different points
 # NT lists of NW lists
-threshDayExcList <- readRDS( paste0(data_wd, subfold, "threshDayExcList_RCM",
+threshDayExcList <- readRDS(paste0(data_wd, subfold, "threshDayExcList_RCM",
                                     RCM, suffix,".rds"))
-
 
 # matrix of threshold value (col) at a given cell (row)
 threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM", 
@@ -48,32 +47,41 @@ threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM",
                       stringsAsFactors=FALSE)
 #dim(threshMat) #19914 x 5
 
-
 #eventLList (length of event L, NT lists (by threshold) of NW lists 
 # (by inun cutoff))
-
 # eventDayList start of event L, NT lists of NW lists
 load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
 
-NE <- length(eventDayList[[jV]][[jI]]) # POT2, 0.5% inun.
+NE <- length(eventDayList[[jT]][[jW]]) # POT2, 0.5% inun.
 
-
-
+NH <- nrow(rn)
 
 # timewise maxima at each cell for each event ((NE + 2) x NH)
-eventDF <- readr::read_csv(paste0(data_wd,subfold, "eventdf_",
-                                  thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+obs_events  <- readr::read_csv(paste0(data_wd,subfold, "eventflow_OBS_",thresh1,"_", ws1,
+                                      "_RCM", RCM, suffix, ".csv"),
+                               col_types=cols(.default = col_double()))
 
-# PoE under different computations with extra data. Tidy format.
-present <- readr::read_csv(paste0(data_wd, subfold, "returnlevels_",
-                                  thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+obs_dpoe  <- readr::read_csv(paste0(data_wd,subfold, "eventdpe_OBS_",thresh1,"_", ws1,
+                                    "_RCM", RCM, suffix, ".csv"),
+                             col_types=cols(.default = col_double()))
 
-#dummy <- present %>% filter(loc < 4)
+obs_apoe  <- readr::read_csv(paste0(data_wd,subfold, "eventape_OBS_",thresh1,"_", ws1,
+                                    "_RCM", RCM, suffix, ".csv"),
+                             col_types=cols(.default = col_double()))
+
+# # PoE under different computations with extra data. Tidy format.
+# present <- readr::read_csv(paste0(data_wd, subfold, "returnlevels_",
+#                                   thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
 
-##### COPULA FUNCTIONS #####---------------------------------------------------
 
-tailsGen <- function(n, low=1, pool=present$gpp, maxit=1000, betapar=c(1,1)){
+
+
+
+
+### COPULA FUNCTIONS ###---------------------------------------------------
+
+tailsGen <- function(n, low=1, maxit=1000, betapar=c(1,1)){
   # draw new probabilities of exceedence from pool, allowing minumum lower bound
   # to be enforced. Technically drawing from the conditional distribution 
   # P[X=x | X_i < low for some i].
@@ -85,14 +93,11 @@ tailsGen <- function(n, low=1, pool=present$gpp, maxit=1000, betapar=c(1,1)){
   # betapar   vector of two parameters for the Beta distribution
   
   QV <- rep(2, n)
-  
   #TODO needs the right distribution to extrapolate from pool to reach tails.
-  
   z <- 0
   while(min(QV) > low){
     V <- runif(n)
     z <- z+1
-    
     QV <- qbeta(V, betapar[1], betapar[2])
     if(z >= maxit){
       print("maxit exceeded")
@@ -100,148 +105,116 @@ tailsGen <- function(n, low=1, pool=present$gpp, maxit=1000, betapar=c(1,1)){
     }
   }
   if(z>1){print(paste(z, "iterations."))}
-  unname(QV)
-  
- # print(QV)
-  
   return(unname(QV))
-  
-  
 }
 
-
-generateNewEvent <- function(eventSet=present, NE=285, NH=19914,
-                             maxit=10000, low=1, pool=present$gpp, betapar=c(1,1)){
+generateNewEvent <- function(eventSet=obs_dpoe, NE=285, NH=19914,
+                             maxit=10000, low=1, betapar=c(1,1)){
   # generates a new widespread event based on a given event library
   #
-  # eventSet  object like present1_return_levels.csv, needs the right col names
+  # eventSet  grid of daily PoE, one location per row, one event per col.
   # NE        number of events in the set
   # NH        number of gridpoints involved (~20000 in standard set)
   
   U <- sample.int(NE, 1)
-  
-  #print(paste(U,NE))
-  
-  eventSubset <-  eventSet %>% filter(eventNo == U)
-  
-  #print(paste("gpp",eventSubset$gpp))
-  rankNew <- rank(eventSubset$gpp, ties.method="random")
-  
-  eventMags <- tailsGen(NH, low=low, pool=pool, maxit=maxit, betapar=betapar)
-  
- #print(paste("eventMags",length(eventMags)))
-  
+  eventSubset <-  eventSet[,U]
+  rankNew <- rank(eventSubset, ties.method="random")
+  eventMags <- tailsGen(NH, low=low, maxit=maxit, betapar=betapar)
   # add the magnitudes according to rank
   magsNew <- sort(eventMags)[rankNew]
-  
-  
-  #print(paste("magsNew",length(magsNew)))
-  
-    #print(paste("rankNew",rankNew))
-  
   df <- eventSubset[,c("loc", "Northing", "Easting")]
-  #print(paste("eventSubset",dim(eventSubset), collapse=" "))
-  #print(paste("df", dim(df)))
   df$rank <- rankNew
-  df$gpp <- magsNew
+  df$dpoe <- magsNew
   df$low <- rep(low, nrow(df))
-  
   df
+}
+
+returnLevelsEC <- function(eventSimTable, ncin, paramtable,
+                           NH=19914, pthr=(2/360)){
+  # Gets empirical quantiles for simulated PoE, and GPA fitted values of flow
+  # for simulated PoE below threshold (e.g 2/360 for POT2).
+  #
+  # eventSimTable     matrix of DPoE, one event per column, one location per row.
+  # ncin              netCDF object showing daily flow
+  # paramtable        GPA parameters table for POTs
+  # NH                number of locations
+  # pthr              probability for threshold exceedence, default = POT2
   
-  
+  eventFlow <- eventSimTable
+  for(i in 1:NH){
+    
+    if((i < 10) | (i %% 200 == 0)){ # time recording
+      print(i)
+      I <- difftime(Sys.time(), ST, units="secs")
+      I0 <- difftime(Sys.time(), ST0, units="secs")
+      print(paste("Percent remaining", 100*round((NH-i)/NH ,2)))
+      print(paste("Time remaining", round((NH-i)/i * I0,2)))
+      print(paste("Since last readout:", round(I,2)))
+      ST <- Sys.time()
+      print(ST) 
+    }
+    
+    nor <- rn$row[i]
+    eas <- rn$col[i]
+    tSlice <- ncvar_get(ncin, varid="dmflow",
+                        start=c(nor, eas,  1),
+                        count=c(1, 1, -1))
+    rare <- (eventSimTable[i,] < pthr)
+    quant <- quantile(tSlice, probs=1-eventSimTable[i,])
+    # fit exceedences using obs if under threshold
+    
+    # use GPA if over threshold (note divide by pthr to get P[X | X>thr])
+    quant[rare] <- qevd(eventSimTable[i,rare]/pthr,
+                        thr=paramtable$threshold[i],
+                        scale=paramtable$scale[i],
+                        shape=paramtable$shape[i], type="GP")
+    eventFlow[i,] <- quant
+  }
+  eventFlow
 }
 
 
+
+### FITTING TAILS ###------------------------------------------------------
+
 print("Determining tail distribution")
+FF <- fitdist(flatten(obs_dpoe), "beta", method="mle") #get tails from events
 
-FF <- fitdist(present$gpp, "beta", method="mle")
-T3 <- tailsGen(1, pool=present$gpp, maxit=1000, betapar=FF$estimate)
 
+
+### SIMULATION OF NEW EVENTS ###--------------------------------------------
 # Number of new events to simulate
-M <- 500
+M <- 1000
 
 print("Simulating new events")
 
-newEventMat <- matrix(NA, nrow=NH, ncol=M)
+newEventDpe <- matrix(NA, nrow=NH, ncol=M)
 for(m in 1:M){
-  #if(m %% 50 == 0){print(m)}
-  newEventMat[,m] <- generateNewEvent(eventSet=present, NE=NE, NH=nrow(rn),
-                                      maxit=100, pool=present$gpp,
-                                      low=1, betapar=FF$estimate)$gpp
+  if(m %% 50 == 0){print(m)}
+  newEventDpe[,m] <- generateNewEvent(eventSet=obs_dpoe, NE=NE, NH=NH,
+                                    maxit=100, low=1, betapar=FF$estimate)$dpoe
 }
 
-readr::write_csv(data.frame(newEventMat),
-                 paste0(data_wd, subfold, "NewEventEC_",
-                            thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+
+### CONVERSION TO FLOW AND APoE ###------------------------------------------
+# Conversion to flow
+newEventFlow <- returnLevelsEC(newEventMat, ncin=ncin, paramtable=paramtable)
+
+# Conversion to APoE
+newEventApe <- 1 - exp(-newEventDpe/360)
+
 print(Sys.time())
 
+#### SAVE OUTPUTS ####--------------------------------------------------------
 
-# Convert rp to flow and vice versa.
+readr::write_csv(data.frame(newEventFlow),
+                 paste0(data_wd, subfold, "eventflow_EC_",
+                        thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
-rarityDF$Easting <- rn[rarityDF[, jV], 1]
-rarityDF$Northing <- rn[rarityDF[, jV], 2]
-rarityDF$thresh <- NA
-rarityDF$DayS <- eventDayList[[jV]][[jI]][rarityDF[, 1]]
-rarityDF$val <- NA
-rarityDF$gpp <- NA
-rarityDF$ecdf <- NA
-rarityDF$gev <- NA
+readr::write_csv(data.frame(newEventDpe),
+                 paste0(data_wd, subfold, "eventdpe_EC_",
+                        thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
-ST0 <- proc.time()
-ST <- proc.time()
-print("loop start")
-for(n in 1:NH){
-  if(n %% 200 == 0){
-    print(paste(n, "out of", NH))
-  }
-  
-  
-  i <- rn[n,1]
-  j <- rn[n,2]
-  # Pull out spaceslice
-  tSlice <- ncvar_get(ncin, varid="dmflow",
-                      start=c(i, j,  1),
-                      count=c(1, 1, -1))
-  
-  tSliceEvent <- unname(unlist(eventDF[n, -(1:2)]))
-  
-  threshval <- threshMat[n, jV] # POT2 column
-  
-  
-  
-  rarityDF$thresh[which(rarityDF$loc == n)] <- threshval
-  rarityDF$val[which(rarityDF$loc == n)] <- tSliceEvent
-  
-  # get ecdf and estimate PoE
-  
-  ecdfSlice <- ecdf(tSlice)
-  poeEvent <- 1 - ecdfSlice(tSliceEvent)
-  
-  
-  # Weibull or Gringorten plotting position
-  
-  grSlice <- gringorten(tSlice)
-  grEvent <- sapply(tSliceEvent,
-                    function(x){grSlice[which(tSlice == x)[1]]})
-  
-  rarityDF$gpp[which(rarityDF$loc == n)] <- grEvent
-  rarityDF$ecdf[which(rarityDF$loc == n)] <- poeEvent
-  
-  # GEV fitted to whole spaceslice
-  FFGEV <- fevd(x=tSlice,
-                type='GEV')$results$par
-  QFGEV <- 1- pevd(q=tSliceEvent,
-                   loc=FFGEV[1],
-                   scale=FFGEV[2],
-                   shape=FFGEV[3],
-                   type='GEV')
-  
-  rarityDF$gev[which(rarityDF$loc==n)] <- QFGEV
-  
-  if(n %% 200 == 0){
-    print(floor(proc.time() - ST0)[1:3])
-    print(floor(proc.time() -  ST)[1:3])
-  }
-  ST <- proc.time()
-}
-colnames(HTevents)[-(1:4)] <- paste0("E",seq_len(ncol(HTevents)-4))
+readr::write_csv(data.frame(newEventDpe),
+                 paste0(data_wd, subfold, "eventape_EC_",
+                        thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))

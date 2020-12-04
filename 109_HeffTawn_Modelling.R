@@ -4,6 +4,11 @@
 # Using Heffernan and Tawn model for spatial coherence to generate new events.
 #
 # For aquaCAT, Project 07441.
+#
+# OUTPUTS: NewEventHT_***.csv,
+#          coefficients.rds, 
+#          zscores.rds, 
+#          depStruct.rds
 # 
 # Created ABG 2020-06-17
 # Pipeline version 2020-09-07
@@ -71,13 +76,21 @@ load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
 #library(data.table)
 #edf <- fread(paste0(wd,"/Data/eventdf_POT2_pc2.csv"), colClasses=rep("numeric",287))
 
-eventDF <- readr::read_csv(paste0(data_wd,subfold, "eventdf_region_",REG,"_",thresh1,"_", ws1,
+eventFlow <- readr::read_csv(paste0(data_wd,subfold, "eventflow_OBS_region_",
+                                REG,"_",thresh1,"_", ws1,
                                   "_RCM", RCM, suffix, ".csv"))
   
-  
-# PoE under different computations with extra data. Tidy format.
-poeTable <- readr::read_csv(paste0(data_wd, subfold, "regionalEvents_",REG,"_RCM", 
-                                  RCM, suffix,".csv"))
+eventDpe <- readr::read_csv(paste0(data_wd,subfold, "eventddpe_OBS_region_",
+                                   REG,"_",thresh1,"_", ws1,
+                                     "_RCM", RCM, suffix, ".csv"))
+eventApe <- readr::read_csv(paste0(data_wd,subfold, "eventape_OBS_region_",
+                                   REG,"_",thresh1,"_", ws1,
+                       "_RCM", RCM, suffix, ".csv"))
+
+# 
+# # PoE under different computations with extra data. Tidy format.
+# poeTable <- readr::read_csv(paste0(data_wd, subfold, "regionalEvents_",REG,"_RCM", 
+#                                   RCM, suffix,".csv"))
  
 REG <- REG
 r1 <- which(rn_regions$REGION == REG)
@@ -87,21 +100,25 @@ thresh0 <- unlist(threshMat[r1,jV], use.names=FALSE)
 print("SETUP DONE.")
 print(Sys.time() - ST)
 ST <- Sys.time()
+# 
+# poeTable_melt <- dcast(poeTable, eventNo~loc, value.var="val")
+# rownames(poeTable_melt) <- paste0("E",poeTable$eventNo)
+# colnames(poeTable_melt) <- paste0("L", 0:NREG)
+
 ##### HEFFTAWN CODING #####------------------------------------------------
 
-
-poeTable_melt <- dcast(poeTable, eventNo~loc, value.var="val")
-rownames(poeTable_melt) <- paste0("E",poeTable$eventNo)
-colnames(poeTable_melt) <- paste0("L", 0:NREG)
-
 ### KEY ARGUMENTS ---------------------------------
-DATA <- poeTable_melt[,-1]
+DATA <- eventFlow
 mqu <- 0.7
 dqu <- 0.7
 nSample <- 101
 mult <- 10
 
 
+
+
+
+### STEP 1 ### MARGINALS ###--------------------------------------------------
 
 marginals <- migpd_slim(mqu=mqu, penalty="none")
 # str(step1_test1, max.level=1)
@@ -110,41 +127,43 @@ mqu_in <- marginals$mqu
 
 # Marginal models using Generalised Pareto distribution.
 MODELS <- marginals$models
-saveRDS(MODELS, file=paste0(data_wd, subfold, "marginal_models.rds"))
 
 rm(marginals)
 print("Step 1 completed: Marginal models.")
 
-
-
-
-
+### STEP 2 ### TRANSFORM TO LAPLACE ###----------------------------------------
 
 marginfns_temp <- list("laplace",
-                     p2q = function(p) ifelse(p <  0.5, log(2 * p), -log(2 * (1 - p))),
-                     q2p = function(q) ifelse(q <  0, exp(q)/2, 1 - 0.5 * exp(-q)))
+                  p2q = function(p) ifelse(p <  0.5, log(2 * p), -log(2 * (1 - p))),
+                  q2p = function(q) ifelse(q <  0, exp(q)/2, 1 - 0.5 * exp(-q)))
 
 #Transform DATA into Laplace distribution
 TRANSFORMED <- mexTransform_slim(marginfns=marginfns_temp, mth=mth_in,
                                   method="mixture", r=NULL)$TRANSFORMED
-saveRDS(TRANSFORMED, file=paste0(data_wd, subfold, "transformedData.rds"))
+
 print("Step 2 completed: Data transform.")
 print(Sys.time() - ST)
 ST <- Sys.time()
 
-
-
-
-
+### STEP 3 ### DEPT STRUCT ### ---------------------
 
 COEFFS <- array(NA, dim=c(6,NREG-1,NREG))  # parameters for dep struct
 Z <- array(NA, dim=c(24,NREG-1,NREG))  # Z-scores for dependence structure.
 DEPENDENCE <- vector("list", NREG)
 # Compute parametric dependence structure
 for(k in 1:NREG){
-  if (k%%50==0){
-    print(paste0("Dependence at", round(100*k/NREG,2), "%"))
-  } 
+  
+    if((k < 10) | (k %% 100 == 0)){ # time recording
+      print(n)
+      I <- difftime(Sys.time(), ST, units="secs")
+      I0 <- difftime(Sys.time(), ST0, units="secs")
+      print(paste("Percent remaining", 100*round((NH-k)/NH ,2)))
+      print(paste("Time remaining", round((NH-k)/k * I0,2)))
+      print(paste("Since last readout:", round(I,2)))
+      ST <- Sys.time()
+      print(ST) 
+    }
+  
   o <- try(mexDependence_slim(dqu=dqu, mth=mth_in, which=k,
                               marginsTransformed=TRANSFORMED))
   
@@ -160,14 +179,12 @@ for(k in 1:NREG){
   }
 }
 
-saveRDS(DEPENDENCE, file=paste0(data_wd, subfold, "depStruct.rds"))
-saveRDS(COEFFS, file=paste0(data_wd, subfold, "coefficients.rds"))
-saveRDS(Z, file=paste0(data_wd, subfold, "zScores.rds"))
 
 print("Step 3 Complete: Dependence Structure computation.")
 print(Sys.time() - ST)
 ST <- Sys.time()
 
+### STEP 4 ### SIMULATION ###-----------------------------------------
 
 MCEVENTS <- mexMonteCarlo_slim(mexList=DEPENDENCE,
                                   marginfns=marginfns_temp,
@@ -177,15 +194,27 @@ MCEVENTS <- mexMonteCarlo_slim(mexList=DEPENDENCE,
 
 str(MCEVENTS, max.level=1)
 
-MCS <- MCEVENTS$MCsample
-colnames(MCS) <- paste0("L", 1:NREG)
+MCS <- t(MCEVENTS$MCsample)
 
-readr::write_csv(MCEVENTS$MCsample,
-                 paste0(data_wd, subfold, "NewEventHT_",REG,"_",
+# MCS <- cbind(rn[r1, ], t(MCS))
+
+
+### SAVE OUTPUTS ###----------------------------------------
+saveRDS(MODELS, file=paste0(data_wd, subfold, "marginal_models.rds"))
+
+saveRDS(TRANSFORMED, file=paste0(data_wd, subfold, "transformedData.rds"))
+
+saveRDS(DEPENDENCE, file=paste0(data_wd, subfold, "depStruct", REG, "_",
+                                thresh1,"_", ws1, "_RCM", RCM, suffix, ".rds"))
+saveRDS(COEFFS, file=paste0(data_wd, subfold, "coefficients_", REG, "_",
+                            thresh1,"_", ws1, "_RCM", RCM, suffix, ".rds"))
+saveRDS(Z, file=paste0(data_wd, subfold, "zScores", REG, "_",
+                       thresh1,"_", ws1, "_RCM", RCM, suffix, ".rds"))
+
+readr::write_csv(t(MCEVENTS$MCsample),
+                 paste0(data_wd, subfold, "eventflow_HT_",REG,"_",
                         thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"), 
                  append=T)
 print("Step 4 Complete: New events simulated.")
 print(Sys.time() - ST)
 ST <- Sys.time()
-
-
