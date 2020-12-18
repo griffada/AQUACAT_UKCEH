@@ -42,9 +42,8 @@ threshDayExcList <- readRDS(paste0(data_wd, subfold, "threshDayExcList_RCM",
                                     RCM, suffix,".rds"))
 
 # matrix of threshold value (col) at a given cell (row)
-threshMat <- read.csv(paste0(data_wd, subfold,"threshMat_RCM", 
-                             RCM, suffix,".rds"),
-                      stringsAsFactors=FALSE)
+threshMat <- readRDS(paste0(data_wd, subfold,"threshMat_RCM", 
+                             RCM, suffix,".rds"))
 #dim(threshMat) #19914 x 5
 
 #eventLList (length of event L, NT lists (by threshold) of NW lists 
@@ -140,6 +139,8 @@ returnLevelsEC <- function(eventSimTable, ncin, paramtable,
   # NH                number of locations
   # pthr              probability for threshold exceedence, default = POT2
   
+  ST0 <- Sys.time()
+  ST <- Sys.time()
   eventFlow <- eventSimTable
   for(i in 1:NH){
     
@@ -198,6 +199,7 @@ for(m in 1:M){
 
 ### CONVERSION TO FLOW AND APoE ###------------------------------------------
 # Conversion to flow
+ncin <- nc_open(ncoriginal)
 newEventFlow <- returnLevelsEC(newEventMat, ncin=ncin, paramtable=paramtable)
 
 # Conversion to APoE

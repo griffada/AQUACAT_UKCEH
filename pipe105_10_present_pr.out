@@ -5,9 +5,7 @@ cols(
   scale = col_double(),
   shape = col_double()
 )
-Error: $ operator is invalid for atomic vectors
-Execution halted
-ETCDF4):
+g2g/outputs/dmflow_RCM10_198012_201011_out.nc (NC_FORMAT_NETCDF4):
 
      1 variables (excluding dimension variables):
         float dmflow[Easting,Northing,Time]   (Chunking: [13,19,4])  (Compression: shuffle,level 5)
@@ -31,4 +29,22 @@ ETCDF4):
             axis: T
             units: days since 1961-1-1 0:0:0
             calendar: 360_day
-Time difference of 0.5908601 secs
+Time difference of 0.1714573 secs
+[1] 25
+[1] 50
+[1] 75
+[1] 100
+[1] 125
+[1] 150
+[1] 175
+[1] 200
+[1] 225
+[1] 250
+[1] 275
+[1] 300
+[1] 325
+[1] 350
+[1] 375
+[1] 400
+[1] 425
+[1] 450

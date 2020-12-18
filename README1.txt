@@ -13,7 +13,7 @@ Files:
 103_Regional_Splitting: Script to split GB into hydrological regions based on sets of NRFA Hydrological Areas.
 # OUTPUTS: hasData_Regions.csv
 
-03_Event_Extract.R/.Rmd: Different sizes of widespread events and amounts of gric-cell threshold limits. 
+03_Event_Extract.R/.Rmd: Different sizes of widespread events and amounts of grid-cell threshold limits. 
 
 104_Event_Extract.R: Using threshiold matrices from 102, event extraction from daily flow, no test for independence.
 # OUTPUTS: eventLists***.Rda = eventLList, eventDayList

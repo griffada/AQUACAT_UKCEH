@@ -23,19 +23,19 @@ if(substr(osVersion,1,3) == "Win"){
 
 regions <- c("ANG", "ESC", "NE", "NSC", "NW", "SE", "SEV", "SSC", "SW", "THA", "TRE", "WAL")
 
-if(length(args)==3){
-  RCM <- sprintf("%02d", as.numeric(args[1]))
-  period <- args[2]
-  if(period=="present"){
-    suffix <- "_198012_201011"
-  }else if (period=="future"){
-    suffix <- "_205012_201011"
-  }
-  REG <- args[3]s
-  if(!any(REG == regions)){
-    stop("incorrect call: Rscript 108_eventSplitting.R gcm period region - Region must be one of: ANG, ESC, NE, NW, NSC, SE, SEV, SSC, SW, THA, TRE, WAL.")
-  }
-}
+# if(length(args)==3){
+#   RCM <- sprintf("%02d", as.numeric(args[1]))
+#   period <- args[2]
+#   if(period=="present"){
+#     suffix <- "_198012_201011"
+#   }else if (period=="future"){
+#     suffix <- "_205012_201011"
+#   }
+#   REG <- args[3]
+#   if(!any(REG == regions)){
+#     stop("incorrect call: Rscript 108_eventSplitting.R gcm period region - Region must be one of: ANG, ESC, NE, NW, NSC, SE, SEV, SSC, SW, THA, TRE, WAL.")
+#   }
+# }
 
 thresh1 <- "POT2" # Important constants to select.
 ws1 <- "pc05"
@@ -98,36 +98,38 @@ obs_ape <- readr::read_csv(paste0(data_wd, subfold, "eventape_OBS_", thresh1,
 
 ### EVENT SPLITTING ###---------------------------------------------------
 
-
-r1 <- which(rn_regions$REGION == REG) # length = 1437
-obs_events_region <- obs_events[r1, ]
-obs_dpe_region <- obs_dpe[r1, ]
-obs_ape_region <- obs_ape[r1, ]
-#present_region <- present %>% subset(loc %in% r1) 
-thresh_region <- threshMat[r1,]
-
-KEEP <- apply(obs_dpe_flow, 2, function(x){any(x > thresh_region)})
-
-obs_dpe_region <- obs_dpe_region[,KEEP]
-obs_events_region <- obs_events_region[,KEEP]
-obs_ape_region <- obs_ape_region[,KEEP]
-
-# p_a_events <- unique(present_above$eventNo) #79 events
-#   print(length(p_a_events))
-# present_above2 <- present_region %>% subset(eventNo %in% p_a_events)
-# 
-# event_region <- event_region[, (p_a_events+2)]
-
-### SAVE OUTPUTS ###------------------------------------------------
-
-write_csv(obs_events_region, path=paste0(data_wd, subfold, "eventflow_OBS_region_",
+for(REG in REGIONS){
+  
+  r1 <- which(rn_regions$REGION == REG) # length = 1437
+  obs_events_region <- obs_events[r1, ]
+  obs_dpe_region <- obs_dpe[r1, ]
+  obs_ape_region <- obs_ape[r1, ]
+  #present_region <- present %>% subset(loc %in% r1) 
+  thresh_region <- threshMat[r1,]
+  
+  KEEP <- apply(obs_dpe_flow, 2, function(x){any(x > thresh_region)})
+  
+  obs_dpe_region <- obs_dpe_region[,KEEP]
+  obs_events_region <- obs_events_region[,KEEP]
+  obs_ape_region <- obs_ape_region[,KEEP]
+  
+  # p_a_events <- unique(present_above$eventNo) #79 events
+  #   print(length(p_a_events))
+  # present_above2 <- present_region %>% subset(eventNo %in% p_a_events)
+  # 
+  # event_region <- event_region[, (p_a_events+2)]
+  
+  ### SAVE OUTPUTS ###------------------------------------------------
+  
+  write_csv(obs_events_region, path=paste0(data_wd, subfold, "eventflow_OBS_region_",
+                                        REG,"_RCM", 
+                                        RCM, suffix,".csv"))
+  
+  write_csv(obs_dpe_region, path=paste0(data_wd, subfold, "eventdpe_OBS_region_",
+                                        REG,"_RCM", 
+                                        RCM, suffix,".csv"))
+  
+  write_csv(obs_ape_region, path=paste0(data_wd, subfold, "eventape_OBS_region_",
                                       REG,"_RCM", 
                                       RCM, suffix,".csv"))
-
-write_csv(obs_dpe_region, path=paste0(data_wd, subfold, "eventdpe_OBS_region_",
-                                      REG,"_RCM", 
-                                      RCM, suffix,".csv"))
-
-write_csv(obs_ape_region, path=paste0(data_wd, subfold, "eventape_OBS_region_",
-                                    REG,"_RCM", 
-                                    RCM, suffix,".csv"))
+}

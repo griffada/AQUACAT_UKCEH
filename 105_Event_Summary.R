@@ -41,7 +41,7 @@ if(file.exists(paste0(data_wd,subfold,
 ##### DATA #####------------------------------------------------------------
 
 print(ST <- Sys.time())
-	ncin <- nc_open(ncname) # This file is ~36GB on the linux server.
+	ncin <- nc_open(ncoriginal) # This file is ~36GB on the linux server.
 	print(ncin)
 print(Sys.time() - ST)
 

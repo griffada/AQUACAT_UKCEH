@@ -59,8 +59,7 @@ thresMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
                            RCM, suffix, ".rds"))
 
 print(ST <- Sys.time())
-ncin <- nc_open(ncname)
-print(ncin)
+ncin <- nc_open(ncoriginal)
 print(Sys.time() - ST)
 
 partable <- readr::read_csv(paste0(data_wd,subfold, 
@@ -69,8 +68,7 @@ partable <- readr::read_csv(paste0(data_wd,subfold,
                        .default = col_double()
                      ))
 
-
-eventflow_HT <- readr::read_csv(paste0(data_wd,subfold, "eventflow_HT_",thresh1,"_", ws1,
+eventflow_HT <- readr::read_csv(paste0(data_wd,subfold, "eventflow_HT_",REG,"_",thresh1,"_", ws1,
                                   "_RCM", RCM, suffix, ".csv"),
                            col_types=cols(
                              .default = col_double()
@@ -154,9 +152,9 @@ for(h in 1:nrow(eventflow_HT)){
 #   c("row", "col","east","nor", paste0("E", 1:(ncol(eventDF) - 4)))
 
 readr::write_csv(as.data.frame(eventDpeFrame), path=paste0(data_wd,subfold,
-                  "eventdpe_HT_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+                  "eventdpe_HT_",REG,"_", thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 readr::write_csv(as.data.frame(eventApeFrame), path=paste0(data_wd,subfold,
-                  "eventape_HT_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+                  "eventape_HT_",REG, "_", thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
 # write_csv(data.frame(rarityDF), 
 #           paste0(data_wd,subfold, "HTraritydf_",REG,"_",

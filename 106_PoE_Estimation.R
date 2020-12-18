@@ -61,8 +61,7 @@ print(ST <- Sys.time())
 suffix_pres <- "_198012_201011"
 subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
 
-ncin <- nc_open(paste0(data_wd, subfold_pres, "dmflow_copy_RCM",
-                       RCM, suffix_pres, ".nc")) # This file is ~2.5GB on the linux server.
+ncin <- nc_open(ncoriginal) # This file is ~2.5GB on the linux server.
 print(ncin)
 print(floor(Sys.time() - ST))
 
@@ -104,8 +103,8 @@ colnames(partable)[1] <- "meanint"
 eventDpeFrame <- matrix(NA, ncol=ncol(obs_events), nrow=NH)
 eventApeFrame <- matrix(NA, ncol=ncol(obs_events), nrow=NH)
 
-ST0 <- proc.time()
-ST <- proc.time()
+ST0 <- Sys.time()
+ST <- Sys.time()
 print("loop start")
 for(h in 1:NH){
   
@@ -120,7 +119,7 @@ for(h in 1:NH){
     print(ST) 
   }
   
-  thr <- thresMat[h,jT]
+  thr <- threshMat[h,jT]
   meanInt <- partable$meanint[h]
   scaleH <- partable$scale[h]
   shapeH <- partable$shape[h]
@@ -138,7 +137,7 @@ for(h in 1:NH){
   gpa_poe <- (1 - pevd(as.numeric(obs_events[h,]),
                        threshold=thr, scale=scaleH, shape=shapeH, type='GP'))
   
-  at_site_dpe[wh_ext] <- (2/360)*gpa_poe
+  #at_site_dpe[wh_ext] <- (2/360)*gpa_poe
   
   valsape <- ifelse(wh_ext,
                     1 - exp(-gpa_poe/meanInt), #gpa scaled to year

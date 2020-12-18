@@ -51,7 +51,7 @@ threshDayExcList <- vector("list", length(threshVal))
 names(threshDayExcList) <- threshName
 
 ST <-  Sys.time()
-ncin <- nc_open(ncname, readunlim=FALSE)
+ncin <- nc_open(ncoriginal, readunlim=FALSE)
   # this is a huge file, do not open without reason.
 print(Sys.time() - ST)
 print(ncin)
@@ -163,16 +163,16 @@ if(period=="future"){  #### FUTURE ####-------------------------------------
   threshMat <- readRDS(paste0(data_wd, subfold_pres,
                           "threshMat_RCM", RCM, suffix_pres,".rds"))
   # Just load in threshGridList to save to the Future folder
-  threshGridList <- readRDS(file=paste0(data_wd, subfold_pres,
-                                "threshGridList_RCM", RCM, suffix_pres,".rds"))
+  # threshGridList <- readRDS(file=paste0(data_wd, subfold_pres,
+  #                               "threshGridList_RCM", RCM, suffix_pres,".rds"))
   
-  for(n in 1:NH){
+  for(n in 1:3){
     
     if((n < 10) | (n %% 200 == 0)){ # time recording
       print(n)
-      I <- Sys.time() - ST
-      I0 <- Sys.time() - ST0
-      print(paste("Percent remaining", round((NH-n)/NH ,2)))
+      I <- difftime(Sys.time(), ST, units="secs")
+      I0 <- difftime(Sys.time(), ST0, units="secs")
+      print(paste("Percent remaining", 100*round((NH-n)/NH ,2)))
       print(paste("Time remaining", round((NH-n)/n * I0,2)))
       print(paste("Since last readout:", round(I,2)))
       ST <- Sys.time()

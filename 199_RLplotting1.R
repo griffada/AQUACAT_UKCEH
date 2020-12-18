@@ -91,18 +91,7 @@ returnLevelMapPlotter <- function(RL_df, rn_matrix, rn, eventNumber,
 if(FALSE){
   present <- readr::read_csv(paste0(data_wd,
                                     "TestData/present_returnlevels_POT2_pc05.csv"),
-                             col_types = cols(
-                               eventNo = col_double(),
-                               loc = col_double(),
-                               Easting = col_double(),
-                               Northing = col_double(),
-                               thresh = col_double(),
-                               DayS = col_double(),
-                               val = col_double(),
-                               gpp = col_double(),
-                               ecdf = col_double(),
-                               gev = col_double()
-                             ))
+                             col_types = cols( .default = col_double()))
   
   netcdf <- nc_open(paste0(wd_id,"dmflow_timechunks.nc"))
   fl <- ncvar_get(netcdf, "dmflow", start=c(1,1,1), count=c(-1, -1, 1))

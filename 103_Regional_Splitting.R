@@ -63,6 +63,46 @@ for(i in w){  # find hydrometric area field
   })
   
 }
+HA$REGION <- 0
+for(i in 1:length(HA$HA_NUM)){
+  if(is.na(HA$HA_NUM[i])){ 
+    next 
+  }else if(HA$HA_NUM[i] >= 21 & HA$HA_NUM[i] < 28){
+    HA$REGION[i] <- 1
+  }else if(HA$HA_NUM[i] == 28){
+    HA$REGION[i] <- 2
+  }else if(HA$HA_NUM[i] > 28 & HA$HA_NUM[i] < 38){
+    HA$REGION[i] <- 3
+  }else if(HA$HA_NUM[i] > 39 & (HA$HA_NUM[i] < 43 | HA$HA_NUM[i] == 101)){
+    HA$REGION[i] <- 4
+  }else if(HA$HA_NUM[i] > 42 & HA$HA_NUM[i] < 54){
+    HA$REGION[i] <- 5
+  }else if(HA$HA_NUM[i] == 54){
+    HA$REGION[i] <- 6
+  }else if(HA$HA_NUM[i] > 54 & (HA$HA_NUM[i] < 68 | HA$HA_NUM[i] == 102)){
+    HA$REGION[i] <- 7
+  }else if(HA$HA_NUM[i] > 67 & (HA$HA_NUM[i] < 78 | HA$HA_NUM[i] == 103)){
+    HA$REGION[i] <- 8
+  }else if(HA$HA_NUM[i] > 37 & HA$HA_NUM[i] < 40){
+    HA$REGION[i] <- 9
+  }else if(HA$HA_NUM[i] %in% c(1:9, 90:97, 105:108)){
+    HA$REGION[i] <- 10
+  }else if(HA$HA_NUM[i] %in% 10:20){
+    HA$REGION[i] <- 11
+  }else if(HA$HA_NUM[i] %in% c(78:85, 89)){
+    HA$REGION[i] <- 12
+  }else{
+    HA$REGION[i] <- NA
+  }
+}
+# 
+# vvv<- viridis(12)[sample.int(12,12)]
+# 
+# png("./regionmap.png", width=80, height=100, units="mm", res=300, pointsize=10)
+# par(mar=c(1,0,1,1), mgp=c(2,1,0))
+# plot(HA, col=vvv[HA$REGION], border=ifelse(is.na(HA$REGION),NA,1))
+# #image.plot(z=HA$REGION, zlim=c(1,12), levels=12, col=vvv, legend.only=T)
+# dev.off()
 
 for(i in 1:length(pts$HA_NUM)){
   if(is.na(pts$HA_NUM[i])){ 

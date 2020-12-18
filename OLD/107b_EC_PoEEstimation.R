@@ -41,7 +41,7 @@ thresMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
 
 print(ST <- Sys.time())
 ncin <- nc_open(ncname)
-print(ncin)
+print(ncoriginal)
 print(Sys.time() - ST)
 
 partable <- read_csv(paste0(data_wd,subfold, 
