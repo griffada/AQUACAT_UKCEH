@@ -64,7 +64,8 @@ load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
 
 
 paramtable <- readr::read_csv(paste0(data_wd,subfold, 
-                                     "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"))
+                                     "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"),
+                              col_types = cols(.default = col_double()))
 
 
 ##### GET EVENT #####----------------------------------------------------
@@ -109,7 +110,7 @@ for(i in seq_len(length(eventz))){
 
 # eventDataFrame <- cbind(rn, eventDataFrame)
 
-readr::write_csv(as.data.frame(eventDataFrame), path=paste0(data_wd,subfold,
+readr::write_csv(round(as.data.frame(eventDataFrame),4), path=paste0(data_wd,subfold,
                   "eventflow_OBS_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
 nc_close(ncin)

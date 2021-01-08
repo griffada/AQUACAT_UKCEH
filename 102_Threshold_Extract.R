@@ -80,7 +80,7 @@ NH <- nrow(rn)
 ## Initialise dfs and lists ##-------------------------
 
 threshGrid <- ncvar_get(ncin, "dmflow",
-                        start=c(1, 1, tStart),
+                        start=c(1, 1, 1),
                         count=c(-1, -1, 1))
 
 threshMat <- matrix(NA, ncol=NT, nrow=NH)
@@ -114,8 +114,8 @@ if(period=="present"){ ### PRESENT ###----------------------------------
       print(ST) 
     }
     
-    i <- rn[n,1]
-    j <- rn[n,2]
+    i <- rn$row[n]
+    j <- rn$col[n]
     tSlice <- as.vector(ncvar_get(ncin, varid="dmflow",
                          start=c(i, j,  1),
                          count=c(1, 1, -1)))
@@ -180,8 +180,8 @@ if(period=="future"){  #### FUTURE ####-------------------------------------
     }
     
     
-    i <- rn[n,1]
-    j <- rn[n,2]
+    i <- rn$row[n]
+    j <- rn$col[n]
     tSlice <- as.vector(ncvar_get(ncin, varid="dmflow",
                         start=c(i,j,1), count=c(1,1,-1)))
     

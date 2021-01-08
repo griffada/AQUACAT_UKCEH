@@ -1,6 +1,10 @@
-Loading required package: Lmom[1] "Running for threshold POT2 at  pc05 minimum spread."
-[1] "Determining tail distribution"
-jects are masked from ‘package:stats’:
+nohup: ignoring input
+Loading required package: Lmoments
+Loading required package: distillery
+
+Attaching package: ‘extRemes’
+
+The following objects are masked from ‘package:stats’:
 
     qqnorm, qqplot
 
@@ -32,6 +36,4 @@ The following objects are masked from ‘package:raster’:
     area, select
 
 Loading required package: survival
-Error in flatten(obs_dpoe) : could not find function "flatten"
-Calls: fitdist
-Execution halted
+There were 50 or more warnings (use warnings() to see the first 50)

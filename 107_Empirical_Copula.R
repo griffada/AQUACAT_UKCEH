@@ -31,7 +31,7 @@ library(fitdistrplus)
 
 thresh1 <- "POT2" #!#!#!#!# Important constants to select.
 ws1 <- "pc05"
-print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
+print(paste("Running for threshold", thresh1, "at", ws1, "minimum spread."))
 
 jT <- which(threshName==thresh1)
 jW <- which(wsName == ws1)
@@ -56,23 +56,23 @@ NE <- length(eventDayList[[jT]][[jW]]) # POT2, 0.5% inun.
 NH <- nrow(rn)
 
 # timewise maxima at each cell for each event ((NE + 2) x NH)
-obs_events  <- readr::read_csv(paste0(data_wd,subfold, "eventflow_OBS_",thresh1,"_", ws1,
-                                      "_RCM", RCM, suffix, ".csv"),
+obs_events  <- readr::read_csv(paste0(data_wd,subfold, "eventflow_OBS_",thresh1,
+                                      "_", ws1, "_RCM", RCM, suffix, ".csv"),
                                col_types=cols(.default = col_double()))
 
-obs_dpoe  <- readr::read_csv(paste0(data_wd,subfold, "eventdpe_OBS_",thresh1,"_", ws1,
-                                    "_RCM", RCM, suffix, ".csv"),
+obs_dpoe  <- readr::read_csv(paste0(data_wd,subfold, "eventdpe_OBS_",thresh1,
+                                    "_", ws1, "_RCM", RCM, suffix, ".csv"),
                              col_types=cols(.default = col_double()))
 
-obs_apoe  <- readr::read_csv(paste0(data_wd,subfold, "eventape_OBS_",thresh1,"_", ws1,
-                                    "_RCM", RCM, suffix, ".csv"),
+obs_apoe  <- readr::read_csv(paste0(data_wd,subfold, "eventape_OBS_",thresh1,
+                                    "_", ws1, "_RCM", RCM, suffix, ".csv"),
                              col_types=cols(.default = col_double()))
 
-# # PoE under different computations with extra data. Tidy format.
-# present <- readr::read_csv(paste0(data_wd, subfold, "returnlevels_",
-#                                   thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+partable <- readr::read_csv(paste0(data_wd,subfold, 
+                                   "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"),
+                            col_types=cols(.default= col_double()))
 
-
+colnames(partable)[1] <- "meanint"
 
 
 
@@ -121,7 +121,7 @@ generateNewEvent <- function(eventSet=obs_dpoe, NE=285, NH=19914,
   eventMags <- tailsGen(NH, low=low, maxit=maxit, betapar=betapar)
   # add the magnitudes according to rank
   magsNew <- sort(eventMags)[rankNew]
-  df <- eventSubset[,c("loc", "Northing", "Easting")]
+  df <- eventSubset#[,c("loc", "Northing", "Easting")]
   df$rank <- rankNew
   df$dpoe <- magsNew
   df$low <- rep(low, nrow(df))
@@ -176,10 +176,22 @@ returnLevelsEC <- function(eventSimTable, ncin, paramtable,
 
 
 
+
+
+
 ### FITTING TAILS ###------------------------------------------------------
 
 print("Determining tail distribution")
-FF <- fitdist(flatten(obs_dpoe), "beta", method="mle") #get tails from events
+u <- unlist(obs_dpoe)
+u[u < 1e-10] <- 1e-10
+m_x <- mean(u, na.rm = TRUE)
+s_x <- sd(u, na.rm = TRUE)
+
+alpha <- m_x*((m_x*(1 - m_x)/s_x^2) - 1)
+beta <- (1 - m_x)*((m_x*(1 - m_x)/s_x^2) - 1)
+FF <- fitdist(u, "beta", method="mle",
+              start=list(shape1=alpha, shape2=beta)) #get tails from events
+rm(u)
 
 
 
@@ -200,7 +212,7 @@ for(m in 1:M){
 ### CONVERSION TO FLOW AND APoE ###------------------------------------------
 # Conversion to flow
 ncin <- nc_open(ncoriginal)
-newEventFlow <- returnLevelsEC(newEventMat, ncin=ncin, paramtable=paramtable)
+newEventFlow <- returnLevelsEC(newEventDpe, ncin=ncin, paramtable=partable)
 
 # Conversion to APoE
 newEventApe <- 1 - exp(-newEventDpe/360)
@@ -209,14 +221,14 @@ print(Sys.time())
 
 #### SAVE OUTPUTS ####--------------------------------------------------------
 
-readr::write_csv(data.frame(newEventFlow),
+readr::write_csv(round(data.frame(newEventFlow),4),
                  paste0(data_wd, subfold, "eventflow_EC_",
                         thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
-readr::write_csv(data.frame(newEventDpe),
+readr::write_csv(round(data.frame(newEventDpe),4),
                  paste0(data_wd, subfold, "eventdpe_EC_",
                         thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
-readr::write_csv(data.frame(newEventDpe),
+readr::write_csv(round(data.frame(newEventApe),4),
                  paste0(data_wd, subfold, "eventape_EC_",
                         thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))

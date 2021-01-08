@@ -1,5 +1,5 @@
-[1] "2020-12-17 09:51:44 GMT"
-geos version: 0.5-5, (SVN revision 640)
+Loading required package: sp
+rgeos version: 0.5-5, (SVN revision 640)
  GEOS runtime version: 3.4.2-CAPI-1.8.2 
  Linking to sp version: 1.4-1 
  Polygon checking: TRUE 

@@ -1,11 +1,15 @@
 
 Attaching package: ‘dplyr’
 
-The following objects are masked from ‘package:rasterOGR data source with driver: ESRI Shapefile 
-Source: "/prj/aquacat/Data/hydrometricAreas", layer: "hyd_areas"
-with 115 features
-It has 2 fields
-d from ‘package:base’:
+The following objects are masked from ‘package:raster’:
+
+    intersect, select, union
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
 
     intersect, setdiff, setequal, union
 
@@ -46,5 +50,6 @@ cols(
   .default = col_double()
 )
 See spec(...) for full column specifications.
-Error in REGIONS : object 'REGIONS' not found
+Error in apply(obs_dpe_flow, 2, function(x) { : 
+  object 'obs_dpe_flow' not found
 Execution halted

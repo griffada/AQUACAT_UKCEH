@@ -98,7 +98,7 @@ obs_ape <- readr::read_csv(paste0(data_wd, subfold, "eventape_OBS_", thresh1,
 
 ### EVENT SPLITTING ###---------------------------------------------------
 
-for(REG in REGIONS){
+for(REG in regions){
   
   r1 <- which(rn_regions$REGION == REG) # length = 1437
   obs_events_region <- obs_events[r1, ]

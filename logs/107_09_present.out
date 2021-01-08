@@ -1,0 +1,565 @@
+[1] "2021-01-06 21:01:40 GMT"
+[1] "Running for threshold POT2 at pc05 minimum spread."
+[1] "Determining tail distribution"
+[1] "Simulating new events"
+[1] 50
+[1] 100
+[1] 150
+[1] 200
+[1] 250
+[1] 300
+[1] 350
+[1] 400
+[1] 450
+[1] 500
+[1] 550
+[1] 600
+[1] 650
+[1] 700
+[1] 750
+[1] 800
+[1] 850
+[1] 900
+[1] 950
+[1] 1000
+[1] 1
+[1] "Percent remaining 100"
+[1] "Time remaining 6.96"
+[1] "Since last readout: 0"
+[1] "2021-01-06 21:09:13 GMT"
+[1] 2
+[1] "Percent remaining 100"
+[1] "Time remaining 3857.27"
+[1] "Since last readout: 0.39"
+[1] "2021-01-06 21:09:13 GMT"
+[1] 3
+[1] "Percent remaining 100"
+[1] "Time remaining 5783.62"
+[1] "Since last readout: 0.48"
+[1] "2021-01-06 21:09:14 GMT"
+[1] 4
+[1] "Percent remaining 100"
+[1] "Time remaining 5619.57"
+[1] "Since last readout: 0.26"
+[1] "2021-01-06 21:09:14 GMT"
+[1] 5
+[1] "Percent remaining 100"
+[1] "Time remaining 5508.03"
+[1] "Since last readout: 0.25"
+[1] "2021-01-06 21:09:14 GMT"
+[1] 6
+[1] "Percent remaining 100"
+[1] "Time remaining 5456.53"
+[1] "Since last readout: 0.26"
+[1] "2021-01-06 21:09:15 GMT"
+[1] 7
+[1] "Percent remaining 100"
+[1] "Time remaining 5416.09"
+[1] "Since last readout: 0.26"
+[1] "2021-01-06 21:09:15 GMT"
+[1] 8
+[1] "Percent remaining 100"
+[1] "Time remaining 5353.17"
+[1] "Since last readout: 0.25"
+[1] "2021-01-06 21:09:15 GMT"
+[1] 9
+[1] "Percent remaining 100"
+[1] "Time remaining 5298.91"
+[1] "Since last readout: 0.24"
+[1] "2021-01-06 21:09:15 GMT"
+[1] 200
+[1] "Percent remaining 99"
+[1] "Time remaining 3044.73"
+[1] "Since last readout: 28.49"
+[1] "2021-01-06 21:09:44 GMT"
+[1] 400
+[1] "Percent remaining 98"
+[1] "Time remaining 2882.65"
+[1] "Since last readout: 28.2"
+[1] "2021-01-06 21:10:12 GMT"
+[1] 600
+[1] "Percent remaining 97"
+[1] "Time remaining 2842.12"
+[1] "Since last readout: 29.2"
+[1] "2021-01-06 21:10:41 GMT"
+[1] 800
+[1] "Percent remaining 96"
+[1] "Time remaining 2826.71"
+[1] "Since last readout: 30.02"
+[1] "2021-01-06 21:11:11 GMT"
+[1] 1000
+[1] "Percent remaining 95"
+[1] "Time remaining 2803.06"
+[1] "Since last readout: 29.89"
+[1] "2021-01-06 21:11:41 GMT"
+[1] 1200
+[1] "Percent remaining 94"
+[1] "Time remaining 2753.52"
+[1] "Since last readout: 28.36"
+[1] "2021-01-06 21:12:10 GMT"
+[1] 1400
+[1] "Percent remaining 93"
+[1] "Time remaining 2698.98"
+[1] "Since last readout: 27.53"
+[1] "2021-01-06 21:12:37 GMT"
+[1] 1600
+[1] "Percent remaining 92"
+[1] "Time remaining 2674.43"
+[1] "Since last readout: 29.56"
+[1] "2021-01-06 21:13:07 GMT"
+[1] 1800
+[1] "Percent remaining 91"
+[1] "Time remaining 2641.94"
+[1] "Since last readout: 28.88"
+[1] "2021-01-06 21:13:36 GMT"
+[1] 2000
+[1] "Percent remaining 90"
+[1] "Time remaining 2606.34"
+[1] "Since last readout: 28.45"
+[1] "2021-01-06 21:14:04 GMT"
+[1] 2200
+[1] "Percent remaining 89"
+[1] "Time remaining 2565.35"
+[1] "Since last readout: 27.62"
+[1] "2021-01-06 21:14:32 GMT"
+[1] 2400
+[1] "Percent remaining 88"
+[1] "Time remaining 2532.14"
+[1] "Since last readout: 28.38"
+[1] "2021-01-06 21:15:00 GMT"
+[1] 2600
+[1] "Percent remaining 87"
+[1] "Time remaining 2505.4"
+[1] "Since last readout: 29.24"
+[1] "2021-01-06 21:15:29 GMT"
+[1] 2800
+[1] "Percent remaining 86"
+[1] "Time remaining 2479.71"
+[1] "Since last readout: 29.47"
+[1] "2021-01-06 21:15:59 GMT"
+[1] 3000
+[1] "Percent remaining 85"
+[1] "Time remaining 2463.7"
+[1] "Since last readout: 31.28"
+[1] "2021-01-06 21:16:30 GMT"
+[1] 3200
+[1] "Percent remaining 84"
+[1] "Time remaining 2432.47"
+[1] "Since last readout: 28.73"
+[1] "2021-01-06 21:16:59 GMT"
+[1] 3400
+[1] "Percent remaining 83"
+[1] "Time remaining 2403.37"
+[1] "Since last readout: 29.11"
+[1] "2021-01-06 21:17:28 GMT"
+[1] 3600
+[1] "Percent remaining 82"
+[1] "Time remaining 2370.92"
+[1] "Since last readout: 28.37"
+[1] "2021-01-06 21:17:56 GMT"
+[1] 3800
+[1] "Percent remaining 81"
+[1] "Time remaining 2343.67"
+[1] "Since last readout: 29.49"
+[1] "2021-01-06 21:18:26 GMT"
+[1] 4000
+[1] "Percent remaining 80"
+[1] "Time remaining 2318.33"
+[1] "Since last readout: 30.03"
+[1] "2021-01-06 21:18:56 GMT"
+[1] 4200
+[1] "Percent remaining 79"
+[1] "Time remaining 2292.35"
+[1] "Since last readout: 29.98"
+[1] "2021-01-06 21:19:26 GMT"
+[1] 4400
+[1] "Percent remaining 78"
+[1] "Time remaining 2278.28"
+[1] "Since last readout: 33.46"
+[1] "2021-01-06 21:19:59 GMT"
+[1] 4600
+[1] "Percent remaining 77"
+[1] "Time remaining 2246.71"
+[1] "Since last readout: 28.71"
+[1] "2021-01-06 21:20:28 GMT"
+[1] 4800
+[1] "Percent remaining 76"
+[1] "Time remaining 2221.81"
+[1] "Since last readout: 30.75"
+[1] "2021-01-06 21:20:59 GMT"
+[1] 5000
+[1] "Percent remaining 75"
+[1] "Time remaining 2198.8"
+[1] "Since last readout: 31.54"
+[1] "2021-01-06 21:21:30 GMT"
+[1] 5200
+[1] "Percent remaining 74"
+[1] "Time remaining 2169.62"
+[1] "Since last readout: 29.59"
+[1] "2021-01-06 21:22:00 GMT"
+[1] 5400
+[1] "Percent remaining 73"
+[1] "Time remaining 2141.05"
+[1] "Since last readout: 29.83"
+[1] "2021-01-06 21:22:30 GMT"
+[1] 5600
+[1] "Percent remaining 72"
+[1] "Time remaining 2110.48"
+[1] "Since last readout: 29.09"
+[1] "2021-01-06 21:22:59 GMT"
+[1] 5800
+[1] "Percent remaining 71"
+[1] "Time remaining 2080.78"
+[1] "Since last readout: 29.4"
+[1] "2021-01-06 21:23:28 GMT"
+[1] 6000
+[1] "Percent remaining 70"
+[1] "Time remaining 2054.94"
+[1] "Since last readout: 31.06"
+[1] "2021-01-06 21:23:59 GMT"
+[1] 6200
+[1] "Percent remaining 69"
+[1] "Time remaining 2024.74"
+[1] "Since last readout: 29.24"
+[1] "2021-01-06 21:24:28 GMT"
+[1] 6400
+[1] "Percent remaining 68"
+[1] "Time remaining 1996.05"
+[1] "Since last readout: 29.92"
+[1] "2021-01-06 21:24:58 GMT"
+[1] 6600
+[1] "Percent remaining 67"
+[1] "Time remaining 1967.21"
+[1] "Since last readout: 29.89"
+[1] "2021-01-06 21:25:28 GMT"
+[1] 6800
+[1] "Percent remaining 66"
+[1] "Time remaining 1936.75"
+[1] "Since last readout: 29.08"
+[1] "2021-01-06 21:25:57 GMT"
+[1] 7000
+[1] "Percent remaining 65"
+[1] "Time remaining 1908.43"
+[1] "Since last readout: 30.2"
+[1] "2021-01-06 21:26:28 GMT"
+[1] 7200
+[1] "Percent remaining 64"
+[1] "Time remaining 1878.17"
+[1] "Since last readout: 29.16"
+[1] "2021-01-06 21:26:57 GMT"
+[1] 7400
+[1] "Percent remaining 63"
+[1] "Time remaining 1853.72"
+[1] "Since last readout: 32.56"
+[1] "2021-01-06 21:27:29 GMT"
+[1] 7600
+[1] "Percent remaining 62"
+[1] "Time remaining 1824.78"
+[1] "Since last readout: 30.05"
+[1] "2021-01-06 21:27:59 GMT"
+[1] 7800
+[1] "Percent remaining 61"
+[1] "Time remaining 1795.47"
+[1] "Since last readout: 29.85"
+[1] "2021-01-06 21:28:29 GMT"
+[1] 8000
+[1] "Percent remaining 60"
+[1] "Time remaining 1765.58"
+[1] "Since last readout: 29.47"
+[1] "2021-01-06 21:28:59 GMT"
+[1] 8200
+[1] "Percent remaining 59"
+[1] "Time remaining 1736.6"
+[1] "Since last readout: 30.1"
+[1] "2021-01-06 21:29:29 GMT"
+[1] 8400
+[1] "Percent remaining 58"
+[1] "Time remaining 1707.57"
+[1] "Since last readout: 30.1"
+[1] "2021-01-06 21:29:59 GMT"
+[1] 8600
+[1] "Percent remaining 57"
+[1] "Time remaining 1678.82"
+[1] "Since last readout: 30.36"
+[1] "2021-01-06 21:30:29 GMT"
+[1] 8800
+[1] "Percent remaining 56"
+[1] "Time remaining 1650.18"
+[1] "Since last readout: 30.5"
+[1] "2021-01-06 21:31:00 GMT"
+[1] 9000
+[1] "Percent remaining 55"
+[1] "Time remaining 1621.49"
+[1] "Since last readout: 30.52"
+[1] "2021-01-06 21:31:30 GMT"
+[1] 9200
+[1] "Percent remaining 54"
+[1] "Time remaining 1591.67"
+[1] "Since last readout: 29.62"
+[1] "2021-01-06 21:32:00 GMT"
+[1] 9400
+[1] "Percent remaining 53"
+[1] "Time remaining 1562.47"
+[1] "Since last readout: 30.17"
+[1] "2021-01-06 21:32:30 GMT"
+[1] 9600
+[1] "Percent remaining 52"
+[1] "Time remaining 1533.42"
+[1] "Since last readout: 30.34"
+[1] "2021-01-06 21:33:00 GMT"
+[1] 9800
+[1] "Percent remaining 51"
+[1] "Time remaining 1503.54"
+[1] "Since last readout: 29.6"
+[1] "2021-01-06 21:33:30 GMT"
+[1] 10000
+[1] "Percent remaining 50"
+[1] "Time remaining 1474.72"
+[1] "Since last readout: 30.65"
+[1] "2021-01-06 21:34:01 GMT"
+[1] 10200
+[1] "Percent remaining 49"
+[1] "Time remaining 1448.64"
+[1] "Since last readout: 33.61"
+[1] "2021-01-06 21:34:34 GMT"
+[1] 10400
+[1] "Percent remaining 48"
+[1] "Time remaining 1419.12"
+[1] "Since last readout: 30.16"
+[1] "2021-01-06 21:35:04 GMT"
+[1] 10600
+[1] "Percent remaining 47"
+[1] "Time remaining 1389.58"
+[1] "Since last readout: 30.16"
+[1] "2021-01-06 21:35:35 GMT"
+[1] 10800
+[1] "Percent remaining 46"
+[1] "Time remaining 1360.14"
+[1] "Since last readout: 30.31"
+[1] "2021-01-06 21:36:05 GMT"
+[1] 11000
+[1] "Percent remaining 45"
+[1] "Time remaining 1330.56"
+[1] "Since last readout: 30.18"
+[1] "2021-01-06 21:36:35 GMT"
+[1] 11200
+[1] "Percent remaining 44"
+[1] "Time remaining 1300.26"
+[1] "Since last readout: 29.28"
+[1] "2021-01-06 21:37:04 GMT"
+[1] 11400
+[1] "Percent remaining 43"
+[1] "Time remaining 1269.83"
+[1] "Since last readout: 29.05"
+[1] "2021-01-06 21:37:33 GMT"
+[1] 11600
+[1] "Percent remaining 42"
+[1] "Time remaining 1239.63"
+[1] "Since last readout: 29.31"
+[1] "2021-01-06 21:38:03 GMT"
+[1] 11800
+[1] "Percent remaining 41"
+[1] "Time remaining 1210.36"
+[1] "Since last readout: 30.63"
+[1] "2021-01-06 21:38:33 GMT"
+[1] 12000
+[1] "Percent remaining 40"
+[1] "Time remaining 1180.66"
+[1] "Since last readout: 30.03"
+[1] "2021-01-06 21:39:03 GMT"
+[1] 12200
+[1] "Percent remaining 39"
+[1] "Time remaining 1151.1"
+[1] "Since last readout: 30.28"
+[1] "2021-01-06 21:39:34 GMT"
+[1] 12400
+[1] "Percent remaining 38"
+[1] "Time remaining 1121.06"
+[1] "Since last readout: 29.51"
+[1] "2021-01-06 21:40:03 GMT"
+[1] 12600
+[1] "Percent remaining 37"
+[1] "Time remaining 1091.02"
+[1] "Since last readout: 29.49"
+[1] "2021-01-06 21:40:33 GMT"
+[1] 12800
+[1] "Percent remaining 36"
+[1] "Time remaining 1061.22"
+[1] "Since last readout: 29.9"
+[1] "2021-01-06 21:41:03 GMT"
+[1] 13000
+[1] "Percent remaining 35"
+[1] "Time remaining 1032.07"
+[1] "Since last readout: 31.13"
+[1] "2021-01-06 21:41:34 GMT"
+[1] 13200
+[1] "Percent remaining 34"
+[1] "Time remaining 1001.88"
+[1] "Since last readout: 29.2"
+[1] "2021-01-06 21:42:03 GMT"
+[1] 13400
+[1] "Percent remaining 33"
+[1] "Time remaining 972.45"
+[1] "Since last readout: 30.7"
+[1] "2021-01-06 21:42:34 GMT"
+[1] 13600
+[1] "Percent remaining 32"
+[1] "Time remaining 943.13"
+[1] "Since last readout: 31.01"
+[1] "2021-01-06 21:43:05 GMT"
+[1] 13800
+[1] "Percent remaining 31"
+[1] "Time remaining 913.83"
+[1] "Since last readout: 31.18"
+[1] "2021-01-06 21:43:36 GMT"
+[1] 14000
+[1] "Percent remaining 30"
+[1] "Time remaining 883.6"
+[1] "Since last readout: 29.08"
+[1] "2021-01-06 21:44:05 GMT"
+[1] 14200
+[1] "Percent remaining 29"
+[1] "Time remaining 855.22"
+[1] "Since last readout: 33.62"
+[1] "2021-01-06 21:44:38 GMT"
+[1] 14400
+[1] "Percent remaining 28"
+[1] "Time remaining 825.23"
+[1] "Since last readout: 29.79"
+[1] "2021-01-06 21:45:08 GMT"
+[1] 14600
+[1] "Percent remaining 27"
+[1] "Time remaining 796.48"
+[1] "Since last readout: 33.17"
+[1] "2021-01-06 21:45:41 GMT"
+[1] 14800
+[1] "Percent remaining 26"
+[1] "Time remaining 766.2"
+[1] "Since last readout: 29.12"
+[1] "2021-01-06 21:46:10 GMT"
+[1] 15000
+[1] "Percent remaining 25"
+[1] "Time remaining 736.06"
+[1] "Since last readout: 29.42"
+[1] "2021-01-06 21:46:40 GMT"
+[1] 15200
+[1] "Percent remaining 24"
+[1] "Time remaining 705.79"
+[1] "Since last readout: 28.94"
+[1] "2021-01-06 21:47:09 GMT"
+[1] 15400
+[1] "Percent remaining 23"
+[1] "Time remaining 675.71"
+[1] "Since last readout: 29.48"
+[1] "2021-01-06 21:47:38 GMT"
+[1] 15600
+[1] "Percent remaining 22"
+[1] "Time remaining 645.66"
+[1] "Since last readout: 29.54"
+[1] "2021-01-06 21:48:08 GMT"
+[1] 15800
+[1] "Percent remaining 21"
+[1] "Time remaining 616.02"
+[1] "Since last readout: 31.06"
+[1] "2021-01-06 21:48:39 GMT"
+[1] 16000
+[1] "Percent remaining 20"
+[1] "Time remaining 586.17"
+[1] "Since last readout: 30.37"
+[1] "2021-01-06 21:49:09 GMT"
+[1] 16200
+[1] "Percent remaining 19"
+[1] "Time remaining 556.2"
+[1] "Since last readout: 29.88"
+[1] "2021-01-06 21:49:39 GMT"
+[1] 16400
+[1] "Percent remaining 18"
+[1] "Time remaining 526.3"
+[1] "Since last readout: 30.17"
+[1] "2021-01-06 21:50:09 GMT"
+[1] 16600
+[1] "Percent remaining 17"
+[1] "Time remaining 496.34"
+[1] "Since last readout: 29.91"
+[1] "2021-01-06 21:50:39 GMT"
+[1] 16800
+[1] "Percent remaining 16"
+[1] "Time remaining 466.76"
+[1] "Since last readout: 32.02"
+[1] "2021-01-06 21:51:11 GMT"
+[1] 17000
+[1] "Percent remaining 15"
+[1] "Time remaining 436.87"
+[1] "Since last readout: 30.49"
+[1] "2021-01-06 21:51:42 GMT"
+[1] 17200
+[1] "Percent remaining 14"
+[1] "Time remaining 407.12"
+[1] "Since last readout: 31.44"
+[1] "2021-01-06 21:52:13 GMT"
+[1] 17400
+[1] "Percent remaining 13"
+[1] "Time remaining 377.28"
+[1] "Since last readout: 31.14"
+[1] "2021-01-06 21:52:44 GMT"
+[1] 17600
+[1] "Percent remaining 12"
+[1] "Time remaining 347.11"
+[1] "Since last readout: 28.81"
+[1] "2021-01-06 21:53:13 GMT"
+[1] 17800
+[1] "Percent remaining 11"
+[1] "Time remaining 317.05"
+[1] "Since last readout: 29.52"
+[1] "2021-01-06 21:53:43 GMT"
+[1] 18000
+[1] "Percent remaining 10"
+[1] "Time remaining 287"
+[1] "Since last readout: 29.42"
+[1] "2021-01-06 21:54:12 GMT"
+[1] 18200
+[1] "Percent remaining 9"
+[1] "Time remaining 257.01"
+[1] "Since last readout: 30.03"
+[1] "2021-01-06 21:54:42 GMT"
+[1] 18400
+[1] "Percent remaining 8"
+[1] "Time remaining 226.99"
+[1] "Since last readout: 29.67"
+[1] "2021-01-06 21:55:12 GMT"
+[1] 18600
+[1] "Percent remaining 7"
+[1] "Time remaining 197.13"
+[1] "Since last readout: 31.71"
+[1] "2021-01-06 21:55:44 GMT"
+[1] 18800
+[1] "Percent remaining 6"
+[1] "Time remaining 167.07"
+[1] "Since last readout: 29.03"
+[1] "2021-01-06 21:56:13 GMT"
+[1] 19000
+[1] "Percent remaining 5"
+[1] "Time remaining 137.05"
+[1] "Since last readout: 29.49"
+[1] "2021-01-06 21:56:42 GMT"
+[1] 19200
+[1] "Percent remaining 4"
+[1] "Time remaining 107.13"
+[1] "Since last readout: 31.78"
+[1] "2021-01-06 21:57:14 GMT"
+[1] 19400
+[1] "Percent remaining 3"
+[1] "Time remaining 77.12"
+[1] "Since last readout: 29.93"
+[1] "2021-01-06 21:57:44 GMT"
+[1] 19600
+[1] "Percent remaining 2"
+[1] "Time remaining 47.08"
+[1] "Since last readout: 28.28"
+[1] "2021-01-06 21:58:12 GMT"
+[1] 19800
+[1] "Percent remaining 1"
+[1] "Time remaining 17.09"
+[1] "Since last readout: 28.63"
+[1] "2021-01-06 21:58:41 GMT"
+[1] "2021-01-06 21:59:00 GMT"

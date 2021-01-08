@@ -1,11 +1,7 @@
-Parsed with column specification:
-cols(
-  meanint = col_double(),
-  threshold = col_double(),
-  scale = col_double(),
-  shape = col_double()
-)
-g2g/outputs/dmflow_RCM10_198012_201011_out.nc (NC_FORMAT_NETCDF4):
+[1] "2021-01-06 19:38:34 GMT"
+[1] "Running for threshold POT2 at  pc05 minimum spread."
+[1] "2021-01-06 19:38:44 GMT"
+File /prj/aquacat/run_hmfg2g/outputs/dmflow_RCM09_198012_201011_out.nc (NC_FORMAT_NETCDF4):
 
      1 variables (excluding dimension variables):
         float dmflow[Easting,Northing,Time]   (Chunking: [13,19,4])  (Compression: shuffle,level 5)
@@ -29,7 +25,7 @@ g2g/outputs/dmflow_RCM10_198012_201011_out.nc (NC_FORMAT_NETCDF4):
             axis: T
             units: days since 1961-1-1 0:0:0
             calendar: 360_day
-Time difference of 0.1714573 secs
+Time difference of 0.566308 secs
 [1] 25
 [1] 50
 [1] 75
@@ -47,4 +43,3 @@ Time difference of 0.1714573 secs
 [1] 375
 [1] 400
 [1] 425
-[1] 450
