@@ -45,7 +45,7 @@ if(length(args)==3){
   }
   REG <- args[3]
   if(!any(REG == regions)){
-    stop(paste("incorrect call: Rscript 109b_HT_PoEEstimation.R gcm period region \n",
+    stop(paste("incorrect call: Rscript 110_HT_PoEEstimation.R gcm period region \n",
                "- Region must be one of: ANG, ESC, NE, NSC, NW, SE, SEV, SSC, SW, THA, TRE, WAL."))
   }
 }
@@ -68,17 +68,19 @@ partable <- readr::read_csv(paste0(data_wd,subfold,
                        .default = col_double()
                      ))
 
-eventflow_HT <- readr::read_csv(paste0(data_wd,subfold, "eventflow_HT_",REG,"_",thresh1,"_", ws1,
-                                  "_RCM", RCM, suffix, ".csv"),
-                           col_types=cols(
-                             .default = col_double()
-                           ))
+eventflow_HT <- readr::read_csv(paste0(data_wd,subfold, "/", REG, "/eventflow_HT_",
+                                REG,"_",thresh1,"_", ws1,"_RCM", RCM, suffix, ".csv"),
+                           col_types=cols(.default = col_double()))[,-(1:4)]
 
 NE <- ncol(eventflow_HT) - 4
 
 rn_regions$locnum <- 1:nrow(rn_regions)
 
 rn_reg <- data.frame(rn_regions) %>% dplyr::filter(REGION == REG)
+
+r1 <- which(rn_regions$REGION == REG)
+
+partable <- partable[r1,]
 
 ### Prealloc ###--------------------------------------------------------------
 eventflow_HT <- as.matrix(eventflow_HT)
@@ -132,30 +134,15 @@ for(h in 1:nrow(eventflow_HT)){
   eventDpeFrame[h,]  <- valsdpe
   eventApeFrame[h,]  <- valsape
   
-  # rps <- as.numeric(pevd(eventflow_HT[h,-(1:4)],
-  #                        scale=partable$scale[h],
-  #                        shape=partable$shape[h],
-  #                        threshold = partable$threshold[h], type='GP'))
-  # 
-  # rps[rps < 1e-10] <- NA
-  # rarityDF[h,-1] <- 1 - rps
-  
 }
 
-# eventDpeFrame  <- cbind(rn, eventDpeFrame)
-# eventApeFrame  <- cbind(rn, eventApeFrame)
+eventDpeFrame  <- cbind(rn, eventDpeFrame)
+eventApeFrame  <- cbind(rn, eventApeFrame)
 
 ##### OUTPUTS #####-----------------------------------------------------------
 
-# rarityDF <- data.frame(rarityDF)
-# colnames(rarityDF) <- 
-#   c("row", "col","east","nor", paste0("E", 1:(ncol(eventDF) - 4)))
+readr::write_csv(as.data.frame(eventDpeFrame), path=paste0(data_wd,subfold, "/", REG,
+                  "/eventdpe_HT_",REG,"_", thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+readr::write_csv(as.data.frame(eventApeFrame), path=paste0(data_wd,subfold, "/", REG,
+                  "/eventape_HT_",REG, "_", thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
-readr::write_csv(as.data.frame(eventDpeFrame), path=paste0(data_wd,subfold,
-                  "eventdpe_HT_",REG,"_", thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
-readr::write_csv(as.data.frame(eventApeFrame), path=paste0(data_wd,subfold,
-                  "eventape_HT_",REG, "_", thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
-
-# write_csv(data.frame(rarityDF), 
-#           paste0(data_wd,subfold, "HTraritydf_",REG,"_",
-#                  thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))

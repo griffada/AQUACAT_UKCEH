@@ -9,7 +9,6 @@
 # Pipeline version ABG 2020-09-07
 #
 # OUTPUTS: NewEventPresentEC_***.csv: data table of events, one event per row.
-#   
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -31,7 +30,12 @@ library(fitdistrplus)
 
 thresh1 <- "POT2" #!#!#!#!# Important constants to select.
 ws1 <- "pc05"
+
 print(paste("Running for threshold", thresh1, "at", ws1, "minimum spread."))
+
+suffix_pres <- "_198012_201011"
+subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
+ncpres <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix_pres, "_out.nc") 
 
 jT <- which(threshName==thresh1)
 jW <- which(wsName == ws1)
@@ -58,18 +62,22 @@ NH <- nrow(rn)
 # timewise maxima at each cell for each event ((NE + 2) x NH)
 obs_events  <- readr::read_csv(paste0(data_wd,subfold, "eventflow_OBS_",thresh1,
                                       "_", ws1, "_RCM", RCM, suffix, ".csv"),
-                               col_types=cols(.default = col_double()))
+                               col_types=cols(.default = col_double()))[,-(1:4)]
 
 obs_dpoe  <- readr::read_csv(paste0(data_wd,subfold, "eventdpe_OBS_",thresh1,
                                     "_", ws1, "_RCM", RCM, suffix, ".csv"),
-                             col_types=cols(.default = col_double()))
+                             col_types=cols(.default = col_double()))[,-(1:4)]
 
 obs_apoe  <- readr::read_csv(paste0(data_wd,subfold, "eventape_OBS_",thresh1,
                                     "_", ws1, "_RCM", RCM, suffix, ".csv"),
-                             col_types=cols(.default = col_double()))
+                             col_types=cols(.default = col_double()))[,-(1:4)]
 
 partable <- readr::read_csv(paste0(data_wd,subfold, 
-                                   "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"),
+                           "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"),
+                            col_types=cols(.default= col_double()))
+
+partable_pres <- readr::read_csv(paste0(data_wd,subfold_pres, 
+                        "paramtable_",thresh1, "_RCM", RCM, suffix_pres, ".csv"),
                             col_types=cols(.default= col_double()))
 
 colnames(partable)[1] <- "meanint"
@@ -125,6 +133,7 @@ generateNewEvent <- function(eventSet=obs_dpoe, NE=285, NH=19914,
   df$rank <- rankNew
   df$dpoe <- magsNew
   df$low <- rep(low, nrow(df))
+  df$U <- U
   df
 }
 
@@ -182,53 +191,98 @@ returnLevelsEC <- function(eventSimTable, ncin, paramtable,
 ### FITTING TAILS ###------------------------------------------------------
 
 print("Determining tail distribution")
-u <- unlist(obs_dpoe)
-u[u < 1e-10] <- 1e-10
+
+u <- unlist(obs_dpoe, use.names=FALSE)
+w <- which(u < 1e-15)
+u[w] <- 1e-15
+ww <- which((1-u) < 1e-15)
+u[ww] <- 1 - 1e-15
 m_x <- mean(u, na.rm = TRUE)
 s_x <- sd(u, na.rm = TRUE)
-
 alpha <- m_x*((m_x*(1 - m_x)/s_x^2) - 1)
 beta <- (1 - m_x)*((m_x*(1 - m_x)/s_x^2) - 1)
+
+
+
+FF <- c(alpha,beta)
+try({
 FF <- fitdist(u, "beta", method="mle",
-              start=list(shape1=alpha, shape2=beta)) #get tails from events
+              start=list(shape1=alpha, shape2=beta))$estimate
+#get tails from events
+})
 rm(u)
 
 
 
 ### SIMULATION OF NEW EVENTS ###--------------------------------------------
 # Number of new events to simulate
-M <- 1000
-
 print("Simulating new events")
 
+M <- 5000
+newEventDraw <- rep(NA, M)
 newEventDpe <- matrix(NA, nrow=NH, ncol=M)
 for(m in 1:M){
   if(m %% 50 == 0){print(m)}
-  newEventDpe[,m] <- generateNewEvent(eventSet=obs_dpoe, NE=NE, NH=NH,
-                                    maxit=100, low=1, betapar=FF$estimate)$dpoe
+  gne <-  generateNewEvent(eventSet=obs_dpoe, NE=NE, NH=NH,
+                                    maxit=100, low=1, betapar=FF)
+  newEventDpe[,m] <-gne$dpoe
+  newEventDraw[m] <- gne$U
 }
 
 
 ### CONVERSION TO FLOW AND APoE ###------------------------------------------
+print("Conversion to flow")
 # Conversion to flow
-ncin <- nc_open(ncoriginal)
-newEventFlow <- returnLevelsEC(newEventDpe, ncin=ncin, paramtable=partable)
+ncin <- nc_open(ncpres)
+newEventFlow <- returnLevelsEC(newEventDpe, ncin=ncin, paramtable=partable_pres)
 
 # Conversion to APoE
-newEventApe <- 1 - exp(-newEventDpe/360)
+newEventApe <- 1 - exp(-newEventDpe*360)
+
+fn1 <- function(h){
+  wh_ext <- (newEventDpe < (2/360))
+  gpa_poe <- (1 - pevd(newEventFlow[h,],
+                       threshold=threshMat[h,jT], scale=partable$scale[h],
+                       shape=partable$shape[h], type='GP'))
+
+  valsape <- ifelse(wh_ext,
+                    1 - exp(-gpa_poe/partable$meanInt[h]), #gpa scaled to year
+                    1 - exp(-newEventDpe[h,]*360)) #dpoe scaled to year
+  valsape
+}
+
+newEventApe <- sapply(1:NH, fn1)
 
 print(Sys.time())
 
 #### SAVE OUTPUTS ####--------------------------------------------------------
+print("Saving outputs")
 
-readr::write_csv(round(data.frame(newEventFlow),4),
+newEventFlow <- cbind(rn, round(as.data.frame(NewEventFlow),8))
+W <- paste0("E",1:(ncol(newEventFlow)-4))
+W1 <- sapply(1:length(W), function(i){paste0(W[i],".",sum(W[1:i]==W[i]))})
+colnames(newEventFlow)[-(1:4)] <- W1
+
+newEventApe <- cbind(rn, round(as.data.frame(NewEventApe),8))
+W <- paste0("E",1:(ncol(newEventFlow)-4))
+W1 <- sapply(1:length(W), function(i){paste0(W[i],".",sum(W[1:i]==W[i]))})
+colnames(newEventFlow)[-(1:4)] <- W1
+
+newEventDpe <- cbind(rn, round(as.data.frame(NewEventDpe),8))
+W <- paste0("E",1:(ncol(newEventFlow)-4))
+W1 <- sapply(1:length(W), function(i){paste0(W[i],".",sum(W[1:i]==W[i]))})
+colnames(newEventDpe)[-(1:4)] <- W1
+
+readr::write_csv(newEventFlow,
                  paste0(data_wd, subfold, "eventflow_EC_",
                         thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
-readr::write_csv(round(data.frame(newEventDpe),4),
+readr::write_csv(newEventDpe,
                  paste0(data_wd, subfold, "eventdpe_EC_",
                         thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
-readr::write_csv(round(data.frame(newEventApe),4),
+readr::write_csv(newEventApe,
                  paste0(data_wd, subfold, "eventape_EC_",
                         thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+
+print("107 done.")

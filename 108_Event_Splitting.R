@@ -82,13 +82,13 @@ NE <- length(eventDayList[[jV]][[jI]]) # POT2, 2% inun.
 
 # timewise maxima at each cell for each event ((NE + 2) x NH)
 obs_events <- readr::read_csv(paste0(data_wd, subfold, "eventflow_OBS_", thresh1,
-                                     "_", ws1, "_RCM", RCM, suffix, ".csv"))
+                                     "_", ws1, "_RCM", RCM, suffix, ".csv"))[,-(1:4)]
 
 obs_dpe <- readr::read_csv(paste0(data_wd, subfold, "eventdpe_OBS_", thresh1,
-                                       "_", ws1, "_RCM", RCM, suffix, ".csv"))
+                                       "_", ws1, "_RCM", RCM, suffix, ".csv"))[,-(1:4)]
   
 obs_ape <- readr::read_csv(paste0(data_wd, subfold, "eventape_OBS_", thresh1,
-                                       "_", ws1, "_RCM", RCM, suffix, ".csv"))
+                                       "_", ws1, "_RCM", RCM, suffix, ".csv"))[,-(1:4)]
 
 # # PoE under different computations with extra data. Tidy format.
 # present <- readr::read_csv(paste0(data_wd, subfold, "returnlevels_",
@@ -100,18 +100,26 @@ obs_ape <- readr::read_csv(paste0(data_wd, subfold, "eventape_OBS_", thresh1,
 
 for(REG in regions){
   
+  print(paste("splitting", REG))
+  
   r1 <- which(rn_regions$REGION == REG) # length = 1437
   obs_events_region <- obs_events[r1, ]
   obs_dpe_region <- obs_dpe[r1, ]
   obs_ape_region <- obs_ape[r1, ]
   #present_region <- present %>% subset(loc %in% r1) 
-  thresh_region <- threshMat[r1,]
+  thresh_region <- threshMat[r1, ]
   
-  KEEP <- apply(obs_dpe_flow, 2, function(x){any(x > thresh_region)})
+  KEEP <- apply(obs_events_region, 2, function(x){any(x > thresh_region)})
   
   obs_dpe_region <- obs_dpe_region[,KEEP]
+  obs_dpe_region <- cbind(rn, obs_dpe_region)
+  
   obs_events_region <- obs_events_region[,KEEP]
+  obs_events_region <- cbind(rn, obs_events_region)
+  
+  
   obs_ape_region <- obs_ape_region[,KEEP]
+  obs_ape_region <- cbind(rn, obs_ape_region)
   
   # p_a_events <- unique(present_above$eventNo) #79 events
   #   print(length(p_a_events))
@@ -121,15 +129,22 @@ for(REG in regions){
   
   ### SAVE OUTPUTS ###------------------------------------------------
   
-  write_csv(obs_events_region, path=paste0(data_wd, subfold, "eventflow_OBS_region_",
+  print("saving outputs")
+  
+  if(!dir.exists(paste0(data_wd, subfold, "/", REG))){
+  dir.create(paste0(data_wd, subfold, "/", REG))
+  }
+  
+  write_csv(obs_events_region, path=paste0(data_wd, subfold, "/", REG, "/eventflow_OBS_region_",
                                         REG,"_RCM", 
                                         RCM, suffix,".csv"))
   
-  write_csv(obs_dpe_region, path=paste0(data_wd, subfold, "eventdpe_OBS_region_",
+  write_csv(obs_dpe_region, path=paste0(data_wd, subfold,  "/", REG, "/eventdpe_OBS_region_",
                                         REG,"_RCM", 
                                         RCM, suffix,".csv"))
   
-  write_csv(obs_ape_region, path=paste0(data_wd, subfold, "eventape_OBS_region_",
+  write_csv(obs_ape_region, path=paste0(data_wd, subfold,  "/", REG, "/eventape_OBS_region_",
                                       REG,"_RCM", 
                                       RCM, suffix,".csv"))
 }
+print("108 done.")

@@ -8,19 +8,78 @@
 # OUTPUTS: .png plots
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
-
-
 library(ncdf4)
 library(raster)
-library(dplyr)
 library(fields)
 library(readr)
+library(dplyr)
 
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
 }else{
   source("/prj/aquacat/CodeABG/setup_script_00.R")
 }
+
+gbgrid <- readRDS("S:/data/Misc/gbshape.RDS")
+
+genericMapPlotter <- function(rn, vals, threshold=NULL, 
+                              label="Value", gbgrid,
+                              filename=NULL){
+  # rn          data frame of river network: row, col, E, N. 
+  #               (should be loaded by setup_script_00.R)
+  # vals        vector of values to plot at corresponding points of rn.
+  # gbgrid      matrix of values for GB shape (-1 for land, NA for sea)
+  # threshold   vector of values for thresholds corresponding to points of rn.
+  #               if supplied, vals below threshold are greyed out.
+  # filename    if supplied, .png is saved to this filepath.
+  #
+  # label       label for legend describing value plotted.
+  
+  NH <- nrow(rn)
+  if(length(vals) != NH){
+    stop("Vals not correct length.")
+  }
+  if(is.null(threshold)){
+    threshold <- rep(-1e6, NH)
+  }else{
+    if(length(threshold) != NH){
+      stop("Threshold not correct length.")
+    }
+  }
+  vals[vals < threshold] <- -0.5
+  vals[is.na(vals)] <- -1
+  vmax <- max(vals, na.rm=T)
+  
+  M <- gbgrid
+  for(i in 1:NH){
+    M[rn$row[i], rn$col[i]]<-vals[i]
+  }
+  
+  Mfocal <- raster::focal(raster(M[,ncol(M):1]),
+                          w=matrix(1, 3, 3),
+                          fun=function(x){
+                            if(!all(is.na(x))){max(x, na.rm=T)}else{return(NA)}
+                          })
+  brks <- c(-1.01, -.51, seq(0, max(vals, na.rm=T), length.out=20))
+  
+  f <- function(){
+    par(mar=c(1,1,1,1), mgp=c(1,1,0))
+    image.plot(as.matrix(Mfocal),
+               x=0:700, y=0:1000, ylim=c(0,1000), zlim=c(-2,max(M)),
+               col=c("darkseagreen1", "darkseagreen2", topo.colors(19)),
+               breaks=brks, asp=1,
+               xlab="", ylab="", axes=F)
+  }
+  
+  f()
+  if(!is.null(filename)){
+    png(filename, res=300, width=100, height=100, units='mm', pointsize=10)
+    f()
+    dev.off()
+  }
+}
+
+
 
 returnLevelMapPlotter <- function(RL_df, rn_matrix, rn, eventNumber,
                                   poe_days=TRUE,
@@ -56,7 +115,7 @@ returnLevelMapPlotter <- function(RL_df, rn_matrix, rn, eventNumber,
     rn_matrix[as.matrix(Wdown[,c("Easting","Northing")])] <- 
         1 / (1 - (1-Wdown$gpp)^360)
   }
-  flowR <- raster(rn_matrix[,rev(seq_len(ncol(fl)))])
+  flowR <- raster(rn_matrix[,rev(seq_len(ncol(flowR)))])
   
   flowN <- focal(flowR, w=matrix(1, 3, 3),
                  fun=function(x){

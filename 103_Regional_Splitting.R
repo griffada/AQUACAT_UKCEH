@@ -23,11 +23,11 @@ if(substr(osVersion,1,3) == "Win"){
 }
 
 
-if(file.exists(paste0(data_wd, "hasData_Regions.csv"))){
-    stop("hasData_Regions already exists for 103. Proceeding to next job.")
-}else{
-   print("Proceeding to job.")
-}
+# if(file.exists(paste0(data_wd, "hasData_Regions.csv"))){
+#     stop("hasData_Regions already exists for 103. Proceeding to next job.")
+# }else{
+#    print("Proceeding to job.")
+# }
 
 if(period == "future"){
   stop("Regions computed for present, not required for future (103). Proceeding to next job.")
@@ -89,7 +89,7 @@ for(i in 1:length(HA$HA_NUM)){
     HA$REGION[i] <- 10
   }else if(HA$HA_NUM[i] %in% 10:20){
     HA$REGION[i] <- 11
-  }else if(HA$HA_NUM[i] %in% c(78:85, 89)){
+  }else if(HA$HA_NUM[i] %in% c(78:89, 104)){
     HA$REGION[i] <- 12
   }else{
     HA$REGION[i] <- NA
@@ -129,7 +129,7 @@ for(i in 1:length(pts$HA_NUM)){
     pts$REGION[i] <- "NSC"
   }else if(pts$HA_NUM[i] %in% 10:20){
     pts$REGION[i] <- "ESC"
-  }else if(pts$HA_NUM[i] %in% c(78:85, 89)){
+  }else if(pts$HA_NUM[i] %in% c(78:89, 104)){
     pts$REGION[i] <- "SSC"
   }else{
     pts$REGION[i] <- "UNK"

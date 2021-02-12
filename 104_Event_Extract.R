@@ -53,7 +53,7 @@ for(i in 1:5){
 
 # Number of sites exceeded for each day at each threshold
 inunMat <- matrix(0, nrow=NT, ncol=ND)
-inunDays <- matrix(0, nrow=NT, ncol=NH)
+#inunDays <- matrix(0, nrow=NT, ncol=NH)
 
 for(j in 1:NT){  # for each threshold value j
   #print(threshName[j])
@@ -63,17 +63,14 @@ for(j in 1:NT){  # for each threshold value j
     for(n in 1:length(tde_jk)){
       tde <- tde_jk[n] # which days was k exceeded past j
       inunMat[j,tde] <- inunMat[j,tde] + 1 # add 1 to all those locations.
-      
     }
-    
   }
 }
 
 rownames(inunMat) <- threshName
 
 EventSizeSumm <- apply(inunMat, 1, function(v){
-  quantile(v[v>0], probs=
-             c(0.99,0.9,0.8,0.5,0.4, 0.3,0.2,0.1,0.01))
+  quantile(v[v > 0], probs = c(0.99, 0.9, 0.8, 0.5, 0.4, 0.3, 0.2, 0.1, 0.01))
 })
 
 ### Extract data at timepoints for HT/EC ###-----------------------------
@@ -83,41 +80,45 @@ EventSizeSumm <- apply(inunMat, 1, function(v){
 widespreadArray <- array(FALSE, dim=c(NT, ND, NW))
 for(j in 1:NW){
   # Is there a widespread event on this day (at bound j)?
-  widespreadArray[,,j] <- inunMat >= NH*wsCutoff[j] 
+  widespreadArray[, , j] <- inunMat >= NH*wsCutoff[j] 
 }
 dimnames(widespreadArray) <- list(threshold = threshName,
-                                  days=1:ND,
+                                  days = 1:ND,
                                   inundation = c("pc5", "pc2", "pc1",
                                                  "pc05", "pc01"))
 
-widespreadCount <- apply(widespreadArray, c(1,3), sum)
+widespreadCount <- apply(widespreadArray, c(1, 3), sum)
 
 ##### event lengths and event starts #####-------------------------------
 
-eventLList <- vector("list",5)
+eventLList <- vector("list", 5)
 names(eventLList) <- threshName
 eventDayList <- vector("list", 5)
 names(eventDayList) <- threshName
 
 for(j in 1:5){
-  eventLList[[j]] <- vector("list",5)
+  print(j)
+  eventLList[[j]] <- vector("list", 5)
   names(eventLList[[j]]) <- wsName
   eventDayList[[j]] <- vector("list", 5)
   names(eventDayList[[j]]) <- wsName
   for(k in 1:5){
+    print(k)
     eventGo <- 0
     eventL <- c()
     eventD <- c()
+    eventSt <- 1
     for(i in 1:ND){
       if (widespreadArray[j, i, k]) {
         eventGo <- eventGo + 1
       }else{
         if (eventGo > 0){
-          eventD <- c(eventD, i)
+          eventD <- c(eventD, eventSt)
           eventL <- c(eventL, eventGo)
           #print(eventGo)
         }  
         eventGo <- 0
+        eventSt <- i+1
       }
     }
     eventLList[[j]][[k]] <- eventL

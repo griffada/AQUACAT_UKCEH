@@ -49,9 +49,9 @@ migpd_slim <- function(mth, mqu, penalty = "gaussian", maxit = 10000,
   if (!missing(mqu)) 
     mqu <- rep(mqu, length = d)
   if (missing(mqu)) 
-    mqu <- sapply(1:d, function(i, mth) 1 - mean(DATA[, i] > mth[i]), mth = mth)
+    mqu <- sapply(1:d, function(i, mth) 1 - mean(DATA[,i] > mth[i]), mth = mth)
   if (missing(mth)) 
-    mth <- sapply(1:d, function(i, prob) quantile(DATA[,  i], prob = prob[i]), prob = mqu)
+    mth <- sapply(1:d, function(i, prob) quantile(DATA[,i], prob = prob[i]), prob = mqu)
   if (penalty %in% c("quadratic", "gaussian") & 
       is.null(priorParameters)) {
     gp = list(c(0, 0), matrix(c(100^2, 0, 0, 0.25), nrow = 2))
@@ -75,15 +75,17 @@ migpd_slim <- function(mth, mqu, penalty = "gaussian", maxit = 10000,
       cat("Fitting model", i, "\n")
     if (!is.null(priorParameters)) 
       priorParameters <- 
-        priorParameters[[(1:length(priorParameters))[names(priorParameters) == dimnames(DATA)[[2]][i]]]]
-    x <- c(DATA[, i])
+        priorParameters[[(1:length(priorParameters))[
+                          names(priorParameters) == dimnames(DATA)[[2]][i]]]]
+    x <- c(DATA[,i])
     mth <- mth[i]
     evm(x, th = mth, penalty = penalty, priorParameters = priorParameters, 
         maxit = maxit, trace = trace, cov = cov, family = family)
   }
   #####
   modlist <- lapply(1:d, wrapgpd_slim, penalty = penalty, 
-                    mth = mth, verbose = verbose, priorParameters = priorParameters, 
+                    mth = mth, verbose = verbose,
+                    priorParameters = priorParameters, 
                     maxit = maxit, trace = trace)
   if (length(dimnames(DATA)[[2]]) == dim(DATA)[[2]]) {
     names(modlist) <- dimnames(DATA)[[2]]
@@ -123,8 +125,8 @@ mexTransform_slim <- function(marginfns, mth, r=NULL, method = "mixture",
   
   #####
   transFun <- function(i, th, divisor, method){
-    x <- DATA[, i]
-    r <- DATA[, i]
+    x <- DATA[,i]
+    r <- DATA[,i]
     mod <- MODELS[[i]]
     th <- th[i]
     
@@ -157,10 +159,10 @@ mexTransform_slim <- function(marginfns, mth, r=NULL, method = "mixture",
   #####
   res <- sapply(1:ncol(DATA), transFun, th = r$mth,
                 divisor = divisor, method=method)
-  dimnames(res) <- list(NULL, names(MODELS))
+  colnames(res) <- names(MODELS)
   
-  x <- list(transformed=marginfns$p2q(res))
-  invisible(x)
+  x <- list(TRANSFORMED=marginfns$p2q(res))
+  x
 }
 
 PosGumb.Laplace.negloglik <- function (yex, ydep, a, b, m, s, constrain, v, aLow){
@@ -204,7 +206,7 @@ PosGumb.Laplace.negProfileLogLik <- function (yex, ydep, a, b, constrain, v, aLo
   res
 }
 
-mexDependence_slim <- function (which, dqu, mth, mqu=0.7, margins = "laplace",
+mexDependence_slim <- function (whch, dqu, mth, mqu=0.7, margins = "laplace",
                                 constrain = TRUE, v = 10, maxit = 1e+06,
                                 start = c(0.01, 0.01), marTransform = "mixture", 
                                 referenceMargin = NULL, marginsTransformed = NULL,
@@ -222,11 +224,11 @@ mexDependence_slim <- function (which, dqu, mth, mqu=0.7, margins = "laplace",
   errcode <- 0
   marginfns <- list(casefold(margins),
       p2q = switch(casefold(margins),
-                   gumbel = function(p) -log(-log(p)),
-                   laplace = function(p) ifelse(p <  0.5, log(2 * p), -log(2 * (1 - p)))),
+                gumbel = function(p) -log(-log(p)),
+                laplace = function(p) ifelse(p < 0.5, log(2*p), -log(2 * (1-p)))),
       q2p = switch(casefold(margins),
-                   gumbel = function(q) exp(-exp(-q)),
-                   laplace = function(q) ifelse(q <  0, exp(q)/2, 1 - 0.5 * exp(-q))))
+                gumbel = function(q) exp(-exp(-q)),
+                laplace = function(q) ifelse(q <  0, exp(q)/2, 1 - 0.5 * exp(-q))))
   
   if(!is.null(marginsTransformed)){
     x <- list(transformed = marginsTransformed)
@@ -239,22 +241,22 @@ mexDependence_slim <- function (which, dqu, mth, mqu=0.7, margins = "laplace",
     warning("With Gumbel margins, you can't constrain, setting constrain=FALSE")
     constrain <- FALSE
   }
-  if (missing(which)) {
+  if (missing(whch)) {
     message("Missing 'which'. Conditioning on", dimnames(x$transformed)[[2]][1], 
             "\n")
-    which <- 1
+    whch <- 1
   }
-  else if (length(which) > 1) 
+  else if (length(whch) > 1) 
     stop("which must be of length 1")
-  else if (is.character(which)) 
-    which <- match(which, dimnames(x$transformed)[[2]])
+  else if (is.character(whch)) 
+    whch <- match(whch, dimnames(x$transformed)[[2]])
   if (missing(dqu)) {
     message(paste("Assuming same quantile for dependence thesholding as was used\n",
                   "to fit corresponding marginal model...\n"))
-    dqu <- mqu[which]
+    dqu <- mqu[whch]
   }
-  dth <- quantile(x$transformed[, which], dqu)
-  dependent <- (1:(dim(DATA)[[2]]))[-which]
+  dth <- quantile(x$transformed[, whch], dqu)
+  dependent <- seq_len(ncol(DATA))[-whch]
   if (length(dqu) < length(dependent)) 
     dqu <- rep(dqu, length = length(dependent))
   aLow <- ifelse(margins[[1]] == "gumbel", 10^(-10), 
@@ -361,7 +363,7 @@ mexDependence_slim <- function (which, dqu, mth, mqu=0.7, margins = "laplace",
     c(o$par[1:6], o$value)
   }
   #####
-  yex <- c(x$transformed[, which])
+  yex <- c(x$transformed[, whch])
   wh <- yex > unique(dth)
   
   res <- sapply(1:length(dependent), 
@@ -375,7 +377,7 @@ mexDependence_slim <- function (which, dqu, mth, mqu=0.7, margins = "laplace",
   res <- matrix(res[1:6, ], nrow = 6)
   dimnames(res)[[1]] <- c(letters[1:4], "m", "s")
   dimnames(res)[[2]] <- dimnames(x$transformed)[[2]][dependent]
-  gdata <- as.matrix(x$transformed[wh, -which])
+  gdata <- as.matrix(x$transformed[wh, -whch])
   ####
   tfun <- function(i, data_temp, yex, a, b, cee, d) {
     data_temp <- data_temp[, i]
@@ -408,14 +410,14 @@ mexDependence_slim <- function (which, dqu, mth, mqu=0.7, margins = "laplace",
   if(zspot){
     print(dim(z))
   }
-  COEFFS[,,which] <<- res
+  COEFFS[,,whch] <<- res
   if(is.array(z) && !inherits(z, c("Error", "try-error"))){
-    Z[1:(dim(z)[1]),1:(dim(z)[2]),which] <<- z
+    Z[[whch]] <<- z
   }
   
   res2 <- list(dth = unique(dth), 
-               dqu = unique(dqu), which = which,
-               conditioningVariable = colnames(DATA)[which], 
+               dqu = unique(dqu), whch = whch,
+               conditioningVariable = colnames(DATA)[whch], 
                #loglik = loglik,
                marginfns = marginfns, constrain = constrain, 
                v = v)
@@ -450,9 +452,9 @@ mexMonteCarlo_slim <- function(marginfns, referenceMargin=NULL,
   wMa <- apply(TRANSFORMED,1,which.max)
   wMaTa <- sapply(1:nData, function(i){TRANSFORMED[i, wMa[i]] >= dth[wMa[i]]})
   
-  which <- sample((1:nData)[wMaTa], size = nSample, replace = TRUE)
-  MCsampleOriginal <- DATA[which, ]
-  MCsampleLaplace <- TRANSFORMED[which, ]
+  whch <- sample((1:nData)[wMaTa], size = nSample, replace = TRUE)
+  MCsampleOriginal <- DATA[whch, ]
+  MCsampleLaplace <- TRANSFORMED[whch, ]
   whichMax <- apply(MCsampleLaplace, 1, which.max)
   
   dqu <- sapply(mexList, function(l) l$dependence$dqu)
@@ -468,12 +470,12 @@ mexMonteCarlo_slim <- function(marginfns, referenceMargin=NULL,
     }
     replace <- whichMax == i & whichMaxAboveThresh
     if (nReplace[i] > 0) {
-      MCsampleOriginal[replace, ] <- predict.mex_slim(which=i,
+      MCsampleOriginal[replace, ] <- predict.mex_slim(whch=i,
                                       referenceMargin=referenceMargin,
                                       marginfns=marginfns,
                                       constrain=mexList[[i]]$dependence$constrain,
                                       coeffs_in = COEFFS[,,i],
-                                      z_in = Z[,,i],
+                                      z_in = Z[[i]],
                                       pqu = dqu[i],
                                       mth=mth,
                                       mqu=mqu,
@@ -572,7 +574,7 @@ makeYsubMinusI <- function( i, z, v , y ){
   a + ( y^v[ 2 ] ) * z
 }
 
-predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
+predict.mex_slim <- function(whch, referenceMargin=NULL, marginfns,
                              constrain, coeffs_in, z_in, 
                              mth, mqu, pqu = .99, nsim = 1000, trace=10,
                              smoothZdistribution=FALSE, d, ...){
@@ -607,7 +609,7 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
       }
       tick <- rep(FALSE, nsim)
       while(sum(tick)<2){
-      ui <- runif(nsim , min = max(c(mqu[which], pqu)))
+      ui <- runif(nsim , min = max(c(mqu[whch], pqu)))
       y <-  marginfns$p2q(ui)
       ymi <- sapply( 1:( dim( z )[[ 2 ]] ) , makeYsubMinusI, z=z, v=dco , y=y )
       tick <- y > apply(ymi,1,max)
@@ -621,20 +623,20 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
       xmi <- apply( ymi, 2, distFun )
       xmi[xmi > (1 - 1e-10)] <- (1 - 1e-10) # ! # FUDGE TO AVOID EXACTLY 1
       #print(range(xmi[,11]))
-      xi <- texmex:::u2gpd( ui, p = 1 - mqu[which], th = mth[which],
+      xi <- texmex:::u2gpd( ui, p = 1 - mqu[whch], th = mth[whch],
                    sigma = coxi[1], xi = coxi[2] )
       
       for( i in 1:( dim(xmi)[[2]] ) ){
         #print(paste("I=", i))
         xmi[, i] <- revTransform_slim(
-                                   xmi[, i], as.matrix(DATA[, -which])[, i],
-                                   th = mth[-which][i],
-                                   qu = mqu[-which][i],
+                                   xmi[, i], as.matrix(DATA[, -whch])[, i],
+                                   th = mth[-whch][i],
+                                   qu = mqu[-whch][i],
                                    sigma=coxmi[1, i], xi=coxmi[2, i])
       }
       sim <- data.frame( xi , xmi)
-      names( sim ) <- c( colnames( DATA )[ which ],
-                         colnames( DATA )[ -which ])
+      names( sim ) <- c( colnames( DATA )[ whch ],
+                         colnames( DATA )[ -whch ])
       #sim[,dim(sim)[2]+1] <- y > apply(ymi,1,max) # condlargest extra column
       sim
     }
@@ -643,8 +645,8 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
 
     bootRes <- NULL
     
-    cox <- coef.migpd_slim(mth, mqu)[3:4, which]
-    coxmi <- as.matrix(coef.migpd_slim(mth, mqu)[3:4, -which])
+    cox <- coef.migpd_slim(mth, mqu)[3:4, whch]
+    coxmi <- as.matrix(coef.migpd_slim(mth, mqu)[3:4, -whch])
     
     sim <- MakeThrowData(dco=coeffs_in,
                          z=z_in,
@@ -663,7 +665,7 @@ predict.mex_slim <- function(which, referenceMargin=NULL, marginfns,
     # 
     #res <- list(datafit = datafit)
     #print(CondLargest)
-    as.matrix(sim[, order(c(which, c(1:d)[-which]))])
+    as.matrix(sim[, order(c(whch, c(1:d)[-whch]))])
     
     #res
 }

@@ -47,8 +47,9 @@ if(file.exists(paste0(data_wd, subfold, "threshDayExcList_RCM", RCM, suffix,".rd
 }
 
 #prealloc.
-threshDayExcList <- vector("list", length(threshVal))
-names(threshDayExcList) <- threshName
+#threshDayExcList <- vector("list", length(threshVal))
+threshDayExcList <- lapply(seq_len(length(threshVal)), function(i){vector("list", NH)})
+#names(threshDayExcList) <- threshName
 
 ST <-  Sys.time()
 ncin <- nc_open(ncoriginal, readunlim=FALSE)
@@ -133,14 +134,16 @@ if(period=="present"){ ### PRESENT ###----------------------------------
       if(k == jT){
         o <- try({
           
-          ep1 <- (extractPeaks(vecObs=tSlice, mintimeDiff=7) == 1) & (tSlice > thresh[k])
+          ep1 <- (extractPeaks(vecObs=tSlice, mintimeDiff=7) == 1) &
+            (tSlice > thresh[k])
           peak_vals <- tSlice[ep1]
           whattime <- which(ep1)
           meanint <- mean(whattime[-1] - whattime[-length(whattime)])/360
           at_site_gpa <- fevd(x=peak_vals,
                               threshold = thresh[k], type="GP")$results$par
           
-          partable[nrow(partable)+1,] <- list(meanint, thresh[k], at_site_gpa[1], at_site_gpa[2])
+          partable[nrow(partable)+1,] <- 
+                    list(meanint, thresh[k], at_site_gpa[1], at_site_gpa[2])
           
           1
         })
@@ -162,11 +165,12 @@ if(period=="future"){  #### FUTURE ####-------------------------------------
   #use the Present day threshold matrix
   threshMat <- readRDS(paste0(data_wd, subfold_pres,
                           "threshMat_RCM", RCM, suffix_pres,".rds"))
+  str(threshMat)
   # Just load in threshGridList to save to the Future folder
   # threshGridList <- readRDS(file=paste0(data_wd, subfold_pres,
   #                               "threshGridList_RCM", RCM, suffix_pres,".rds"))
   
-  for(n in 1:3){
+  for(n in 1:NH){
     
     if((n < 10) | (n %% 200 == 0)){ # time recording
       print(n)
@@ -184,10 +188,12 @@ if(period=="future"){  #### FUTURE ####-------------------------------------
     j <- rn$col[n]
     tSlice <- as.vector(ncvar_get(ncin, varid="dmflow",
                         start=c(i,j,1), count=c(1,1,-1)))
-    
+    thresh <- threshMat[n,]
     for(k in 1:NT){
-      # Get exceedences
-      threshDayExcList[[k]][[n]] <- which(tSlice > threshMat[n,k])
+      
+      # save which days cell n was exceeded.
+      threshDayExcList[[k]][[n]] <- which(tSlice > thresh[k])
+      
       if(k == jT){
         o <- try({
           # Take peaks from exceedences
@@ -197,17 +203,20 @@ if(period=="future"){  #### FUTURE ####-------------------------------------
           peak_vals <- tSlice[ep1]
           whattime <- which(ep1)
           meanint <- mean(whattime[-1] - whattime[-length(whattime)])/360
-          
           # fit GPA to peaks
-          at_site_gpa <- fevd(x=peak_vals,
-                              threshold = threshMat[n,k], type="GP")$results$par
+          at_site_gpa <- fevd(x=peak_vals, threshold = threshMat[n,k],
+                              type="GP")$results$par
           
-          partable[nrow(partable)+1,] <- list(meanint, threshMat[n,k],
-                               at_site_gpa[1], at_site_gpa[2])
+          partable[nrow(partable)+1,] <- list(
+            meanint,
+            threshMat[n,k],
+            at_site_gpa[1],
+            at_site_gpa[2])
           
           1
         })
         if(inherits(o, "try-error")){
+          print(paste("oops",n))
           # If it breaks, fit to the AMAX series.
           peak_vals <- blockmaxxer(data.frame(tSlice),blocks=rep(1:30,each=360))
           
@@ -224,7 +233,6 @@ colnames(partable) <- c("meanint", "threshold", "scale", "shape")
 nc_close(ncin)
 
 ## Save outputs ##-----------------------------------------------------
-
 # Note this will make copies of some objects in the Future case, but this is safer
 saveRDS(threshDayExcList, file=paste0(data_wd, subfold,
                           "threshDayExcList_RCM", RCM, suffix,".rds"))

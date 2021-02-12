@@ -32,10 +32,10 @@ jT <- which(threshName==thresh1)
 jW <- which(wsName == ws1)
 print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
 
-if(file.exists(paste0(data_wd,subfold,
-                      "eventdf_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))){
-  stop("eventdf_ exists. finishing 105.")
-}
+# if(file.exists(paste0(data_wd,subfold,
+#                       "eventdf_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))){
+#   stop("eventdf_ exists. finishing 105.")
+# }
 
 
 ##### DATA #####------------------------------------------------------------
@@ -64,7 +64,7 @@ load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
 
 
 paramtable <- readr::read_csv(paste0(data_wd,subfold, 
-                                     "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"),
+                              "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"),
                               col_types = cols(.default = col_double()))
 
 
@@ -108,9 +108,10 @@ for(i in seq_len(length(eventz))){
 
 ##### SAVE OUTPUTS #####----------------------------------------------------------
 
-# eventDataFrame <- cbind(rn, eventDataFrame)
+eventDataFrame <- cbind(rn, round(as.data.frame(eventDataFrame),8))
+colnames(eventDataFrame)[-(1:4)] <- paste0("E",1:(ncol(eventDataFrame)-4))
 
-readr::write_csv(round(as.data.frame(eventDataFrame),4), path=paste0(data_wd,subfold,
+readr::write_csv(eventDataFrame, path=paste0(data_wd,subfold,
                   "eventflow_OBS_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 
 nc_close(ncin)

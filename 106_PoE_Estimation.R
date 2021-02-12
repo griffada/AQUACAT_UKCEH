@@ -32,10 +32,10 @@ thresh1 <- "POT2"
 ws1 <- "pc05"
 print(paste("Running for threshold", thresh1, "at ", ws1, "minimum spread."))
 
-if(file.exists(paste0(data_wd, subfold, "returnlevels_",
-                      thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))){
-  stop("returnlevels already exists. ending 106.")
-}
+# if(file.exists(paste0(data_wd, subfold, "returnlevels_",
+#                       thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))){
+#   stop("returnlevels already exists. ending 106.")
+# }
 
 subfold <- paste0("RCM", RCM, suffix, "/")
 
@@ -60,10 +60,13 @@ print(ST <- Sys.time())
 
 suffix_pres <- "_198012_201011"
 subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
+ncpres <- ncoriginal <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix_pres, "_out.nc") 
 
 ncin <- nc_open(ncoriginal) # This file is ~2.5GB on the linux server.
 print(ncin)
 print(floor(Sys.time() - ST))
+
+ncin_pres <- nc_open(ncpres)
 
 # matrix of threshold value (col) at a given cell (row)
 threshMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
@@ -77,32 +80,23 @@ load(paste0(data_wd, subfold, "eventLists_RCM", RCM, suffix, ".RDa"))
 
 # timewise maxima at each cell for each event (NE x NH)
 
-obs_events  <- readr::read_csv(paste0(data_wd,subfold, "eventflow_OBS_",thresh1,"_", ws1,
-                                  "_RCM", RCM, suffix, ".csv"),
-                           col_types=cols(.default = col_double()))
+obs_events  <- as.data.frame(readr::read_csv(paste0(data_wd,subfold, "eventflow_OBS_",
+                          thresh1,"_", ws1,"_RCM", RCM, suffix, ".csv"),
+                          col_types=cols(.default = col_double())))[,-(1:4)]
 
-NE <- ncol(obs_events) - 4
+NE <- ncol(obs_events)
 
-partable <- readr::read_csv(paste0(data_wd,subfold, 
-                            "paramtable_",thresh1, "_RCM", RCM, suffix, ".csv"),
-                            col_types=cols(.default= col_double()))
+partable <- as.data.frame(readr::read_csv(paste0(data_wd,subfold_pres, 
+                            "paramtable_",thresh1, "_RCM", RCM, suffix_pres, ".csv"),
+                            col_types=cols(.default= col_double())))
 
 colnames(partable)[1] <- "meanint"
 
 ##### PROB CALCULATION #####-------------------------------------------------
 
 ### prealloc -----------------------
-# rarityDF <- data.frame(eventNo = numeric(),
-#                        loc = numeric(),
-#                        Easting = numeric(),
-#                        Northing = numeric(), 
-#                        thresh = numeric(),
-#                        DayS = numeric(),
-#                        val = numeric(),
-#                        gpa_apoe = numeric(),
-#                        rp_years = numeric())
-eventDpeFrame <- matrix(NA, ncol=ncol(obs_events), nrow=NH)
-eventApeFrame <- matrix(NA, ncol=ncol(obs_events), nrow=NH)
+eventDpeFrame <- matrix(NA, ncol=NE, nrow=NH)
+eventApeFrame <- matrix(NA, ncol=NE, nrow=NH)
 
 ST0 <- Sys.time()
 ST <- Sys.time()
@@ -128,43 +122,51 @@ for(h in 1:NH){
   vals <- ncvar_get(ncin, "dmflow",
                     start=c(rn$row[h], rn$col[h], 1),
                     count=c(1, 1, -1))
+  if(period == "future"){
+    vals_pres <- ncvar_get(ncin_pres, "dmflow",
+                           start=c(rn$row[h], rn$col[h], 1),
+                           count=c(1, 1, -1))
+  }
   
-  # DPoE per cell for event maxima based on whole time series.
-  ecd <- ecdf(vals)
-  valsdpe <- 1 - ecd(obs_events[h,])
+  # DPoE per cell for event maxima based on whole present time series.
+  if(period == "present"){
+    ecd <- ecdf(c(-1,vals,1e8))
+  }else{
+    ecd <- ecdf(c(-1,vals_pres,1e8))
+  }
+  valsdpe <- 1 - ecd(unlist(obs_events[h,]))
   
   # APoE per cell for event maxima based on either ecdf or gpa
   wh_ext <- (valsdpe < (2/360))
-  gpa_poe <- (1 - pevd(as.numeric(obs_events[h,]),
+  gpa_poe <- (1 - pevd(as.numeric(unlist(obs_events[h,])),
                        threshold=thr, scale=scaleH, shape=shapeH, type='GP'))
   
   #at_site_dpe[wh_ext] <- (2/360)*gpa_poe
   
   valsape <- ifelse(wh_ext,
                     1 - exp(-gpa_poe/meanInt), #gpa scaled to year
-                    1 - exp(-valsdpe/360)) #dpoe scaled to year
+                    1 - exp(-valsdpe*360)) #dpoe scaled to year
   
   eventDpeFrame[h,]  <- valsdpe
   eventApeFrame[h,]  <- valsape
 }
 
-# eventDpeFrame  <- cbind(rn, eventDpeFrame)
-# eventApeFrame  <- cbind(rn, eventApeFrame)
-# 
-# readr::write_csv(x=rarityDF,
-#                  path=paste0(data_wd, subfold, "returnlevels_",
-#                              thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+eventDpeFrame <- cbind(rn, round(as.data.frame(eventDpeFrame),8))
+colnames(eventDpeFrame)[-(1:4)] <- paste0("E",1:(ncol(eventDpeFrame)-4))
 
-readr::write_csv(round(as.data.frame(eventDpeFrame),4), path=paste0(data_wd,subfold,
+eventApeFrame <- cbind(rn, round(as.data.frame(eventApeFrame),8))
+colnames(eventApeFrame)[-(1:4)] <- paste0("E",1:(ncol(eventApeFrame)-4))
+
+readr::write_csv(eventDpeFrame, path=paste0(data_wd,subfold,
                 "eventdpe_OBS_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
-readr::write_csv(round(as.data.frame(eventApeFrame),4), path=paste0(data_wd,subfold,
+readr::write_csv(eventApeFrame, path=paste0(data_wd,subfold,
                 "eventape_OBS_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
 nc_close(ncin)
 print(Sys.time())
 ######
 #
-# CONVERTION FROM PoE IN DAYS (p) TO PoE IN YEARS (b): p = 1 - (1-b)^(360)
+# CONVERTION FROM PoE IN DAYS (p) TO PoE IN YEARS (b): b = 1 - (1-p)^(360)
 #
-# b = 1- (1-p)^(1/360)
+# p = 1- (1-b)^(1/360)
 #
 #####

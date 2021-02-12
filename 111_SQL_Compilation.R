@@ -23,6 +23,12 @@ if(substr(osVersion,1,3) == "Win"){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
 }
 
+thresh1 <- "POT2"
+ws1 <- "pc05"
+# Only using POT2 and 2% inundation minimums.
+jT <- which(threshName==thresh1)
+jW <- which(wsName == ws1)
+
 regions <- c("ANG", "NE", "NW", "SCO", "SE", "SEV", "SW", "THA", "TRE", "WAL")
 REG <- NA
 if(length(args)==3){
@@ -41,19 +47,21 @@ if(length(args)==3){
 }
 
 
+library(DBI)
+library(dplyr)
 library(dbplyr)
 library(RSQLite)
 library(reshape2)
 
 ##### DATA-------------------------------------------------------------
-dir.create(paste0(data_wd,subfold, "/SQLite/"))
+dir.create(paste0(data_wd,subfold, "SQLite"))
 
 if(!is.na(REG)){
   
-  rl_db_file <- paste0(data_wd,subfold, "/SQLite/eventdb_HT_region_", REG, "_RCM",
+  rl_db_file <- paste0(data_wd,subfold, "SQLite/eventdb_HT_region_", REG, "_RCM",
                        RCM, suffix, ".sqlite")
   
-  rl_db <- src_sqlite(rl_db_file, create=TRUE)
+  rl_db <- DBI::dbConnect(RSQLite::SQLite(), rl_db_file)
   
   rn_regions$locnum <- 1:nrow(rn_regions)
   
@@ -63,7 +71,8 @@ if(!is.na(REG)){
               "eventflow_HT", "eventdpe_HT", "eventape_HT")
   
   for(l in LNAMES){
-    x <- read_csv(paste0(data_wd, subfold, l, REG,"_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
+    x <- read_csv(paste0(data_wd, subfold, l, REG,"_",thresh1,"_", ws1,
+                         "_RCM", RCM, suffix, ".csv"))
     dimnames(x) <- list(paste0("L", rn_reg$locnum),
                         paste0("E", 1:ncol(x)))
     copy_to(rl_db, x, name = l, temporary=FALSE, overwrite=TRUE)
@@ -96,25 +105,31 @@ if(!is.na(REG)){
   MARGINALS <- t(sapply(MODELS, function(x){c(x$par, x$threshold)}))
   colnames(MARGINALS) <- c("scale", "shape", "threshold")
   
-  copy_to(rl_db, MARGINALS, name='HT_marginals', temporary=FALSE, overwrite=TRUE)
-  copy_to(rl_db, COEFF_tall, name="COEFF_tall", temporary=FALSE, overwrite=TRUE)
-  
+  dplyr::copy_to(rl_db, MARGINALS, name='HT_marginals',
+                 temporary=FALSE, overwrite=TRUE)
+  dplyr::copy_to(rl_db, COEFF_tall, name="COEFF_tall",
+                 temporary=FALSE, overwrite=TRUE)
+  DBI::dbDisconnect(rl_db)
 }else{
   
-  rl_db_file <- paste0(data_wd, subfold, "/SQLite/eventdb_EC_RCM", 
+  rl_db_file <- paste0(data_wd, subfold, "SQLite/eventdb_EC_RCM", 
                        RCM, suffix, ".sqlite")
   
-  rl_db <- src_sqlite(rl_db_file, create=TRUE)
+  rl_db <- DBI::dbConnect(RSQLite::SQLite(), rl_db_file)
   
   LNAMES <- c("eventflow_OBS", "eventdpe_OBS", "eventape_OBS",
               "eventflow_EC", "eventdpe_EC", "eventape_EC")
   
   for(l in LNAMES){
-    x <- read_csv(paste0(data_wd, subfold, l, "_",thresh1,"_", ws1, "_RCM", RCM, suffix, ".csv"))
-    dimnames(x) <- list(paste0("L", 1:NH),
-                        paste0("E", 1:ncol(x)))
-    copy_to(rl_db, x, name = l, temporary=FALSE, overwrite=TRUE)
+    x <- read_csv(paste0(data_wd, subfold, l, "_",thresh1,"_", ws1,
+                         "_RCM", RCM, suffix, ".csv"),
+                  col_types=cols(
+                    .default = col_double()
+                  ))
+    x$loc <- 1:NH
+    x <- x[,c(ncol(x), 1:(ncol(x)-1))]
+    colnames(x) <- paste0("E", 1:ncol(x))
+    dplyr::copy_to(rl_db, x, name = l, temporary=FALSE, overwrite=TRUE)
   }
+  DBI::dbDisconnect(rl_db)
 }
-
-

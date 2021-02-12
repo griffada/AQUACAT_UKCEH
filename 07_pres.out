@@ -1,0 +1,66 @@
+07
+present
+102 running
+[1] "2021-02-11 13:49:55 GMT"
+ 
+**********
+ 
+103 running
+
+**********
+
+104 running
+[1] "2021-02-11 13:51:06 GMT"
+
+**********
+
+105 running
+[1] 225
+[1] 250
+[1] 275
+[1] 300
+[1] 325
+[1] 350
+[1] 375
+[1] 400
+[1] 425
+[1] 450
+ 
+**********
+ 
+106 running
+[1] "Percent remaining 2"
+[1] "Time remaining 50.87"
+[1] "Since last readout: 45.21"
+[1] "2021-02-11 15:18:53 GMT"
+[1] 19800
+[1] "Percent remaining 1"
+[1] "Time remaining 18.48"
+[1] "Since last readout: 34.77"
+[1] "2021-02-11 15:19:27 GMT"
+[1] "2021-02-11 15:19:54 GMT"
+ 
+**********
+ 
+107 running
+[1] 19600
+[1] "Percent remaining 2"
+[1] "Time remaining 62.36"
+[1] "Since last readout: 42.81"
+[1] "2021-02-11 16:39:57 GMT"
+[1] 19800
+[1] "Percent remaining 1"
+[1] "Time remaining 22.66"
+[1] "Since last readout: 42.78"
+[1] "2021-02-11 16:40:40 GMT"
+ 
+**********
+ 
+108 running
+[1] "2021-02-11 17:27:52 GMT"
+[1] "Running for threshold POT2 at  pc05 minimum spread."
+OGR data source with driver: ESRI Shapefile 
+Source: "/prj/aquacat/Data/hydrometricAreas", layer: "hyd_areas"
+with 115 features
+It has 2 fields
+Complete
