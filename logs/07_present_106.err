@@ -1,9 +1,0 @@
-Loading required package: Lmoments
-Loading required package: distillery
-
-Attaching package: ‘extRemes’
-
-The following objects are masked from ‘package:stats’:
-
-    qqnorm, qqplot
-

@@ -1,0 +1,3 @@
+rsync -rnvP --exclude="*eventECMar*" --exclude="*eventECA*" --exclude="*ECX*" --exclude"=*paramtableH*" --include="*/" --include="*.csv" --include="*.nc" --exclude="*.rds" --exclude="*.RDa" --exclude="*.RDS" --exclude="*eventSumm_ECX*"  /prj/aquacat/Data adam@punchy2.ddns.net:/raid0/transfer/
+
+rsync -rnvP /prj/aquacat/Data/RCM01_198012_201011 adam@punchy2.ddns.net:/raid0/transfer/Data/RCM01_198012_201011 

@@ -8,9 +8,11 @@
 # Created ABG 2020-02-21, edited 2020-05-04
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~
-
+# if(interactive()){
+#   commandArgs <- function(...){c("10","present","NW")}
+# }
 ##### PARSE COMMAND LINE ARGUMENTS FIRST ##### -------------------------------
-{
+
 args <- commandArgs(trailingOnly=TRUE)
 if(length(args) > 3){
   stop("incorrect call. Rscript 10X_*****.R [RCM] [period]. ")
@@ -33,6 +35,15 @@ if(length(args)==0){
   }else{  
     stop("incorrect call: Rscript 10X_*****.R RCM [period]. Period should be 'present' or 'future'.")
   }
+
+regions <- c("ANG", "ESC", "NE", "NSC", "NW", "SE", "SEV",
+             "SSC", "SW", "THA", "TRE", "WAL")
+if(length(args)==3){
+  REG <- args[3]
+  if(!(REG %in% regions)){
+    stop(paste("incorrect call: Rscript 109_HeffTawn_Modelling.R gcm period [region] \n",
+    "- Region must be one of: ANG, ESC, NE, NSC, NW, SE, SEV, SSC, SW, THA, TRE, WAL."))
+  }
 }
 if(as.numeric(RCM) < 0 | as.numeric(RCM) > 16){
   stop("correct call: Rscript 10X_*****.R RCM [period]. RCM should be between 1 and 16.")
@@ -41,14 +52,17 @@ if(as.numeric(RCM) < 0 | as.numeric(RCM) > 16){
 #### CORE PACKAGES ---------------------------------------------------
 print(Sys.time())
 options("rgdal_show_exportToProj4_warnings"="none")
+options(warn=1)
 suppressMessages({
 library(ncdf4)
 library(raster)
 library(fields)
 library(rgdal)
 library(readr)
+library(yaml)
 })
 
+readdf <- function(...){as.data.frame(data.table::fread(...))}
 
 ### SET WORKING DIRECTORY ###
 if (substr(osVersion,1,3) == "Win") {
@@ -77,13 +91,12 @@ if(!dir.exists(paste0(data_wd, "RCM", RCM, suffix))){
 }
 subfold <- paste0("RCM", RCM, suffix, "/")
 
-
 ncoriginal <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix, "_out.nc") 
 
 ncname <- paste0(data_wd, subfold, "dmflow_copy_RCM", RCM, suffix, ".nc")
 
 # threshold for inundation
-threshVal <- c(5/365, 2/365, 1/365, 0.2/365, 0.1/365)
+threshVal <- c(5/360, 2/360, 1/360, 0.2/360, 0.1/360)
 threshName <- c("POT5", "POT2", "POT1", "Q5", "Q10")
 NT <- length(threshVal)
 
@@ -100,9 +113,11 @@ rn <- read_csv(paste0(data_wd,"hasData_primary.csv"),
                            east = col_double(),
                            nor = col_double()
                          ))
+# print("*********** THIS IS USING A SHORT VERSION OF RN, CHANGE BACK **********************")
+# print("*********** THIS IS USING A SHORT VERSION OF RN, CHANGE BACK **********************")
+# rn <- rn[17000:18999,]
 #rn <- read_csv(paste0(data_wd, "hasData_primary.csv"))
 NH <- nrow(rn)
-
 
 rn_regions <- try({
   read_csv(paste0(data_wd,"hasData_Regions.csv"),
@@ -117,3 +132,26 @@ rn_regions <- try({
 })
 
 ND <- 10800 # Number of days
+
+
+
+# Msims <- 25000
+# nSampleHT <- 400
+# RECOMPUTE_FLAG <- FALSE
+
+source(paste0(wd,"extra_functions.R"))
+
+settingspath <- paste0(data_wd,subfold,"settings.yaml")
+if(file.exists(settingspath)){
+  settings <- read_yaml(settingspath)
+
+thresh1 <- settings$thresh
+ws1 <- settings$wsname
+Msims <- settings$Msims
+nSampleHT <- settings$nSampleHT
+# Only using POT2 and 2% inundation minimums.
+jT <- which(threshName==thresh1)
+jW <- which(wsName == ws1)
+print(paste("Setup for threshold", thresh1, "at", ws1, "minimum spread."))
+}
+

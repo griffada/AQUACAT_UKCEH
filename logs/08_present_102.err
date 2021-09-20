@@ -7,5 +7,7 @@ The following objects are masked from ‘package:stats’:
 
     qqnorm, qqplot
 
-Error: thresh* files already exist for 102. Proceeding to next job.
-Execution halted
+Warning in max(obsPeaks[1:(i - 1)][obsPeaks[1:(i - 1)] %in% seq(1, length(keep))[keep ==  :
+  no non-missing arguments to max; returning -Inf
+Error in if (fn == fp) smallest <- prev else smallest <- c(prev, now)[!c(prev,  : 
+  missing value where TRUE/FALSE needed

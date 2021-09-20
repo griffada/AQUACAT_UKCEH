@@ -1,3 +1,0 @@
-nohup: ignoring input
-tail: cannot open ‘./logs/103.out’ for reading: No such file or directory
-BASH/threepar_108.sh: line 50: 14913 Killed                  Rscript --vanilla 107_Empirical_Copula.R $1 $2 > ./logs/"$1"_"$2"_107.out 2> ./logs/"$1"_"$2"_107.err

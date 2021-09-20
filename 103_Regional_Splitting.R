@@ -16,23 +16,16 @@ library(rgeos)
 
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
-}else if (substr(osVersion,1,3) == "Fed"){
+}else if (substr(osVersion,1,3) %in% c("Cen""Fed")){
   source("/prj/aquacat/CodeABG/setup_script_00.R")
 }else{
   source("~/AQUACAT/CodeABG/setup_script_00.R")
 }
 
-
-# if(file.exists(paste0(data_wd, "hasData_Regions.csv"))){
-#     stop("hasData_Regions already exists for 103. Proceeding to next job.")
-# }else{
-#    print("Proceeding to job.")
-# }
-
 if(period == "future"){
   stop("Regions computed for present, not required for future (103). Proceeding to next job.")
 }
-#### DATA ------------------------------------------------------------
+##### DATA #####---------------------------------------------------------
 HA <- readOGR(dsn=paste0(data_wd, "hydrometricAreas"), layer="hyd_areas",
               stringsAsFactors=FALSE)
 HA@data$HA_NUM <- as.numeric(HA@data$HA_NUM)
@@ -52,7 +45,7 @@ nearw <- rep(0,NH)
 pts$REGION <- rep(NA, NH)
 
 
-#### PROCESSING -----------------------------------------------
+##### PROCESSING #####-----------------------------------------------
 for(i in w){  # find hydrometric area field
   
   tempDist <- gDistance(rn[i,], HA, byid=TRUE)

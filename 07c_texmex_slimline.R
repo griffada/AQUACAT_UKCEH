@@ -51,7 +51,7 @@ migpd_slim <- function(mth, mqu, penalty = "gaussian", maxit = 10000,
   if (missing(mqu)) 
     mqu <- sapply(1:d, function(i, mth) 1 - mean(DATA[,i] > mth[i]), mth = mth)
   if (missing(mth)) 
-    mth <- sapply(1:d, function(i, prob) quantile(DATA[,i], prob = prob[i]), prob = mqu)
+    mth <- sapply(1:d, function(i, prob) quantile(DATA[,i], prob = prob[i], na.rm=T), prob = mqu)
   if (penalty %in% c("quadratic", "gaussian") & 
       is.null(priorParameters)) {
     gp = list(c(0, 0), matrix(c(100^2, 0, 0, 0.25), nrow = 2))
@@ -288,17 +288,17 @@ mexDependence_slim <- function (whch, dqu, mth, mqu=0.7, margins = "laplace",
                    v = v, aLow = aLow))
     if (inherits(o, "try-error")) {
       if(interactive()) browser()
-      warning("Error in optim call from mexDependence")
+      warning("Error in optim call from mexDependence 0101")
       errcode <- 101
       o <- as.list(o)
-      o$par <- rep(NA, 6)
+      o$par <- rep(NA,6)
       o$value <- NA
     }
     else if (o$convergence != 0) {
-      warning("Non-convergence in mexDependence")
+      warning("Non-convergence in mexDependence 0102")
       errcode <- 102
       o <- as.list(o)
-      o$par <- rep(NA, 6)
+      o$par <- rep(NA,6)
     }
     else if (nOptim > 1) {
       for (i in 2:nOptim) {
@@ -306,7 +306,7 @@ mexDependence_slim <- function (whch, dqu, mth, mqu=0.7, margins = "laplace",
                        yex = yex[wh], ydep = X[wh], constrain = constrain, 
                        v = v, aLow = aLow), silent = TRUE)
         if (inherits(o, "try-error")) {
-          warning("Error in optim call from mexDependence")
+          warning("Error in optim call from mexDependence 0103")
           errcode <- 103
           o <- as.list(o)
           o$par <- rep(NA, 6)
@@ -314,7 +314,7 @@ mexDependence_slim <- function (whch, dqu, mth, mqu=0.7, margins = "laplace",
           (break)()
         }
         else if (o$convergence != 0) {
-          warning("Non-convergence in mexDependence")
+          warning("Non-convergence in mexDependence 0104")
           errcode <- 104
           o <- as.list(o)
           o$par <- rep(NA, 6)
@@ -349,7 +349,7 @@ mexDependence_slim <- function (whch, dqu, mth, mqu=0.7, margins = "laplace",
                  silent = TRUE)
         if (inherits(o, "try-error") || o$convergence != 
             0) {
-          warning("Non-convergence in mexDependence")
+          warning("Non-convergence in mexDependence 0105")
           errcode <- 105
           o <- as.list(o)
           o$par <- rep(NA, 6)
@@ -357,7 +357,7 @@ mexDependence_slim <- function (whch, dqu, mth, mqu=0.7, margins = "laplace",
       }
       else {
         Z <- (X[wh] - yex[wh] * o$par[1])/(yex[wh]^o$par[2])
-        o$par <- c(o$par[1:2], 0, 0, mean(Z), sd(Z))
+        o$par <- c(start, 0, 0, mean(Z), sd(Z))
       }
     }
     c(o$par[1:6], o$value)
@@ -377,6 +377,12 @@ mexDependence_slim <- function (whch, dqu, mth, mqu=0.7, margins = "laplace",
   res <- matrix(res[1:6, ], nrow = 6)
   dimnames(res)[[1]] <- c(letters[1:4], "m", "s")
   dimnames(res)[[2]] <- dimnames(x$transformed)[[2]][dependent]
+  #FUDGE TO FIX
+  ww <- which(is.na(res[,1]))
+  ww0 <- ww-1
+  if(any(ww0==0)){ww0[ww0==0] <- min(which(!is.na(res[,1])))}
+  
+  res[,ww] <- res[,ww0] #FUDGE TO FIX
   gdata <- as.matrix(x$transformed[wh, -whch])
   ####
   tfun <- function(i, data_temp, yex, a, b, cee, d) {
@@ -400,9 +406,11 @@ mexDependence_slim <- function (whch, dqu, mth, mqu=0.7, margins = "laplace",
                   cee = res[3,], d = res[4, ]))
   if (inherits(z, c("Error", "try-error"))) {
     errcode <- 106
+    warning("Error in mexDependence 0106")
     z <- matrix(nrow = 0, ncol = dim(DATA)[[2]] - 1)
   }
   else if (!is.array(z)) {
+    warning("Error in mexDependence 0107")
     z <- matrix(nrow = 0, ncol = dim(DATA)[[2]] - 1)
     errcode <- 107
   }
@@ -423,7 +431,7 @@ mexDependence_slim <- function (whch, dqu, mth, mqu=0.7, margins = "laplace",
                v = v)
   
   #oldClass(res2) <- "mexDependence"  # A bit of a lie, but helps things work.
-  
+  if(errcode != 0){print(errcode)}
   output <- list(margins = list(#transformed=x$transformed,
                                 referenceMargin=x$referenceMargin),
                  dependence = res2,
@@ -462,11 +470,24 @@ mexMonteCarlo_slim <- function(marginfns, referenceMargin=NULL,
                           function(i) MCsampleLaplace[i, whichMax[i]] >= dth[whichMax[i]])
   
   nReplace <- sapply(1:d, function(i){sum(whichMax==i & whichMaxAboveThresh)})
+  if(RCM=="09"){
+    nReplace[676] <- 0
+  }
   nR <- rep(0, d)
   names(nR) <- names(DATA)
-  for (i in 1:d) {
-    if(d < 50 | i %% 10 == 0){
-      print(paste0("Currently processing at ", (i/d)*100, "%"))
+  STA <- Sys.time()
+  STA0 <- Sys.time()
+  for (i in which(nReplace>0)) {
+    if((i < 10) | (i %% 10 == 0)){
+      #print(i)
+      #print(nReplace[i])
+      I <- difftime(Sys.time(), STA, units="secs")
+      I0 <- difftime(Sys.time(), STA0, units="secs")
+      print(paste("MMC processing, percent remaining", 100*round((d-i)/d ,2)))
+      print(paste("Time remaining", round((d-i)/i * I0,2)))
+      print(paste("Since last readout:", round(I,2)))
+      STA <- Sys.time()
+      print(STA)
     }
     replace <- whichMax == i & whichMaxAboveThresh
     if (nReplace[i] > 0) {
@@ -480,7 +501,7 @@ mexMonteCarlo_slim <- function(marginfns, referenceMargin=NULL,
                                       mth=mth,
                                       mqu=mqu,
                                       nsim = nSample * d * mult,
-                                      d=d)[1:nReplace[i],]
+                                      d=d, iii=i)[1:nReplace[i],]
     }
   }
   res <- list(nR = nReplace, MCsample = MCsampleOriginal, whichMax = whichMax, 
@@ -526,9 +547,6 @@ revTransform_slim <- function (x, data_temp, qu, th = 0, sigma = 1, xi = 0,
   method <- match.arg(method)
   n <- length(data_temp)
   probs <- (1:n)/(n + 1)
-  # px <- vapply(x, p[[which.min(abs(x-p)))]]}, 0, p=probs) 
-  # 
-  # px <- as.integer(round(px * (1 + n)))
   
   px <- as.integer(pmax( pmin( round( x*(n+1) ), n), 1))
   
@@ -540,6 +558,7 @@ revTransform_slim <- function (x, data_temp, qu, th = 0, sigma = 1, xi = 0,
     if(is.na(i.rx[1])){
       print(str(i.rx))
       if(interactive()) browser()
+      i.rx <- rep(FALSE, length(i.rx))
     }
     if (sum(i.rx > 0)) {
       wh <- texmex:::u2gpd(x[i.rx], p = 1 - qu, th = th, sigma = sigma, 
@@ -577,7 +596,7 @@ makeYsubMinusI <- function( i, z, v , y ){
 predict.mex_slim <- function(whch, referenceMargin=NULL, marginfns,
                              constrain, coeffs_in, z_in, 
                              mth, mqu, pqu = .99, nsim = 1000, trace=10,
-                             smoothZdistribution=FALSE, d, ...){
+                             smoothZdistribution=FALSE, d, iii, ...){
   
   # Extension of **predict.mex** from texmex, removing data from the arguments.
   # Reduces the number of outputs to lower overheads.
@@ -608,26 +627,41 @@ predict.mex_slim <- function(whch, referenceMargin=NULL, marginfns,
         z <- apply(z,2,function(x)x + rnorm(length(x),0,bw.nrd(x)))
       }
       tick <- rep(FALSE, nsim)
-      while(sum(tick)<2){
+      MAXIT <- 10
+      nit <- 0
+      KEEP <- TRUE
+      while(sum(tick)<2 & nit < MAXIT){
       ui <- runif(nsim , min = max(c(mqu[whch], pqu)))
       y <-  marginfns$p2q(ui)
       ymi <- sapply( 1:( dim( z )[[ 2 ]] ) , makeYsubMinusI, z=z, v=dco , y=y )
       tick <- y > apply(ymi,1,max)
+      tick[is.na(tick)] <- FALSE
       #print(sum(tick))
+      if (sum(tick) >= 2) {
       ymi <- ymi[tick,]
       y <- y[tick]
       ui <- ui[tick]
       }
+      nit <- nit+1
+      if (nit == MAXIT) {print(paste("Lots of retries for", iii))}
+      }
+      if(nit > MAXIT-1){
+        print(paste("MAXIT hit: sum(tick)= ",sum(tick)))
+        KEEP <- FALSE
+        tick[1:2] <- TRUE
+        tick[-(1:2)] <- FALSE
+        ymi <- ymi[1:2,]
+        y <- y[1:2]
+        ui <- ui[1:2]
+      }
       
-      #print(range(ymi[,11]))
       xmi <- apply( ymi, 2, distFun )
       xmi[xmi > (1 - 1e-10)] <- (1 - 1e-10) # ! # FUDGE TO AVOID EXACTLY 1
-      #print(range(xmi[,11]))
       xi <- texmex:::u2gpd( ui, p = 1 - mqu[whch], th = mth[whch],
                    sigma = coxi[1], xi = coxi[2] )
       
       for( i in 1:( dim(xmi)[[2]] ) ){
-        #print(paste("I=", i))
+        if(all(is.na(xmi[,i]))){next}
         xmi[, i] <- revTransform_slim(
                                    xmi[, i], as.matrix(DATA[, -whch])[, i],
                                    th = mth[-whch][i],
@@ -637,7 +671,9 @@ predict.mex_slim <- function(whch, referenceMargin=NULL, marginfns,
       sim <- data.frame( xi , xmi)
       names( sim ) <- c( colnames( DATA )[ whch ],
                          colnames( DATA )[ -whch ])
-      #sim[,dim(sim)[2]+1] <- y > apply(ymi,1,max) # condlargest extra column
+      if(!KEEP){
+       sim <- matrix(NA, nrow=2, ncol=d)
+      }
       sim
     }
     
@@ -652,19 +688,6 @@ predict.mex_slim <- function(whch, referenceMargin=NULL, marginfns,
                          z=z_in,
                          coxi=cox,
                          coxmi=coxmi)
-    #CondLargest <- sim[,dim(sim)[2]]
-    #sim <- sim[,-(ncol(sim))]
-    
-    # m <- 1 / ( 1 - pqu ) # Need to estimate pqu quantile
-    # zeta <- 1 - mqu[ which ] # Coles, page 81
-    # pth <- mth[ which ] + cox[ 1 ] / cox[ 2 ] * ( ( m*zeta )^cox[ 2 ] - 1 )
-    # 
-    # datafit <- list( #real = data.frame( data[, which], data[, -which] ),
-    #               simulated = sim,
-    #               CondLargest=CondLargest)
-    # 
-    #res <- list(datafit = datafit)
-    #print(CondLargest)
     as.matrix(sim[, order(c(whch, c(1:d)[-whch]))])
     
     #res

@@ -1,9 +1,0 @@
-Loading required package: sp
-rgeos version: 0.5-5, (SVN revision 640)
- GEOS runtime version: 3.4.2-CAPI-1.8.2 
- Linking to sp version: 1.4-1 
- Polygon checking: TRUE 
-
-Warning message:
-In readOGR(dsn = paste0(data_wd, "hydrometricAreas"), layer = "hyd_areas",  :
-  Z-dimension discarded

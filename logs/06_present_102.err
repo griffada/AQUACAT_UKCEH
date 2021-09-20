@@ -7,5 +7,3 @@ The following objects are masked from ‘package:stats’:
 
     qqnorm, qqplot
 
-Error: thresh* files already exist for 102. Proceeding to next job.
-Execution halted
