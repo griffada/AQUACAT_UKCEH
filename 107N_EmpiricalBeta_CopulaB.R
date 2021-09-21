@@ -13,7 +13,7 @@
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
 
-if(interactive()){commandArgs <- function(...){c("15","present")}}
+if(interactive()){commandArgs <- function(...){c("01","present")}}
 #### SETUP ####----------------------
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
@@ -63,12 +63,12 @@ obs_events  <- nc_open(paste0(data_wd,subfold,"eventOBS_",thresh1, "_", ws1,
 partable    <- readdf(paste0(data_wd,subfold,
                   "paramtableG_",thresh1, "_RCM", RCM, suffix, ".csv"))
 
-partable_pres <- readdf(paste0(data_wd,subfold_pres, 
-                  "paramtableG_", thresh1, "_RCM", RCM, suffix_pres, ".csv"))
+partable_pres <- readdf(paste0(data_wd,subfold, 
+                  "paramtableG_", thresh1, "_RCM", RCM, suffix, ".csv"))
 
 NE <- obs_events$dim$event$len
 
-savepath <- paste0(data_wd, subfold, "eventEC_",
+savepath <- paste0(data_wd, subfold, "eventEC2_",
                         thresh1,"_", ws1, "_RCM", RCM, suffix, ".nc")
 cdfPrimer(RCM, period, "EC2", NE=Msims, NH, thresh1, ws1, rn, savepath,
           chunks=T)
@@ -131,7 +131,7 @@ rank_events <- t(apply(-obs_slice, 1, rank, ties.method = "random"))
 
 cl <- parallel::makeCluster(3, outfile = "")
 doParallel::registerDoParallel(cl)
-Vnew1 <- foreach(m = 1:(M/dM)) %do% {
+Vnew1 <- foreach(m = 1:(M/dM)) %dopar% {
   if(m %% 200 == 0){print(paste0(m,"/",M))}
   B <- betacop(NE, NH, dM, rank_events, thresholds=obs_thresh, mincov=0.0008)
   newEventDraw <<- c(newEventDraw, B$newEventDraw)
@@ -142,7 +142,7 @@ Vnew <- do.call(cbind, lapply(Vnew1, function(v){v$Vnew0}))
 newEventDraw <- do.call(c, lapply(Vnew1, function(v){v$newEventDraw}))
 # V to flow
 
-Vextra <- matrix(NA, NH, M)
+#Vextra <- matrix(NA, NH, M)
 
 for(h in 1:NH){
   if(h < 10 | h %% 1000 == 0){print(h)}
@@ -158,13 +158,14 @@ for(h in 1:NH){
    print(o)
   }else{
     o <- unlist(o)
-    Vextra[h,] <- o
-    #ncvar_put(ec_events, "flow", unlist(o), start=c(h,1), count=c(1,Msims))
+    #Vextra[h,] <- o
+    ncvar_put(ec_events, "flow", unlist(o), start=c(h,1), count=c(1,Msims))
   }
 }
 sapply(1:M, function(i){sum(Vextra[,i] > threshMat[,jT])})
 W <- newEventDraw
 W1 <- sapply(1:length(W), function(i){paste0(W[i],".",sum(W[1:i]==W[i]))})
+
 
 ncvar_put(ec_events, "eventNo", W, start=1, count=Msims)
 

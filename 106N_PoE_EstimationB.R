@@ -44,7 +44,7 @@ if(settings$OBSdpe & settings$OBSape){
 
 suffix_pres  <- "_198012_201011"
 subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
-ncpres <- ncoriginal <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix_pres, "_out.nc") 
+ncpres <- ncoriginal <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix, "_out.nc") 
 ncin_pres <- nc_open(ncpres)
 
 # matrix of threshold value (col) at a given cell (row)
@@ -63,7 +63,7 @@ nc_events <- nc_open(paste0(data_wd,subfold, "eventOBS_",
 NE <- sum(ncvar_get(nc_events, "eventNo") > 0)
 
 partable <- readdf(paste0(data_wd,subfold, 
-                  "paramtableG_",thresh1, "_RCM", RCM, suffix_pres, ".csv"))
+                  "paramtableG_",thresh1, "_RCM", RCM, suffix, ".csv"))
 
 gpa_tracker <- c()
 gpa_worst   <- c()

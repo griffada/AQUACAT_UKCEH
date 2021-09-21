@@ -14,7 +14,7 @@
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
 
-if (interactive()) {commandArgs <- function(...){c("07","present")}}
+if (interactive()) {commandArgs <- function(...){c("01","present")}}
 #### SETUP ####----------------------
 if (substr(osVersion,1,3) == "Win") {
   source("S:/CodeABG/setup_script_00.R")
@@ -47,7 +47,7 @@ print(paste("RCM", RCM, "period", period))
 
 suffix_pres <- "_198012_201011"
 subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
-ncpres <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix_pres, "_out.nc")
+ncpres <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix, "_out.nc")
 ncin_pres <- nc_open(ncpres)
 
 threshMat <- readRDS(paste0(data_wd, subfold,"threshMat_RCM", 
@@ -61,8 +61,8 @@ NH <- nrow(rn)
 partable    <- readdf(paste0(data_wd,subfold,"paramtableG_",thresh1,
                               "_RCM", RCM, suffix, ".csv"))
 
-partable_pres <- readdf(paste0(data_wd,subfold_pres, 
-                  "paramtableG_", thresh1, "_RCM", RCM, suffix_pres, ".csv"))
+partable_pres <- readdf(paste0(data_wd,subfold, 
+                  "paramtableG_", thresh1, "_RCM", RCM, suffix, ".csv"))
 
 ec_events <- nc_open(paste0(data_wd, subfold, "eventEC_",
                         thresh1,"_", ws1, "_RCM", RCM, suffix, ".nc"), write=T)

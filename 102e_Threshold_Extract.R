@@ -101,6 +101,12 @@ print(ST)
 ST0 <- ST
 print(paste("NH =", NH))
 
+if(period=="future"){
+  threshMat <- readdf(paste0(data_wd, subfold,
+                              "threshMat_RCM", RCM, suffix,".csv"))
+}
+
+
 if(TRUE){ ### PRESENT ###----------------------------------
   for(h in 1:NH){
     if((h < 10) | (h %% 200 == 0)){ # time recording
@@ -121,9 +127,15 @@ if(TRUE){ ### PRESENT ###----------------------------------
                          count=c(1, 1, -1)))
     
     # find quantile for threshold
+    if(period=="present"){
     thresh <- quantile(tSlice, prob=c(1 - threshVal[jT]), na.rm=T) #vec
     mt <- medianThresh(tSlice, threshVal=(2/360))
     threshMat[h,jT] <- thresh
+    }
+    else{
+      thresh <- threshMat[h,jT] 
+      mt <- medianThresh(tSlice, threshVal=(2/360))
+    }
     
     k <- jT
     #for(k in 1:NT){
