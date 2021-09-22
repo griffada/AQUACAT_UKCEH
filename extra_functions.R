@@ -1,5 +1,7 @@
 cdfPrimer <- function(RCM, period, method, NE, NH, thresh1, ws1, rn, savepath, chunks=T){
   
+  if(file.exists(savepath)){ file.remove(savepath) }
+  
   if(chunks){
     cs <- c(4,250)
   }else{
@@ -16,9 +18,9 @@ cdfPrimer <- function(RCM, period, method, NE, NH, thresh1, ws1, rn, savepath, c
   ape_var <- ncvar_def("ape","ProbOfExc",list(loc_dim, event_dim), -9999,
                        "Annual Probability of Exceedance",prec="double",
                        compression=2, chunksizes=cs)
-  ape_var20 <- ncvar_def("ape20","ProbOfExc",list(loc_dim, event_dim), -9999,
-                     "Annual Probability of Exceedance (20/yr)",prec="double",
-                     compression=2, chunksizes=cs)
+  #ape_var20 <- ncvar_def("ape20","ProbOfExc",list(loc_dim, event_dim), -9999,
+  #                   "Annual Probability of Exceedance (20/yr)",prec="double",
+  #                   compression=2, chunksizes=cs)
   flow_var <- ncvar_def("flow", "cumecs",list(loc_dim, event_dim), -9999,
                         "Peak Flow",prec="double",
                         compression=2, chunksizes=cs)
@@ -34,7 +36,7 @@ cdfPrimer <- function(RCM, period, method, NE, NH, thresh1, ws1, rn, savepath, c
                         "Easting", prec="double")
   
   nc.file <- nc_create(savepath, list(row_var, col_var, north_var, east_var,
-                                      flow_var, dpe_var, ape_var, ape_var20, 
+                                      flow_var, dpe_var, ape_var,# ape_var20, 
                                       event_var),
                        force_v4 = T)
   
@@ -53,7 +55,7 @@ cdfPrimer <- function(RCM, period, method, NE, NH, thresh1, ws1, rn, savepath, c
   nc_close(nc.file)
 }
 
-dpeApeComputer <- function(h, vals, obs_events, pars, thresh_val, ncin, 
+dpeApeComputer2 <- function(h, vals, obs_events, pars, thresh_val, ncin, 
                            events_per_year=2, rare_limit=1e-3){
   # Calculates daily and annual probability of exceedence based on observed flow
   # and GLO parameters using a hybrid empirical/modelled distribution.
@@ -109,7 +111,7 @@ dpeApeComputer <- function(h, vals, obs_events, pars, thresh_val, ncin,
   return(c(sum(valsape < rare_limit), 1/min(valsape[valsape > (1/5000)])))
 }
 
-dpeApeComputer2 <- function(h, vals, obs_events, pars, thresh_val, ncin, 
+dpeApeComputer <- function(h, vals, obs_events, pars, thresh_val, ncin, 
                            events_per_year=2, rare_limit=1e-3){
   # Calculates daily and annual probability of exceedence based on observed flow
   # and GPA parameters using a hybrid empirical/modelled distribution.
@@ -117,13 +119,18 @@ dpeApeComputer2 <- function(h, vals, obs_events, pars, thresh_val, ncin,
   # Saves directly to the netcdf file.
   # Returns number of extreme events, and annual RP of those events.
   
-  
+  parsGL <- vec2par(unlist(pars[3:5]), type='glo')
+  parsGP <- vec2par(unlist(pars[6:8]), type='gpa')
   ecd <- ecdf(c(-1,vals,1e8))
 
-  gpa_poe <- 1 - lmomco::cdfgpa(obs_events, pars)
+  glo_poe <- 1 - lmomco::cdfgpa(obs_events, parsGL)
+  gpa_poe <- 1 - lmomco::cdfgpa(obs_events, parsGP)
+  
+  gpa_poe <- pmin(gpa_poe, glo_poe)  #take the rarer of glo_poe and gpa_poe
+  
   ecd_poe <- 1 - ecd(obs_events)
   gpa_poe[is.na(gpa_poe)] <- 1
-  wh_ext <- obs_events > thresh_val
+  wh_ext <- (obs_events > thresh_val) & (gpa_poe < ecd_poe)
   wh_ext[is.na(wh_ext)] <- FALSE
 
   gpa_poe[wh_ext] <- gpa_poe[wh_ext]*(1 - ecd(thresh_val))
@@ -134,7 +141,7 @@ dpeApeComputer2 <- function(h, vals, obs_events, pars, thresh_val, ncin,
   
 
   valsape[valsape < 1/5000] <- 1/5000
-  gpa_poe[gpa_poe < 5e-7] <- 5e-7
+  gpa_poe[gpa_poe < -log(1-(1/5000))/360] <- -log(1-(1/5000))/360
   
   if(any(valsape < rare_limit)){
     print(paste("****", h))
@@ -146,21 +153,6 @@ dpeApeComputer2 <- function(h, vals, obs_events, pars, thresh_val, ncin,
             count=c(1,length(gpa_poe)))
   ncvar_put(nc=ncin, varid="ape", vals=valsape, start=c(h,1),
             count=c(1,length(gpa_poe)))
-  
-  # if("ape20" %in% names(ncin$var)){
-  #   valsape20 <- 1 - exp(-20*gpa_poe)
-  #   valsape20[is.na(valsape)] <- 1
-  #   
-  #   ncvar_put(nc=ncin, varid="ape20", vals=valsape20, start=c(h,1),
-  #         count=c(1, length(gpa_poe)))
-  #   
-  #   if(any(valsape20 < rare_limit)){
-  #     print(paste("****", h))
-  #     print(paste("obs beyond rare limit (20/yr)",
-  #               paste(1/valsape20[valsape20 < rare_limit], collapse=" ")))
-  #   }
-  #}
-
   
   return(c(sum(valsape < rare_limit), 1/min(valsape[valsape > (1/5000)])))
 }

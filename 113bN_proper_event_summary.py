@@ -14,6 +14,9 @@ import sys
 import yaml
 import time
 
+def season(x):
+  return ["DJF","MAM","JJA","SON"][((x // 90) % 4)]
+
 #rcm = "01"
 #period = "198012_201011"
 
@@ -67,6 +70,10 @@ thresh_path = f"{outlevel}/RCM{rcm}_{period}/threshMat_RCM{rcm}_{period}.csv"
 threshvec = pd.read_csv(thresh_path).iloc[:,1]
 if regional:
     threshvec = threshvec[rnreg.REGION == "NW"]
+    
+init_path = (f"{outlevel}/RCM{rcm}_{period}{subfold}/initialSummary"
+             f"_RCM{rcm}_{period}.csv")
+init_table = pd.read_csv(init_path)
 
 summ_path = (f"{outlevel}/RCM{rcm}_{period}{subfold}/eventSumm"
              f"_OBS_POT2_pc01_RCM{rcm}_{period}.csv")
@@ -98,9 +105,9 @@ for i in range(NE):
     vvec = sum(vvec_all[i,:] > threshvec)
     avec = min(avec_all[i,:])
     dvec = min(dvec_all[i,:])
-    #D = summtable.iloc[ni-1,1:3] # Done in R afterwards
-    #seas = summtable.iloc[ni-1, 6] # Done in R afterwards
-    summtable_out.loc[i] = [ni, 0, 0, vvec, avec, dvec, 0, 0, 0]
+    D = init_summ.iloc[ni-1,1:3] # Done in R afterwards
+    seas = season(summtable.iloc[ni-1, 1]) # Done in R afterwards
+    summtable_out.loc[i] = [ni, D[0], D[1], vvec, avec, dvec, seas, 0, 0]
 
 print("--- %s seconds ---" % (time.time() - start_time))
 print("done")
@@ -118,7 +125,7 @@ with open(yaml_path) as ym:
 list_doc['OBSsumm'] = True
 
 with open(yaml_path, 'w') as ym:
-    yaml.dump(list_doc, ym)
+    yaml.dump(list_doc, ym, sort_keys=False)
     
 print(time.strftime("%Y-%m-%d %H:%M:%S"))
 print("Nearly finished OBS Summary.")

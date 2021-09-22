@@ -113,6 +113,7 @@ nc_close(obs_events)
 nc_close(ncin)
 
 settings$OBSflow <- TRUE
+settings$Event_Summary <- "105N"
 write_yaml(settings, settingspath)
 }
 print(Sys.time())

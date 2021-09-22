@@ -13,7 +13,7 @@
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
 
-if(interactive()){commandArgs <- function(...){c("01","present")}}
+if(interactive()){commandArgs <- function(...){c("10","present")}}
 #### SETUP ####----------------------
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
@@ -43,8 +43,8 @@ if(settings$EC2flow){
 print(paste("Running for threshold", thresh1, "at", ws1, "minimum spread."))
 print(paste("RCM", RCM, "period", period))
 
-suffix_pres <- "_198012_201011"
-subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
+#suffix_pres <- "_198012_201011"
+#subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
 #ncpres <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix_pres, "_out.nc") 
 
 readdf <- function(...){as.data.frame(data.table::fread(...))}
@@ -63,12 +63,9 @@ obs_events  <- nc_open(paste0(data_wd,subfold,"eventOBS_",thresh1, "_", ws1,
 partable    <- readdf(paste0(data_wd,subfold,
                   "paramtableG_",thresh1, "_RCM", RCM, suffix, ".csv"))
 
-partable_pres <- readdf(paste0(data_wd,subfold, 
-                  "paramtableG_", thresh1, "_RCM", RCM, suffix, ".csv"))
-
 NE <- obs_events$dim$event$len
 
-savepath <- paste0(data_wd, subfold, "eventEC2_",
+savepath <- paste0(data_wd, subfold, "eventEC_",
                         thresh1,"_", ws1, "_RCM", RCM, suffix, ".nc")
 cdfPrimer(RCM, period, "EC2", NE=Msims, NH, thresh1, ws1, rn, savepath,
           chunks=T)
@@ -84,12 +81,12 @@ flow_glo <- function(v, params, eventthresh, OBS){
       up[] <- FALSE
     } else if (!are.lmom.valid(LM)){
       up[] <- FALSE
-    } else if (!are.parglo.valid(parglo(LM))){
+    } else if (!are.pargpa.valid(pargpa(LM))){
       up[] <- FALSE  
     }
     if(any(up)){
-      setpars <- parglo(LM)
-      flow[up] <- quaglo(1 - (v[up])/(1-eventthresh), setpars)
+      setpars <- pargpa(LM)
+      flow[up] <- quagpa(1 - (v[up])/(1-eventthresh), setpars)
       up[flow < params$threshold] <- FALSE
     }
     if(any(!up)) flow[!up] <- quantile(OBS, 1-v[!up])
@@ -114,7 +111,7 @@ betacop <- function(NE, NH, dM, rankevents, thresholds=(2/360), mincov=0.002){
 ### SIMULATION OF NEW EVENTS ###--------------------------------------------
 # Number of new events to simulate
 print("Simulating new events")
-Msims <- 20
+#Msims <- 20
 dM <- 5 #number of draws per tester; keep small.
 M <- Msims - (Msims%%dM)
 print(paste("> > > > > > M = ", M))
@@ -131,7 +128,7 @@ rank_events <- t(apply(-obs_slice, 1, rank, ties.method = "random"))
 
 cl <- parallel::makeCluster(3, outfile = "")
 doParallel::registerDoParallel(cl)
-Vnew1 <- foreach(m = 1:(M/dM)) %dopar% {
+Vnew1 <- foreach(m = 1:(M/dM)) %do% {
   if(m %% 200 == 0){print(paste0(m,"/",M))}
   B <- betacop(NE, NH, dM, rank_events, thresholds=obs_thresh, mincov=0.0008)
   newEventDraw <<- c(newEventDraw, B$newEventDraw)
@@ -142,7 +139,7 @@ Vnew <- do.call(cbind, lapply(Vnew1, function(v){v$Vnew0}))
 newEventDraw <- do.call(c, lapply(Vnew1, function(v){v$newEventDraw}))
 # V to flow
 
-#Vextra <- matrix(NA, NH, M)
+if(interactive()) Vextra <- matrix(NA, NH, M)
 
 for(h in 1:NH){
   if(h < 10 | h %% 1000 == 0){print(h)}
@@ -158,11 +155,14 @@ for(h in 1:NH){
    print(o)
   }else{
     o <- unlist(o)
-    #Vextra[h,] <- o
-    ncvar_put(ec_events, "flow", unlist(o), start=c(h,1), count=c(1,Msims))
+    if(interactive()) Vextra[h,] <- o
+    if(!interactive()){ 
+      ncvar_put(ec_events, "flow", unlist(o), start=c(h,1), count=c(1,Msims))
+    }
   }
 }
-sapply(1:M, function(i){sum(Vextra[,i] > threshMat[,jT])})
+if(interactive()) VV <- 
+  sapply(1:M, function(i){sum(Vextra[,i] > threshMat[,jT])})
 W <- newEventDraw
 W1 <- sapply(1:length(W), function(i){paste0(W[i],".",sum(W[1:i]==W[i]))})
 
@@ -173,6 +173,7 @@ nc_close(obs_events)
 nc_close(ec_events)
 
 settings$EC2flow <- TRUE
+settings$EmpiricalBeta_Copula <- "107cN"
 write_yaml(settings, settingspath)
 }
 print(Sys.time())

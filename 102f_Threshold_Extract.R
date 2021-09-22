@@ -93,7 +93,7 @@ partable <- data.frame(meanint=numeric(),
                         shape=numeric(),
                         threshquan=numeric(),
                         pot2=numeric())
-NV <- 60
+NV <- 50
 ##### Get quantiles for thresholds #####--------------------------------
 print("loop start")
 ST <- Sys.time()
@@ -101,10 +101,10 @@ print(ST)
 ST0 <- ST
 print(paste("NH =", NH))
 
-if(period=="future"){
-  threshMat <- readdf(paste0(data_wd, subfold,
-                              "threshMat_RCM", RCM, suffix,".csv"))
-}
+# if(period=="future"){
+#   threshMat <- readdf(paste0(data_wd, subfold,
+#                               "threshMat_RCM", RCM, suffix,".csv"))
+# }
 
 
 if(TRUE){ ### PRESENT ###----------------------------------
@@ -127,15 +127,15 @@ if(TRUE){ ### PRESENT ###----------------------------------
                          count=c(1, 1, -1)))
     
     # find quantile for threshold
-    if(period=="present"){
+    #if(period=="present"){
     thresh <- quantile(tSlice, prob=c(1 - threshVal[jT]), na.rm=T) #vec
     mt <- medianThresh(tSlice, threshVal=(2/360))
     threshMat[h,jT] <- thresh
-    }
-    else{
-      thresh <- threshMat[h,jT] 
-      mt <- medianThresh(tSlice, threshVal=(2/360))
-    }
+    # }
+    # else{
+    #   thresh <- threshMat[h,jT] 
+    #   mt <- medianThresh(tSlice, threshVal=(2/360))
+    # }
     
     k <- jT
     #for(k in 1:NT){
@@ -155,7 +155,7 @@ if(TRUE){ ### PRESENT ###----------------------------------
       #print(min_ep)
     })
     
-    if(inherits(o1, "try-error") | min_ep < 0.8){
+    if(inherits(o1, "try-error") | min_ep < 0.7){
       print(paste("min_ep =", min_ep))
       print(paste(h, " Using UKFE2 and medianThresh"))
 
@@ -181,18 +181,29 @@ if(TRUE){ ### PRESENT ###----------------------------------
     meanint <- 30/sum(ep1)
       # fit a GPA distribution
     o <- try({
-        LM <- lmoms(peak_vals) 
-        LM$lambdas[1] <- median(peak_vals)
+        PV <- sort(peak_vals, decreasing=T)[-1]
+        LM <- lmoms(PV) 
+        
+        at_site_gpa <- pargpa(LM, xi=thresh0)
+        invisible({cdfglo(peak_vals, at_site_gpa)})
+        at_site_gpa <- at_site_gpa$para
+        
+        LM$lambdas[1] <- (median(PV) + mean(PV))/2
         LM$ratios[2] <- LM$lambdas[2]/LM$lambdas[1]
         at_site_glo <- parglo(LM)
         invisible({cdfglo(peak_vals, at_site_glo)})
         at_site_glo <- at_site_glo$para
+        
+        
+        
         #lmomco uses opposite shape to fevd
     })
     if(inherits(o, "try-error")){
       warning(paste("ML used for site",h))
-      at_site_gum <- fevd(x=peak_vals,
-                          type="Gumbel")$results$par
+      at_site_gpa <- c(9999,1,0.01)
+      thresh0 <- 9999
+      threshquan <- 1
+      at_site_glo <- c(1,1,0.01)
     }
       
     threshquan <- ecdf(tSlice)(thresh0)
@@ -201,6 +212,7 @@ if(TRUE){ ### PRESENT ###----------------------------------
                 list(meanint,
                      thresh0,
                      at_site_glo[1], at_site_glo[2], at_site_glo[3], 
+                     at_site_gpa[1], at_site_gpa[2], at_site_gpa[3], 
                      threshquan, threshMat[h,k])
   }
 }
@@ -208,7 +220,9 @@ if(TRUE){ ### PRESENT ###----------------------------------
 # 
 
 print("saving outputs")
-colnames(partable) <- c("meanint", "threshold", "loc", "sca", "shape",
+colnames(partable) <- c("meanint", "threshold",
+                        "locGL", "scaGL", "shapeGL",
+                        "locGP", "scaGP", "shapeGP",
                         "threshquan", "pot2")
 str(partable)
 str(data.frame(threshMat))
@@ -227,6 +241,7 @@ readr::write_csv(partable, paste0(data_wd,subfold,
                           "paramtableG_",thresh1, "_RCM", RCM, suffix, ".csv"))
 
 settings$paramtable <- TRUE
+settings$threshold_extract <- "102f"
 write_yaml(settings, settingspath)
 }
 warnings()

@@ -128,10 +128,14 @@ for (j in jT) {
   }
 }
 
+#season <- function(D) switch(((D %/% 90) %% 4) + 1, "DJF", "MAM", "JJA", "SON")
+season2 <- function(D) c("DJF","MAM","JJA","SON")[((D %/% 90) %% 4) + 1]
+
 # Initial summary of events, possibly to be used in summaries.
 summInitial <- data.frame(Start=eventDayList[[jT]][[jW]],
                           Length=eventLList[[jT]][[jW]],
-                          MaxInun=maxInunList[[jT]][[jW]])
+                          MaxInun=maxInunList[[jT]][[jW]],
+                          Season=season2(eventDayList[[jT]][[jW]]))
                           
 
 #### OUTPUTS ##### ----------------------------------------------------
@@ -145,6 +149,7 @@ readr::write_csv(summInitial,
           paste0(data_wd, subfold, "initialSummary_RCM", RCM, suffix, ".csv"))
 settings$paramtable <- TRUE
 settings$eventlist <- TRUE
+settings$event_extract <- "104b"
 write_yaml(settings, settingspath)
 
 print(Sys.time())
