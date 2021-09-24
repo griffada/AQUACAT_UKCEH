@@ -88,9 +88,12 @@ threshMat <- matrix(NA, ncol=NT, nrow=NH)
 
 partable <- data.frame(meanint=numeric(),
                         threshold=numeric(),
-                        loc=numeric(),
-                        scale=numeric(),
-                        shape=numeric(),
+                        locGL=numeric(),
+                        scaleGL=numeric(),
+                        shapeGL=numeric(),
+                        locGP=numeric(),
+                        scaleGP=numeric(),
+                        shapeGP=numeric(),
                         threshquan=numeric(),
                         pot2=numeric())
 NV <- 50
@@ -185,7 +188,7 @@ if(TRUE){ ### PRESENT ###----------------------------------
         LM <- lmoms(PV) 
         
         at_site_gpa <- pargpa(LM, xi=thresh0)
-        invisible({cdfglo(peak_vals, at_site_gpa)})
+        invisible({cdfgpa(peak_vals, at_site_gpa)})
         at_site_gpa <- at_site_gpa$para
         
         LM$lambdas[1] <- (median(PV) + mean(PV))/2

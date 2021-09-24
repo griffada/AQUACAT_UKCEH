@@ -14,10 +14,10 @@ import sys
 import yaml
 import time
 
-def season(x):
-  return ["DJF","MAM","JJA","SON"][((x // 90) % 4)]
+# def season(x):
+  # return ["DJF","MAM","JJA","SON"][((x // 90) % 4)]
 
-#rcm = "01"
+#=rcm = "10"
 #period = "198012_201011"
 
 rcm = sys.argv[1]
@@ -36,7 +36,7 @@ periods = ["198012_201011","205012_208011"]
 toplevel = r"/prj/aquacat/Data"
 
 # CHANGE THIS TO THE TOP LEVEL OF THE FOLDER THE NETCDFs ARE IN
-outlevel = toplevel #r'S:/Data'
+outlevel = toplevel #r'S:/Data' #
 
 # CHANGE THIS TO WHERE THE hasData files are, they should exist in the toplevel folder.
 rn = pd.read_csv(f"{toplevel}/hasData_primary.csv")
@@ -70,9 +70,8 @@ thresh_path = f"{outlevel}/RCM{rcm}_{period}/threshMat_RCM{rcm}_{period}.csv"
 threshvec = pd.read_csv(thresh_path).iloc[:,1]
 if regional:
     threshvec = threshvec[rnreg.REGION == "NW"]
-    
-init_path = (f"{outlevel}/RCM{rcm}_{period}{subfold}/initialSummary"
-             f"_RCM{rcm}_{period}.csv")
+
+init_path = (f"{outlevel}/RCM{rcm}_{period}{subfold}/initialSummary_RCM{rcm}_{period}.csv")
 init_table = pd.read_csv(init_path)
 
 summ_path = (f"{outlevel}/RCM{rcm}_{period}{subfold}/eventSumm"
@@ -81,13 +80,14 @@ summ_path = (f"{outlevel}/RCM{rcm}_{period}{subfold}/eventSumm"
 
 
 summtable_out = pd.DataFrame(columns=["eventNumber", "eventDay", "eventLength",
-                                      "area","peakA", "peakD", "season",
+                                      "area","peakA", "peakA_mid", "peakD", "season",
                                       "nclusters","peakyness"])
 
 eventNo = list(ncfile.variables["eventNo"][:])
 NE = np.sum([i > 0 for i in eventNo])
 
 avec_all = ncfile.variables['ape'][:,:]
+avec_mid = ncfile.variables['ape_mid'][:,:]
 vvec_all = ncfile.variables['flow'][:,:]
 dvec_all = ncfile.variables['dpe'][:,:]
 
@@ -104,10 +104,13 @@ for i in range(NE):
     ni = eventNo[i]
     vvec = sum(vvec_all[i,:] > threshvec)
     avec = min(avec_all[i,:])
+    amid = min(avec_mid[i,:])
     dvec = min(dvec_all[i,:])
-    D = init_summ.iloc[ni-1,1:3] # Done in R afterwards
-    seas = season(summtable.iloc[ni-1, 1]) # Done in R afterwards
-    summtable_out.loc[i] = [ni, D[0], D[1], vvec, avec, dvec, seas, 0, 0]
+    D = init_table.iloc[ni-1,:] # Done in R afterwards
+    #seas = init_table.iloc[ni-1, 3]) # Done in R afterwards
+    summtable_out.loc[i] = [ni, D[0], D[1],
+                            vvec, avec, amid, dvec,
+                            D[3], 0, 0]
 
 print("--- %s seconds ---" % (time.time() - start_time))
 print("done")
@@ -123,9 +126,10 @@ with open(yaml_path) as ym:
     list_doc = yaml.safe_load(ym)
 
 list_doc['OBSsumm'] = True
+list_doc['propsumm'] = "113bN.py"
 
 with open(yaml_path, 'w') as ym:
     yaml.dump(list_doc, ym, sort_keys=False)
     
 print(time.strftime("%Y-%m-%d %H:%M:%S"))
-print("Nearly finished OBS Summary.")
+print("Files saved and YAML updated. End.")

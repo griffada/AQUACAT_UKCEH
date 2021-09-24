@@ -128,7 +128,7 @@ rank_events <- t(apply(-obs_slice, 1, rank, ties.method = "random"))
 
 cl <- parallel::makeCluster(3, outfile = "")
 doParallel::registerDoParallel(cl)
-Vnew1 <- foreach(m = 1:(M/dM)) %do% {
+Vnew1 <- foreach(m = 1:(M/dM)) %dopar% {
   if(m %% 200 == 0){print(paste0(m,"/",M))}
   B <- betacop(NE, NH, dM, rank_events, thresholds=obs_thresh, mincov=0.0008)
   newEventDraw <<- c(newEventDraw, B$newEventDraw)

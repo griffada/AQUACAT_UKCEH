@@ -14,6 +14,9 @@ import sys
 import yaml
 import time
 
+def season(x):
+  return ["DJF","MAM","JJA","SON"][((x // 90) % 4)]
+
 #rcm = "01"
 #period="205012_208011"
 
@@ -72,6 +75,9 @@ summ_path = (f"{outlevel}/RCM{rcm}_{period}{subfold}/eventSumm_OBS"
              f"_POT2_pc01_RCM{rcm}_{period}.csv")
 summtable = pd.read_csv(summ_path)
 
+init_path = (f"{outlevel}/RCM{rcm}_{period}{subfold}/initialSummary"
+             f"_RCM{rcm}_{period}.csv")
+init_table = pd.read_csv(init_path)
 
 summtable_out = pd.DataFrame(columns=["eventNumber", "eventDay", "eventLength",
                                       "area","peakA", "peakD", "season",
@@ -98,10 +104,11 @@ for i in range(NE):
     vvec = np.nansum(vvec_all[i,:] > threshvec)
     avec = min(avec_all[i,:])
     dvec = min(dvec_all[i,:])
-    D = summtable.iloc[ni-1,1:3]
+    D = init_table.iloc[ni-1,1:3] # Done in R afterwards
+    seas = season(summtable.iloc[ni-1, 1]) # Done in R afterwards
     summtable_out.loc[i] = [ni, D[0], D[1],
                             vvec, avec, dvec,
-                            summtable.iloc[ni-1,6], 0, 0]
+                            seas, 0, 0]
 
 print("--- %s seconds ---" % (time.time() - start_time))
 print("done")
@@ -119,6 +126,7 @@ with open(yaml_path) as ym:
     list_doc = yaml.safe_load(ym)
 
 list_doc['EC2summ'] = True
+list_doc['ECpropsumm'] = "113bN.py"
 
 with open(yaml_path, 'w') as ym:
     yaml.dump(list_doc, ym)
