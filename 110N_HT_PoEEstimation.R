@@ -58,9 +58,9 @@ if(length(args)==3){
   }
 }
 
-suffix_pres <- "_198012_201011"
-subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
-ncpres <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix_pres, "_out.nc") 
+# suffix_pres <- "_198012_201011"
+# subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
+ncpres <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix, "_out.nc") 
 
 ##### DATA #####-------------------------------------------------------
 
@@ -106,6 +106,7 @@ for(h in 1:NE){
   
   
   H <- rn_reg$locnum[h]
+  thr  <- threshMat[H,jT]
   locH <- partable$loc[h]
   scaleH <- partable$sca[h]
   shapeH <- partable$shape[h]
@@ -120,9 +121,9 @@ for(h in 1:NE){
 
   da <- dpeApeComputer(h,
                  vals,
-                 eventflow_HT,
+                 obs=eventflow_HT,
                  ncin=ht_events,
-                 pars=vec2par(c(locH,scaleH,shapeH), type='gpa'),
+                 pars=partable[h,],
                  thresh_val=thresholdH)
 }
 
@@ -133,7 +134,7 @@ nc_close(ncin)
 
 settings$HTdpe <- TRUE
 settings$HTape <- TRUE
-
+settings$HTPoE_Estimation <- "110cN"
 write_yaml(settings, settingspath)
 
 }

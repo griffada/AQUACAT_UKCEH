@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# You need the top line of this script so that it runs properly.
+
+for r in 01 04 05 06 07 08 09 10 11 12 13 15  # This runs the loop for each of these strings
+do
+for p in present future 
+    do
+
+    echo $r # This prints the value of r (as defined on line 5)
+    echo $p
+    
+    echo "108 event splitting"
+    Rscript --vanilla 108_Event_Splitting.R $r $p &  # This passes the arguments r and p to the R-script.
+    tail ./logs/"$r"_"$p"_108_rerun.err  # This prints the last ~10 lines of this file.
+
+    echo "113 OBS event summary running"
+    Rscript --vanilla 113N_proper_event_summary.R $r $p > ./logs/"$r"_"$p"_113_rerun.out 2> ./logs/"$r"_"$p"_113_rerun.err
+    tail ./logs/"$r"_"$p"_113_rerun.err
+
+    echo "113 EC event summary running"
+    Rscript --vanilla 113b_EC_proper_event_summary.R $r $p > ./logs/"$r"_"$p"_113b_rerun.out 2> ./logs/"$r"_"$p"_113b_rerun.err
+    tail ./logs/"$r"_"$p"_113b_rerun.err
+
+    echo "114 regional event summary running"
+    Rscript --vanilla 114_regional_proper_event_summary.R $r $p NW > ./logs/"$r"_"$p"_114_rerun.out 2> ./logs/"$r"_"$p"_114_rerun.err
+    tail ./logs/"$r"_"$p"_114_rerun.err
+
+    done
+done
+echo "Complete"

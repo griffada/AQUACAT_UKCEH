@@ -61,3 +61,7 @@ abline(h=mid_changept, col=2)
 abline(v=glim[2])
 
 max(1/glo_poe0)
+
+
+
+

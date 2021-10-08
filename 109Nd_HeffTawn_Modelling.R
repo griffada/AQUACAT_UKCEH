@@ -15,7 +15,7 @@
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
 if(interactive()){
-  commandArgs <- function(...){c("01","present","NW")}
+  commandArgs <- function(...){c("06","present","NW")}
 }
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
@@ -101,7 +101,7 @@ print(Sys.time() - ST)
 
 ### KEY ARGUMENTS ---------------------------------
 ST <- Sys.time()
-DATA <- ncvar_get(obs_events, "flow") %>% as.data.frame()# %>% t()
+DATA <- ncvar_get(obs_events, "flow") %>% as.data.frame()# %>% t() 
 rownames(DATA) <- ncvar_get(obs_events, "eventNo")
 mqu <- 0.75
 dqu <- 0.8
@@ -110,8 +110,8 @@ nc_close(obs_events)
 
 ### STEP 1 ### MARGINALS ###--------------------------------------------------
 marginfns_temp <- list("laplace",
-      p2q = function(p) ifelse(p <  0.5, log(2 * p), -log(2 * (1 - p))),
-      q2p = function(q) ifelse(q <  0, exp(q)/2, 1 - 0.5 * exp(-q)))
+          p2q = function(p) ifelse(p <  0.5, log(2 * p), -log(2 * (1 - p))),
+          q2p = function(q) ifelse(q <  0, exp(q)/2, 1 - 0.5 * exp(-q)))
 ### STEP 2 ### TRANSFORM TO LAPLACE ###----------------------------------------
 if(settings$HTstructure){
   MODELS <- readRDS(paste0(data_wd, subfold, REG, "/marginal_models.rds"))
@@ -223,6 +223,7 @@ cdfPrimer(RCM, period, "HT", NE=nSample, NH=NREG, thresh1=thresh1, ws1=ws1,
 ht_events <- nc_open(savepath, write=T)
 
 
+
 MCEVENTS <- mexMonteCarlo_slim(mexList=DEPENDENCE,
                                   marginfns=marginfns_temp,
                                   mth=mth_in,
@@ -234,7 +235,7 @@ MCS <- t(MCEVENTS$MCsample)
 
 W <- colnames(MCS)
 W <- floor(as.numeric(W))
-#W <- as.numeric(unlist(sapply(W, function(w){strsplit(w, ".")[[1]][1]})))
+#W <- as.numeric(unlist(sapply(W, function(w){strsplit(w, "V")[[1]][2]})))
 #W1 <- sapply(1:length(W), function(i){paste0(W[i],".",sum(W[1:i]==W[i]))})
 #MCS <- cbind(rn[r1,], MCS)
 #colnames(MCS)[-(1:4)] <- W1
@@ -252,7 +253,7 @@ ncvar_put(ht_events, "flow", MCS, start=c(1,en), count=c(-1,min(nSample, dS)))
 if(nSample > dS){
     sampleStep <- seq(0,nSample,by=dS)
     if(max(sampleStep) != nSample){ sampleStep <- c(sampleStep, nSample) }
-    for(i in seq_len(length(sampleStep)-1)[-1]){
+    for(i in seq_len(length(sampleStep)-1)){
       MCEVENTS <- mexMonteCarlo_slim(mexList=DEPENDENCE,
                                   marginfns=marginfns_temp,
                                   mth=mth_in,
@@ -263,8 +264,7 @@ if(nSample > dS){
       MCS <- t(MCEVENTS$MCsample)
       
       W <- colnames(MCS)
-      W <- floor(as.numeric(W))
-      # W <- as.numeric(unlist(sapply(W, function(w){strsplit(w, "V")[[1]][2]})))
+      W <- as.numeric(unlist(sapply(W, function(w){strsplit(w, "V")[[1]][2]})))
       # MCS <- cbind(rn[r1,], MCS)
       # colnames(MCS)[-(1:4)] <- W1
       
@@ -285,7 +285,6 @@ nc_close(ht_events)
 print("Step 4 Complete: New events simulated.")
 
 settings$HTflow <- TRUE
-settings$texmex <- "07d"
 write_yaml(settings, settingspath)
 
 }

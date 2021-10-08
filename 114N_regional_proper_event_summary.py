@@ -35,8 +35,6 @@ outlevel = toplevel #r'S:/Data'
 rn = pd.read_csv("".join([toplevel,"/hasData_primary.csv"]))
 rnreg = pd.read_csv("".join([toplevel,"/hasData_Regions.csv"]))
 
-method="HT" # "EC" OR "OBS", "HT" AS NEEDED
-
 regional = True
 
 if regional:
@@ -49,30 +47,34 @@ else:
     fileinfix = 'POT2_pc01'
     NH = 19914
 
-ncpath = "".join([outlevel, r'/RCM', rcm, '_', period, subfold,
-                  r'/event', method, '_', fileinfix, '_RCM',rcm,
-                  '_',period, '.nc'])
-ncfile = nc.Dataset(ncpath, mode='r+')
+#for method in ["OBS", "EC", "HT"]:
+method="OBS" # "EC" OR "OBS", "HT" AS NEEDED
 
-param_path = "".join([outlevel, r'/RCM', rcm, '_', period, 
-                  r'/paramtableG_POT2_RCM',rcm,
-                  '_',period,'.csv'])
+ncpath = (f"{outlevel}/RCM{rcm}_{period}{subfold}/event{method}_{fileinfix}"
+          f"_RCM{rcm}_{period}.nc")
+ncfile = nc.Dataset(ncpath, mode='r')
+
+param_path = (f"{outlevel}/RCM{rcm}_{period}{subfold}/paramtableG"
+              f"_POT2_RCM{rcm}_{period}.csv")
 
 param_table = pd.read_csv(param_path)
 
-thresh_path = "".join([outlevel, r'/RCM', rcm, '_', period, 
-                  r'/threshMat_RCM',rcm,
-                  '_',period,'.csv'])
+thresh_path = f"{outlevel}/RCM{rcm}_{period}{subfold}/threshMat_RCM{rcm}_{period}.csv"
 
 threshvec = pd.read_csv(thresh_path).iloc[:,1]
 if regional:
     threshvec = threshvec[rnreg.REGION == "NW"]
 
-summ_path = "".join([outlevel, r'/RCM', rcm, '_', period, 
-                  r'/eventSumm_OBS_POT2_pc01_RCM',rcm,
-                  '_',period, '.csv'])
-summtable = pd.read_csv(summ_path)
+init_path = (f"{outlevel}/RCM{rcm}_{period}/initialSummary_RCM{rcm}_{period}.csv")
+init_table = pd.read_csv(init_path)
 
+summ_path = (f"{outlevel}/RCM{rcm}_{period}{subfold}/eventSumm"
+             f"_OBS_POT2_pc01_RCM{rcm}_{period}.csv")
+
+
+threshvec = pd.read_csv(thresh_path).iloc[:,1]
+if regional:
+    threshvec = threshvec[rnreg.REGION == "NW"]
 
 summtable_out = pd.DataFrame(columns=["eventNumber", "eventDay", "eventLength",
                                       "area","peakA", "peakD", "season",
@@ -82,6 +84,7 @@ eventNo = list(ncfile.variables["eventNo"][:])
 NE = np.sum([i > 0 for i in eventNo])
 
 avec_all = ncfile.variables['ape'][:,:]
+avec_mid = ncfile.variables['ape_mid'][:,:]
 vvec_all = ncfile.variables['flow'][:,:]
 dvec_all = ncfile.variables['dpe'][:,:]
 
@@ -93,14 +96,17 @@ import time
 
 start_time = time.time()
 for i in range(NE):
-    #if i % 100 == 0:
-    #    print(i)
+    if (i < 10) or (i % 200) == 0:
+        print(i)
+        print("--- %s seconds ---" % (time.time() - start_time))
+        start_time = time.time()
     ni = eventNo[i]
     vvec = sum(vvec_all[i,:] > threshvec)
     avec = min(avec_all[i,:])
+    amid = min(avec_mid[i,:])
     dvec = min(dvec_all[i,:])
     D = summtable.iloc[ni-1,1:3]
-    summtable_out.loc[i] = [ni, D[0], D[1], vvec, avec, dvec, summtable.iloc[ni,6], 0, 0]
+    summtable_out.loc[i] = [ni, D[0], D[1], vvec, avec, dvec, summtable.iloc[ni-1,6], 0, 0]
 
 print("--- %s seconds ---" % (time.time() - start_time))
 print("done")
@@ -115,6 +121,10 @@ with open(yaml_path) as ym:
     list_doc = yaml.safe_load(ym)
 
 list_doc['HTsumm'] = True
+list_doc['propsumm'] = "114N.py"
 
 with open(yaml_path, 'w') as ym:
     yaml.dump(list_doc, ym)
+    
+    print(time.strftime("%Y-%m-%d %H:%M:%S"))
+print("Files saved and YAML updated. End.")

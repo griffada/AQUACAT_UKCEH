@@ -492,8 +492,7 @@ mexMonteCarlo_slim <- function(marginfns, referenceMargin=NULL,
     replace <- whichMax == i & whichMaxAboveThresh
     if (nReplace[i] > 0) {
       try({
-      MCsampleOriginal[replace, ] <- predict.mex_slim(whch=i,
-                                      referenceMargin=referenceMargin,
+      P <- predict.mex_slim(whch=i, referenceMargin=referenceMargin,
                                       marginfns=marginfns,
                                       constrain=mexList[[i]]$dependence$constrain,
                                       coeffs_in = COEFFS[,,i],
@@ -502,7 +501,8 @@ mexMonteCarlo_slim <- function(marginfns, referenceMargin=NULL,
                                       mth=mth,
                                       mqu=mqu,
                                       nsim = nSample * d * mult,
-                                      d=d, iii=i)[1:nReplace[i],]
+                                      d=d, iii=i)
+      MCsampleOriginal[replace, ] <- P[sample.int(nrow(P),nReplace[i]),]
       })
     }
   }
@@ -633,19 +633,19 @@ predict.mex_slim <- function(whch, referenceMargin=NULL, marginfns,
       nit <- 0
       KEEP <- TRUE
       while(sum(tick)<2 & nit < MAXIT){
-      ui <- runif(nsim , min = max(c(mqu[whch], pqu)))
-      y <-  marginfns$p2q(ui)
-      ymi <- sapply(1:(dim(z)[[2]]), makeYsubMinusI, z=z, v=dco , y=y)
-      tick <- y > apply(ymi,1,max)
-      tick[is.na(tick)] <- FALSE
-      #print(sum(tick))
-      if (sum(tick) >= 2) {
-      ymi <- ymi[tick,]
-      y <- y[tick]
-      ui <- ui[tick]
-      }
-      nit <- nit+1
-      if (nit == MAXIT) {print(paste("Lots of retries for", iii))}
+        ui <- runif(nsim , min = max(c(mqu[whch], pqu)))
+        y <-  marginfns$p2q(ui)
+        ymi <- sapply(1:(dim(z)[[2]]), makeYsubMinusI, z=z, v=dco , y=y)
+        tick <- y > apply(ymi,1,max)
+        tick[is.na(tick)] <- FALSE
+        #print(sum(tick))
+        if (sum(tick) >= 2) {
+          ymi <- ymi[tick,]
+          y <- y[tick]
+          ui <- ui[tick]
+        }
+        nit <- nit+1
+        if (nit == MAXIT) {print(paste("Lots of retries for", iii))}
       }
       if(nit > MAXIT-1){
         print(paste("MAXIT hit: sum(tick)= ",sum(tick)))
@@ -673,6 +673,7 @@ predict.mex_slim <- function(whch, referenceMargin=NULL, marginfns,
       sim <- data.frame( xi , xmi)
       names( sim ) <- c( colnames( DATA )[ whch ],
                          colnames( DATA )[ -whch ])
+      rownames(sim) <- which(tick)
       if(!KEEP){
        sim <- matrix(NA, nrow=2, ncol=d)
       }
@@ -684,8 +685,10 @@ predict.mex_slim <- function(whch, referenceMargin=NULL, marginfns,
 
     bootRes <- NULL
     
-    cox <- coef.migpd_slim(mth, mqu)[3:4, whch]
-    coxmi <- as.matrix(coef.migpd_slim(mth, mqu)[3:4, -whch])
+    CM <- coef.migpd_slim(mth, mqu)
+    cox <- CM[3:4, whch]
+    coxmi <- CM[3:4, -whch]
+    rm(CM)
     
     sim <- MakeThrowData(dco=coeffs_in,
                          z=z_in,

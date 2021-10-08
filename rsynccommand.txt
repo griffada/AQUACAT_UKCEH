@@ -1,3 +1,7 @@
-rsync -rnvP --exclude="*eventECMar*" --exclude="*eventECA*" --exclude="*ECX*" --exclude"=*paramtableH*" --include="*/" --include="*.csv" --include="*.nc" --exclude="*.rds" --exclude="*.RDa" --exclude="*.RDS" --exclude="*eventSumm_ECX*"  /prj/aquacat/Data adam@punchy2.ddns.net:/raid0/transfer/
+rsync -rnvP --exclude="*eventECMar*" --exclude="*eventEC*" --exclude="*ECX*" --exclude"=*paramtableH*" --include="*/" --include="*.csv" --include="*.nc" --exclude="*.rds" --exclude="*.RDa" --exclude="*.RDS" --exclude="*eventSumm_ECX*"  /prj/aquacat/Data adam@punchy2.ddns.net:/raid0/transfer/
 
-rsync -rnvP /prj/aquacat/Data/RCM01_198012_201011 adam@punchy2.ddns.net:/raid0/transfer/Data/RCM01_198012_201011 
+rsync -rnvP /prj/aquacat/Data/RCM01_205012_208011 adam@punchy2.ddns.net:/raid0/transfer/Data/RCM01_205012_208011 
+
+rsync -arnvzP --delete --delete-excluded --exclude="*.rds" --exclude="*.RDa" --exclude="*.RDS"  /prj/aquacat/Data/RCM01_198012_201011/ adam@punchy2.ddns.net:/raid0/transfer/aquacat_data/RCM01_198012_201011/
+
+rsync -anvzP --exclude="*1980*" --exclude="*FF*" --exclude="*.rds" --exclude="*.RDa" --exclude="*.RDs" --exclude="*.RDS" /prj/aquacat/Data/ adam@punchy2.ddns.net:/raid0/transfer/aquacat_data/

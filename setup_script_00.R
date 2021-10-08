@@ -14,6 +14,7 @@
 ##### PARSE COMMAND LINE ARGUMENTS FIRST ##### -------------------------------
 
 args <- commandArgs(trailingOnly=TRUE)
+FF_flag <- FALSE
 if(length(args) > 3){
   stop("incorrect call. Rscript 10X_*****.R [RCM] [period]. ")
 }
@@ -38,11 +39,18 @@ if(length(args)==0){
 
 regions <- c("ANG", "ESC", "NE", "NSC", "NW", "SE", "SEV",
              "SSC", "SW", "THA", "TRE", "WAL")
+
+
 if(length(args)==3){
-  REG <- args[3]
-  if(!(REG %in% regions)){
-    stop(paste("incorrect call: Rscript 109_HeffTawn_Modelling.R gcm period [region] \n",
-    "- Region must be one of: ANG, ESC, NE, NSC, NW, SE, SEV, SSC, SW, THA, TRE, WAL."))
+  
+  if(args[3] == "FF" & period == "future"){
+    FF_flag <- TRUE
+  }else{
+    REG <- args[3]
+    if(!(REG %in% regions)){
+      stop(paste("incorrect call: Rscript 109_HeffTawn_Modelling.R gcm period [region] \n",
+      "- Region must be one of: ANG, ESC, NE, NSC, NW, SE, SEV, SSC, SW, THA, TRE, WAL."))
+    }
   }
 }
 if(as.numeric(RCM) < 0 | as.numeric(RCM) > 16){
@@ -86,10 +94,16 @@ if (substr(osVersion,1,3) == "Win") {
   g2g_wd <- "~/AQUACAT/run_hmfg2g/outputs/"
 }
 
-if(!dir.exists(paste0(data_wd, "RCM", RCM, suffix))){
-  dir.create(paste0(data_wd, "RCM", RCM, suffix))
+
+if(FF_flag){
+  subfold <- paste0("RCM", RCM, suffix, "_FF/")
+}else{
+  subfold <- paste0("RCM", RCM, suffix, "/")
 }
-subfold <- paste0("RCM", RCM, suffix, "/")
+
+if(!dir.exists(paste0(data_wd, subfold))){
+  dir.create(paste0(data_wd, subfold))
+}
 
 ncoriginal <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix, "_out.nc") 
 

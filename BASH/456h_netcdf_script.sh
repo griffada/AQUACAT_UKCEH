@@ -3,6 +3,10 @@
 # This bash script runs the bare essentials to get to 108 for RCM01 present
 # In theory we have all these already, except for 107, where new 
 
+if [ $2 = "present" ]; then
+    exit 1
+fi
+
 echo "101 running"
 Rscript --vanilla 101_YAML_creation.R $1 $2 > ./logs/"$1"_"$2"_101.out 2> ./logs/"$1"_"$2"_101.err
 tail ./logs/"$1"_"$2"_101.out

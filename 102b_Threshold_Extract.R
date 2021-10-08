@@ -17,7 +17,7 @@
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
 print("running 102")
-if(interactive()){commandArgs <- function(...){c("01","present")}}
+if(interactive()){commandArgs <- function(...){c("15","present", "FF")}}
 #### SETUP ####----------------------
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")

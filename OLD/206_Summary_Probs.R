@@ -1,10 +1,10 @@
 library(dplyr)
 
 files_in <- c(#"S:/Data/eventSumm_OBS_POT2_pc01_ALL.csv",
-            #"S:/Data/eventSumm_EC_POT2_pc01_ALL.csv",
+            "S:/Data/eventSumm_EC_POT2_pc01_ALL.csv",
             #"S:/Data/eventSumm_OBS_region_NW_POT2_pc01_ALL.csv",
             #"S:/Data/eventSumm_EC_region_NW_POT2_pc01_ALL.csv",
-            "S:/Data/eventSumm_HT_NW_POT2_pc01_ALL.csv")
+            "S:/Data/eventSumm_OBS_POT2_pc01_ALL.csv")
 files_out <- stringr::str_replace(files_in, "ALL", "SEASON_PROBS")
 
 files_yr <- stringr::str_replace(files_in, "ALL", "EVENTS_PER_YEAR")

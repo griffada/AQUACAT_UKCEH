@@ -3,35 +3,37 @@
 # This bash script runs the bare essentials to get to 108 for RCM01 present
 # In theory we have all these already, except for 107, where new 
 
-echo "101 running"
-Rscript --vanilla 101_YAML_creation.R $1 $2 > ./logs/"$1"_"$2"_101.out 2> ./logs/"$1"_"$2"_101.err
-tail ./logs/"$1"_"$2"_101.out
-tail ./logs/"$1"_"$2"_101.err
+date -R
 
-echo "102 running"
-Rscript --vanilla 102g_Threshold_Extract.R $1 $2 > ./logs/"$1"_"$2"_102.out 2> ./logs/"$1"_"$2"_102.err
-tail ./logs/"$1"_"$2"_102.out
-tail ./logs/"$1"_"$2"_102.err
+# echo "101 running"
+# Rscript --vanilla 101_YAML_creation.R $1 $2 > ./logs/"$1"_"$2"_101.out 2> ./logs/"$1"_"$2"_101.err
+# tail ./logs/"$1"_"$2"_101.out
+# tail ./logs/"$1"_"$2"_101.err
 
-echo "104 running"
-Rscript --vanilla 104b_Event_Extract.R $1 $2 > ./logs/"$1"_"$2"_104.out 2> ./logs/"$1"_"$2"_104.err
-tail ./logs/"$1"_"$2"_104.out
-tail ./logs/"$1"_"$2"_104.err
+# echo "102 running"
+# Rscript --vanilla 102g_Threshold_Extract.R $1 $2 > ./logs/"$1"_"$2"_102.out 2> ./logs/"$1"_"$2"_102.err
+# tail ./logs/"$1"_"$2"_102.out
+# tail ./logs/"$1"_"$2"_102.err
 
-echo "105N running"
-Rscript --vanilla 105N_Event_Summary.R $1 $2 > ./logs/"$1"_"$2"_105.out 2> ./logs/"$1"_"$2"_105.err
-tail ./logs/"$1"_"$2"_105.out
-tail ./logs/"$1"_"$2"_105.err
+# echo "104 running"
+# Rscript --vanilla 104b_Event_Extract.R $1 $2 > ./logs/"$1"_"$2"_104.out 2> ./logs/"$1"_"$2"_104.err
+# tail ./logs/"$1"_"$2"_104.out
+# tail ./logs/"$1"_"$2"_104.err
+
+# echo "105N running"
+# Rscript --vanilla 105N_Event_Summary.R $1 $2 > ./logs/"$1"_"$2"_105.out 2> ./logs/"$1"_"$2"_105.err
+# tail ./logs/"$1"_"$2"_105.out
+# tail ./logs/"$1"_"$2"_105.err
 
 echo "106N running"
 Rscript --vanilla 106cN_PoE_Estimation.R $1 $2 > ./logs/"$1"_"$2"_106.out 2> ./logs/"$1"_"$2"_106.err
 tail ./logs/"$1"_"$2"_106.out
 tail ./logs/"$1"_"$2"_106.err 
 
-echo "107N running"
-Rscript --vanilla 107cN_EmpiricalBeta_Copula.R $1 $2 > ./logs/"$1"_"$2"_107.out 2> ./logs/"$1"_"$2"_107.err
-tail ./logs/"$1"_"$2"_107.out
-tail ./logs/"$1"_"$2"_107.err
+# echo "107N running"
+# Rscript --vanilla 107cN_EmpiricalBeta_Copula.R $1 $2 > ./logs/"$1"_"$2"_107.out 2> ./logs/"$1"_"$2"_107.err
+# tail ./logs/"$1"_"$2"_107.out
+# tail ./logs/"$1"_"$2"_107.err
 
 echo "117N running"
 Rscript --vanilla 117cN_EmpiricalBeta_PoE.R $1 $2 > ./logs/"$1"_"$2"_117.out 2> ./logs/"$1"_"$2"_117.err
@@ -73,4 +75,5 @@ tail ./logs/"$1"_"$2"_113B.err
 # tail ./logs/"$1"_"$2"_NW_119N.out
 # tail ./logs/"$1"_"$2"_NW_119N.err
 
+date -R
 echo "Complete"

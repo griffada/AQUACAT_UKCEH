@@ -30,96 +30,116 @@ library(RColorBrewer)
 # jT <- which(threshName==thresh1)
 # jW <- which(wsName == ws1)
 
-# Summarylist <- list()
-# rcms <- c("01","04","05","06","07","08","09","10","11","12","13","15")
-# for (i in rcms) {
-# 
-#   for (j in c("present","future")) {
-# 
-#     for (k in c("EC","OBS","HT")) {
-#       suffix <- ifelse(j=="present", "_198012_201011", "_205012_208011")
-#       subfold <- paste0("RCM", i, suffix)
-#       print(paste(i,j,k))
-# 
-#       if(file.exists(paste0(
-#           data_wd,subfold, "/eventSumm_",k,"_", thresh1,
-#           "_",ws1,"_RCM",i,suffix,".csv"))){
-# 
-#         S <- readr::read_csv(
-#           paste0(
-#             data_wd,subfold, "/eventSumm_",k,"_", thresh1,
-#             "_",ws1,"_RCM",i,suffix,".csv"),
-#           col_types = cols(
-#             eventNumber = col_double(),
-#             eventDay = col_double(),
-#             eventLength = col_double(),
-#             area = col_double(),
-#             peakA = col_double(),
-#             peakD = col_double(),
-#             season = col_character(),
-#             nclusters = col_double(),
-#             peakyness = col_double()
-#         )
-#       )
-#       S$rcm <- as.numeric(i)
-#       S$period <- j
-#       S$method <- k
-#       #head(S)
-#       Summarylist[[length(Summarylist) + 1]] <- S
-#       }
-#     }
-#   }
+Summarylist <- list()
+rcms <- c("01","04","05","06","07","08","09","10","11","12","13","15")
+for (i in rcms) {
+
+  for (j in c("present","future")) {
+
+    for (k in c("OBS", "EC")) {
+      suffix <- ifelse(j=="present", "_198012_201011", "_205012_208011")
+      subfold <- paste0("RCM", i, suffix)
+      print(paste(i,j,k))
+
+      if(file.exists(paste0(
+          data_wd,subfold, "/eventSumm_",k,"_", thresh1,
+          "_",ws1,"_RCM",i,suffix,".csv"))){
+
+        S <- readdf(
+          paste0(
+            data_wd,subfold, "/eventSumm_",k,"_", thresh1,
+            "_",ws1,"_RCM",i,suffix,".csv"))
+      S$rcm <- as.numeric(i)
+      S$period <- j
+      S$method <- k
+      #head(S)
+      Summarylist[[length(Summarylist) + 1]] <- S
+      }
+    }
+  }
+}
+# for(i in 1:length(Summarylist)){
+#  if(ncol(Summarylist[[i]]) == 13) 
+#  Summarylist[[i]] <- Summarylist[[i]][,-6]
 # }
-# FullSumm <- do.call(rbind, Summarylist)
-# #FullSumm <- FullSumm0[FullSumm0$area>99,]
-# par(mar=c(3,3,1,1), mgp=c(2,1,0))
-# 
-# #FullSumm <-FullSumm %>%
-# #  dplyr::filter(rcm==4)# %>%
-#   #group_by(eventLength, season) %>%
-#   #summarise(areabar=median(area))
-# 
+FullSumm <- do.call(rbind, Summarylist)
+
+HTsumm <- readdf("S:/Data/eventSumm_HT_NW_POT2_pc01_ALL.csv")
+HTsumm$method <- "HT"
+HTsumm <- HTsumm[,-12]
+
+FullSumm <- rbind(FullSumm, HTsumm)
+
+#FullSumm <- FullSumm0[FullSumm0$area>99,]
+par(mar=c(3,3,1,1), mgp=c(2,1,0))
+
+#FullSumm <-FullSumm %>%
+#  dplyr::filter(rcm==4)# %>%
+  #group_by(eventLength, season) %>%
+  #summarise(areabar=median(area))
+
 FullSumm$season <- factor(x=FullSumm$season, levels=c("DJF","MAM","JJA","SON"), ordered=T)
 FullSumm$period <- factor(x=FullSumm$period, levels=c("present","future"), ordered=T)
-# FullSumm$method <- factor(x=FullSumm$method, levels=c("OBS", "EC", "HT"), ordered=T)
-# FullSumm$RPA <- 1/FullSumm$peakA
+FullSumm$method <- factor(x=FullSumm$method, levels=c("OBS", "EC", "HT"), ordered=T)
+FullSumm$RPA <- 1/FullSumm$peakA_mid
 # FullSumm <- FullSumm[!is.na(FullSumm$area),]
 # 
 # readr::write_csv(FullSumm, "./Data/FullSumm_plotting_national.csv")
 FullSumm <- readr::read_csv("./Data/FullSumm_plotting_national.csv")
 
-FullSumm$weight <- sapply(levels(FullSumm$method)[FullSumm$method],
-                          function(x){switch(x, "OBS"=(1/14778), "EC"=(1/120000), "HT"=1)})
+# FullSumm$weight <- sapply(levels(FullSumm$method)[FullSumm$method],
+#               function(x){switch(x, "OBS"=(1/14778), "EC"=(1/120000), "HT"=1)})
 
-ggplot(FullSumm[FullSumm$method == "OBS",], aes(x=1/peakA, y=area+1)) +
+FullSumm$weight <- 0 
+FullSumm$weight[FullSumm$method == "OBS" & FullSumm$period=="present"] <- 
+  1/sum(FullSumm$method == "OBS" & FullSumm$period == "present")
+FullSumm$weight[FullSumm$method == "OBS" & FullSumm$period=="future"] <- 
+  1/sum(FullSumm$method == "OBS" & FullSumm$period == "future")
+FullSumm$weight[FullSumm$method == "EC" & FullSumm$period == "present"] <-
+                  1/sum(FullSumm$method == "EC" & FullSumm$period == "present")
+FullSumm$weight[FullSumm$method == "EC" & FullSumm$period == "future"] <-
+                  1/sum(FullSumm$method == "EC" & FullSumm$period == "future")
+FullSumm$weight[FullSumm$method == "HT" & FullSumm$period == "present"] <-
+                  1/sum(FullSumm$method == "HT" & FullSumm$period == "present")
+FullSumm$weight[FullSumm$method == "HT" & FullSumm$period == "future"] <-
+                  1/sum(FullSumm$method == "HT" & FullSumm$period == "future")
+
+FullSumm$peakA_mid[FullSumm$peakA_mid > 1000] <- 1100
+
+al <- as_labeller(c("OBS"="G2G", "EC"="EC", "HT"="HT"))
+
+pl <- as_labeller(c("present"="1980-2010", "future"="2050-2080"))
+
+ggplot(FullSumm[FullSumm$method != "HT",], aes(x=1/peakA_mid, y=area+1)) +
   geom_bin2d() +
-  #xlim(0,750) +
   theme_bw() + 
   scale_y_log10() +
-  scale_x_log10() +
+  scale_x_log10(limits=c(1,4900)) +
   scale_fill_viridis(option = "D",  trans = 'log', breaks= c(0, 1, 10, 100, 1000)) + 
-  facet_grid(period~season) +
+  facet_grid(period~method, labeller=labeller(period=pl, method=al)) +
   labs(x="Return Period", y="Area (km\U00B2)", colour="Number of events")
-ggsave(paste0("S:/Plots/area_rpa_period.png"),
+ggsave(paste0("S:/Plots/area_rpa_period5.png"),
        type='cairo-png', width=160, height=120, units='mm')
 
-ggplot(FullSumm, aes(x=eventLength, y=area+1)) +
-  geom_bin2d(binwidth=c(1,0.1), aes(fill=after_stat(ncount))) +
+ggplot(FullSumm[FullSumm$method == "OBS",], aes(x=eventLength, y=1/peakA)) +
+  geom_bin2d(binwidth=c(1,0.1)) +
     theme_bw() + 
-  scale_y_log10() +
-  scale_fill_viridis(option = "D",  trans = 'log', breaks= c(0.5,5,50,500)) + 
-  facet_grid(method~period) +
-  labs(x="Duration of Event (days)", y="Area (km\U00B2)")
-ggsave(paste0("S:/Plots/area_period3.png"),
+  scale_y_log10(limits=c(1,300)) +
+  xlim(0,14) +
+  scale_fill_viridis(option = "D",  trans = 'log', breaks= c(1,10,100)) + 
+  facet_grid(period~season, labeller=labeller(period=pl)) +
+  labs(x="Duration of Event (days)", y="Return Period (years)")
+ggsave(paste0("S:/Plots/area_period5.png"),
        type='cairo-png', width=160, height=120, units='mm')
+
 
 ggplot(FullSumm, aes(x=season)) +   # Needs to be proportions
-  geom_bar(position="dodge",aes(fill=period)) + 
+  geom_bar(position="dodge",aes(fill=period, weight=weight)) + 
     theme_bw() + 
   scale_fill_brewer(palette = "Dark2")  +
   theme_bw() +
-  #facet_grid(~method) +
-  labs(x="Season", y="Number of observed widespread events", fill="Period")
+  facet_grid(~method, labeller=al) +
+  labs(x="Season", y="Proportion of events", fill="Period")
 ggsave(paste0("S:/Plots/events_season4.png"),
        type='cairo-png', width=160, height=120, units='mm')
 
@@ -127,7 +147,7 @@ ggplot(FullSumm, aes(x=eventLength)) +
   geom_histogram(binwidth=1, aes(fill=season, weight=weight)) + 
     theme_bw() + 
   xlim(0, 15) +
-  facet_grid(period~season) +
+  facet_grid(period~season, labeller=labeller(period=pl)) +
   guides(fill=FALSE) +
   scale_fill_brewer(palette = "Dark2")  +
   theme_bw() +
@@ -135,20 +155,33 @@ ggplot(FullSumm, aes(x=eventLength)) +
 ggsave(paste0("S:/Plots/duration_period_season3.png"),
        width=120, height=120, units='mm')
 
-ggplot(FullSumm, aes(x=area)) +
-  geom_histogram(aes(fill=season, weight=weight)) + 
+ggplot(FullSumm[FullSumm$method != "HT" & abs(FullSumm$RPA - 50)>1,], aes(x=RPA)) +
+  geom_density(aes(fill=period, weight=weight), adjust=1.55) + 
     theme_bw() + 
-  scale_x_log10() +
+  scale_x_log10(limits=c(1,300)) +
   #coord_cartesian(xlim = c(0, 5)) +
-  facet_grid(method~season) +
-  guides(fill=FALSE) +
+  facet_grid(period~method, labeller=labeller(method=al,period=pl)) +
+  guides(fill="none") +
   scale_fill_brewer(palette = "Dark2")  +
   theme_bw() +
-  labs(x="Area (km\U00B2)", y="Proportion of events", fill="Season")
-ggsave(paste0("S:/Plots/area_period_season3.png"),
+  labs(x="Return Period (years)", y="Density of events", fill="Season")
+ggsave(paste0("S:/Plots/area_period_season4.png"),
        width=120, height=120, units='mm')
 
-ggplot(FullSumm[FullSumm$period == "present",], aes(x=area)) +
+ggplot(FullSumm[FullSumm$method != "HT",], aes(x=area)) +
+  geom_histogram(aes(fill=season, weight=weight)) + 
+  theme_bw() + 
+  scale_x_log10() +
+  #coord_cartesian(xlim = c(0, 5)) +
+  facet_grid(method~season, labeller=labeller(method=al,period=pl)) +
+  guides(fill="none") +
+  scale_fill_brewer(palette = "Dark2")  +
+  theme_bw() +
+  labs(x="Area (km\U00B2)", y="Density of events", fill="Season")
+ggsave(paste0("S:/Plots/area_season4.png"),
+       width=120, height=120, units='mm')
+
+ggplot(FullSumm[FullSumm$period == "present" & FullSumm$method == "OBS",], aes(x=area)) +
   geom_histogram() + 
     theme_bw() + 
   scale_x_log10() +
@@ -161,7 +194,9 @@ ggplot(FullSumm[FullSumm$period == "present",], aes(x=area)) +
 ggsave(paste0("S:/Plots/rcm_variability_present_area3.png"),
        width=120, height=120, units='mm')
 
-ggplot(FullSumm[FullSumm$period == "present" & FullSumm$rcm %in% c(1,7,15),], aes(x=RPA)) +
+ggplot(FullSumm[FullSumm$period == "present" &
+                  FullSumm$rcm %in% c(1,7,15) & 
+                  FullSumm$method != "HT",], aes(x=1/peakA_mid)) +
   geom_density() + 
     theme_bw() + 
   scale_x_log10() +
@@ -262,17 +297,16 @@ ggplot(FullSumm, aes(x=peakA, y=peakD)) +
 ggsave(paste0("S:/Plots/annVdaily3.png"),
        width=120, height=120, units='mm')
 
-ggplot(FullSumm, aes(x=RPA)) +
+ggplot(FullSumm[FullSumm$method != "HT",], aes(x=1/peakA_mid)) +
   geom_histogram(aes(weight=weight)) + 
   theme_bw() + 
-  scale_x_continuous(trans="log10") +
-  coord_cartesian(xlim = c(-50, 1200)) +
+  scale_x_continuous(trans="log10", limits=c(1,4900)) +
   facet_grid(period~method) +
   guides(fill=FALSE) +
   scale_fill_brewer(palette = "Dark2")  +
   theme_bw() +
   labs(x="Return Period (years)", y="Probability Density")
-ggsave(paste0("S:/Plots/peakA_hist3.png"),
+ggsave(paste0("S:/Plots/peakA_hist4.png"),
        width=120, height=120, units='mm')
 
 ggplot(FullSumm, aes(x=area)) +

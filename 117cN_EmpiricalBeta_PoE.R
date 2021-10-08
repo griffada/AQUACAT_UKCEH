@@ -25,7 +25,7 @@ if (substr(osVersion,1,3) == "Win") {
 }
 
 if(settings$EC2ape & settings$EC2dpe){
- stop("EC probabilities exist. Stopping 117N.") 
+ stop("EC probabilities exist. Stopping 117N.")
 }else{
 #{
 ##### SETUP #####---------------------------------------------------
@@ -111,8 +111,8 @@ for(h in 1:NH){
   
 }
 
-print(quantile(gpa_tracker, probs=seq(0,1,by=0.1)))
-print(quantile(gpa_worst, probs=seq(0,1,by=0.1)))
+#print(quantile(gpa_tracker, probs=seq(0,1,by=0.1)))
+#print(quantile(gpa_worst, probs=seq(0,1,by=0.1)))
 
 #### SAVE OUTPUTS ####--------------------------------------------------------
 print("Saving outputs")

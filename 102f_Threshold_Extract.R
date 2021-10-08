@@ -27,9 +27,11 @@ if(substr(osVersion,1,3) == "Win"){
   source("~/AQUACAT/CodeABG/setup_script_00.R")
 }
 
+suppressPackageStartupMessages({
 library(ilaprosUtils)
 library(extRemes)
 library(lmomco)
+})
 
 if(settings$paramtable){
   print("thresh* files already exist for 102. Proceeding to next job.")

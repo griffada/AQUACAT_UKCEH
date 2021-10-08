@@ -27,19 +27,9 @@ for(RCM in RCMS){
     suffix <- ifelse(period=="present","_198012_201011","_205012_208011")
     subfold <- paste0("RCM", RCM, suffix, "/")
     
-    df_temp <- readr::read_csv(paste0(data_wd,subfold, "eventSumm_OBSB_",
-                                        thresh1,"_", ws1,"_RCM", RCM, suffix, ".csv"), 
-                          col_types=cols(
-                            eventNumber = col_double(),
-                            eventDay = col_double(),
-                            eventLength = col_double(),
-                            area = col_double(),
-                            peakA = col_double(),
-                            peakD = col_double(),
-                            season = col_character(),
-                            nclusters = col_double(),
-                            peakyness = col_double()
-                          ))
+    df_temp <- readr::read_csv(paste0(data_wd,subfold, "eventSumm_OBS_",
+                                        thresh1,"_", ws1,"_RCM", RCM, suffix, ".csv")
+                          )
     
     df_temp$period <- rep(period, nrow(df_temp))
     df_temp$rcm <- rep(RCM, nrow(df_temp))
@@ -51,28 +41,20 @@ for(RCM in RCMS){
     notfirst <- TRUE
   }
 }
-    readr::write_csv(df, paste0(data_wd, "eventSumm_OBSB_", thresh1,
+    readr::write_csv(df, paste0(data_wd, "eventSumm_OBS_", thresh1,
                                 "_", ws1, "_ALL.csv"))
     
 notfirst <- FALSE
 for(RCM in RCMS){
   for(period in PERIODS){
-    
+    print(paste(RCM, period))
     suffix <- ifelse(period=="present","_198012_201011","_205012_208011")
     subfold <- paste0("RCM", RCM, suffix, "/")    
-    df_temp <- readr::read_csv(paste0(data_wd,subfold, "eventSumm_ECB_",
-                                        thresh1,"_", ws1,"_RCM", RCM, suffix, ".csv"),
-                          col_types=cols(
-                            eventNumber = col_double(),
-                            eventDay = col_double(),
-                            eventLength = col_double(),
-                            area = col_double(),
-                            peakA = col_double(),
-                            peakD = col_double(),
-                            season = col_character(),
-                            nclusters = col_double(),
-                            peakyness = col_double()
-                          ))
+    df_temp <- readr::read_csv(paste0(data_wd,subfold, "eventSumm_EC_",
+                                        thresh1,"_", ws1,"_RCM", RCM, suffix, ".csv"))
+    if(ncol(df_temp) == 10){
+    df_temp <- df_temp[,-6]
+    }
 
     df_temp$period <- rep(period, nrow(df_temp))
     df_temp$rcm <- rep(RCM, nrow(df_temp))
@@ -86,7 +68,7 @@ for(RCM in RCMS){
 
   }
 }
-    readr::write_csv(df,paste0(data_wd, "eventSumm_ECB_", thresh1, "_",
+    readr::write_csv(df,paste0(data_wd, "eventSumm_EC_", thresh1, "_",
                            ws1, "_ALL.csv"))
 
 

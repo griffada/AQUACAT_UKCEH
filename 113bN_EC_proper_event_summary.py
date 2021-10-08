@@ -13,6 +13,7 @@ import re
 import sys
 import yaml
 import time
+import gc
 
 def season(x):
   return ["DJF","MAM","JJA","SON"][((x // 90) % 4)]
@@ -56,16 +57,20 @@ else:
     fileinfix = 'POT2_pc01'
     NH = 19914
 
+if len(sys.argv) > 3:
+    if sys.argv[3] == "FF":
+        subfold = '_FF'
+
 ncpath = (f"{outlevel}/RCM{rcm}_{period}{subfold}/event{method}"
           f"_POT2_pc01_RCM{rcm}_{period}.nc")
 ncfile = nc.Dataset(ncpath, mode='r')
 
-param_path = (f"{outlevel}/RCM{rcm}_{period}/paramtableG_POT2_RCM{rcm}"
+param_path = (f"{outlevel}/RCM{rcm}_{period}{subfold}/paramtableG_POT2_RCM{rcm}"
               f"_{period}.csv")
 
 param_table = pd.read_csv(param_path)
 
-thresh_path = f"{outlevel}/RCM{rcm}_{period}/threshMat_RCM{rcm}_{period}.csv"
+thresh_path = f"{outlevel}/RCM{rcm}_{period}{subfold}/threshMat_RCM{rcm}_{period}.csv"
 
 threshvec = pd.read_csv(thresh_path).iloc[:,1]
 if regional:
@@ -80,40 +85,60 @@ init_path = (f"{outlevel}/RCM{rcm}_{period}{subfold}/initialSummary"
 init_table = pd.read_csv(init_path)
 
 summtable_out = pd.DataFrame(columns=["eventNumber", "eventDay", "eventLength",
-                                      "area","peakA", "peakD", "season",
+                                      "area","peakA", "peakA_mid", "peakD", "season",
                                       "nclusters","peakyness"])
 
 eventNo = list(ncfile.variables["eventNo"][:])
 NE = np.sum([i > 0 for i in eventNo])
 
 avec_all = ncfile.variables['ape'][:,:]
-vvec_all = ncfile.variables['flow'][:,:]
-dvec_all = ncfile.variables['dpe'][:,:]
-
-ncfile.close()
+avec_mid = ncfile.variables['ape_mid'][:,:]
 
 print("Setup complete")
 
 start_time = time.time()
 for i in range(NE):
-    if (i < 10) or (i % 1000 == 0):
+    if (i < 10) or (i % 1000) == 0:
         print(i)
         print("--- %s seconds ---" % (time.time() - start_time))
         start_time = time.time()
     ni = eventNo[i]
-    vvec = np.nansum(vvec_all[i,:] > threshvec)
+    vvec = 0
     avec = min(avec_all[i,:])
-    dvec = min(dvec_all[i,:])
-    D = init_table.iloc[ni-1,1:3] # Done in R afterwards
-    seas = season(summtable.iloc[ni-1, 1]) # Done in R afterwards
+    amid = min(avec_mid[i,:])
+    dvec = 0
+    D = init_table.iloc[ni-1,:] # Done in R afterwards
+    #seas = init_table.iloc[ni-1, 3]) # Done in R afterwards
     summtable_out.loc[i] = [ni, D[0], D[1],
-                            vvec, avec, dvec,
-                            seas, 0, 0]
+                            vvec, avec, amid, dvec,
+                            D[3], 0, 0]
 
 print("--- %s seconds ---" % (time.time() - start_time))
-print("done")
+print("avec amid done")
 
-#ncfile.close()
+del avec_all
+del avec_mid
+gc.collect()
+
+vvec_all = ncfile.variables['flow'][:,:]
+dvec_all = ncfile.variables['dpe'][:,:]
+
+for i in range(NE):
+    if (i < 10) or (i % 1000) == 0:
+        print(i)
+        print(">>> %s seconds >>>" % (time.time() - start_time))
+        start_time = time.time()
+    ni = eventNo[i]
+    summtable_out.iloc[i,3] = sum(vvec_all[i,:] > threshvec)
+    summtable_out.iloc[i,6] = min(dvec_all[i,:])
+
+
+
+print(">>> %s seconds >>>" % (time.time() - start_time))
+print("vvec dvec done")
+
+
+ncfile.close()
 
 yaml_path = f"{outlevel}/RCM{rcm}_{period}/settings.yaml"
 

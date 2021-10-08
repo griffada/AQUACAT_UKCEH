@@ -1,14 +1,12 @@
 #!/bin/bash
 
-for p in present future
-do
-    
+for r in 06 07 08
+    do
+    for p in present future
+    do
 
-    echo "RCM$r present running"
-    bash /prj/aquacat/CodeABG/BASH/7_13_netcdf_script.sh 04 $p > /prj/aquacat/CodeABG/logs/"$r"pres_new.out 2> /prj/aquacat/CodeABG/logs/"$r"pres_new.err
+        echo "RCM$r $p running"
+        bash /prj/aquacat/CodeABG/BASH/456g_netcdf_script.sh $r $p > /prj/aquacat/CodeABG/logs/"$r"_"$p"_new.out 2> /prj/aquacat/CodeABG/logs/"$r"_"$p"_new.err
 
-    echo "RCM$r future running"
-    bash /prj/aquacat/CodeABG/BASH/7_13_netcdf_script.sh 04 $p > /prj/aquacat/CodeABG/logs/"$r"fut_new.out 2> /prj/aquacat/CodeABG/logs/"$r"fut_new.err
-
-done
+    done
 echo "all done"

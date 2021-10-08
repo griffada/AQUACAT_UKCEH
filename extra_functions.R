@@ -56,6 +56,116 @@ cdfPrimer <- function(RCM, period, method, NE, NH, thresh1, ws1, rn, savepath, c
   nc_close(nc.file)
 }
 
+
+dpeApeComputer <- function(h, vals, obs_events, pars, thresh_val, ncin, 
+                           events_per_year=2, rare_limit=1e-3, midrp = 50){
+  # Calculates daily and annual probability of exceedence based on observed flow
+  # and GPA parameters using a hybrid empirical/modelled distribution.
+  # Calculates 360-day conversion and 20-events-per-year conversion.
+  # Saves directly to the netcdf file.
+  # Returns number of extreme events, and annual RP of those events.
+  ecd <- ecdf(c(-1,vals,1e8))
+  
+  mid_changept <- -log(1-(1/midrp))/360 # daily PoE for 1/50year flood
+  mid_prob <- (1-mid_changept)/(1 - ecd(thresh_val))
+  
+  parsGL <- vec2par(unlist(pars[3:5]), type='glo')
+  parsGP <- vec2par(unlist(pars[6:8]), type='gpa')
+  
+  glo_poe0 <- 1 - lmomco::cdfglo(obs_events, parsGL)
+  gpa_poe0 <- 1 - lmomco::cdfgpa(obs_events, parsGP)
+  
+  gpa_poe <- pmin(gpa_poe0, glo_poe0)  #take the rarer of glo_poe and gpa_poe
+  # 
+  # gpa_geom <- sqrt(gpa_poe0 * glo_poe0)
+  # # The harmonic mean errs towards the smaller of the two 
+  # # (HM(10,1000)=100, AM(10,1000) = 505)
+  # 
+  # glim <- c(quaglo((1-mid_changept), parsGL), quagpa(1-mid_changept, parsGP))
+  # glim[glim==max(glim)] = 1.05*max(glim)
+  # 
+  # lint <- approx(glim,
+  #                c(1-cdfglo(glim[1], parsGL), 1-cdfgpa(glim[2], parsGP)),
+  #                xout=obs_events)
+  # lint$y[lint$x < min(glim)] <- 0.1*min(c(1e-10,lint$y), na.rm=T)
+  # lint$y[lint$x > max(glim)] <- 2
+  # 
+  # gpa_li <- pmax(pmin(glo_poe0, gpa_poe0), pmin(lint$y, gpa_geom))
+  # 
+  # gpa_poe_mid <- dplyr::if_else(gpa_poe > mid_changept,
+  #                        gpa_poe,
+  #                        gpa_li,
+  #                        missing=glo_poe0)
+  
+  ecd_poe <- 1 - ecd(obs_events)
+  POT2 <- pars$pot2
+  d2a <- function(ecdp, poe, thresh_val, pot2=POT2, obs){
+    poe[is.na(poe)] <- 1
+    wh_ext <- (obs > thresh_val) & (poe < ecdp)
+    wh_ext[is.na(wh_ext)] <- FALSE
+  
+    poe[wh_ext] <- poe[wh_ext]*(1 - ecd(thresh_val))
+    poe[!wh_ext] <- ecdp[!wh_ext]
+  
+    ape <- 1 - exp(-360*poe)
+    ape[is.na(ape)] <- 1
+    
+    ape[ape < 1/5000] <- 1/5000
+    poe[poe < -log(1-(1/5000))/360] <- -log(1-(1/5000))/360
+    return(list(ape=ape, poe=poe))
+  }
+  
+  # ann <- d2a(ecd_poe, gpa_poe, thresh_val, obs_events)
+  # ann_mid <- d2a(ecd_poe, gpa_poe_mid, thresh_val, obs_events)
+  
+  ann_glo <- d2a(ecd_poe, glo_poe0, thresh_val, obs_events)
+  ann_gpa <- d2a(ecd_poe, gpa_poe0, thresh_val, obs_events)
+  ann_geom <- sqrt(ann_glo$ape * ann_gpa$ape)
+  dai_geom <- sqrt(ann_glo$poe * ann_gpa$poe)
+  
+  ann_min <- d2a(ecd_poe, gpa_poe, thresh_val, obs_events)$ape
+  
+  
+  ann_geom[ann_min >= 1/50] <- ann_min[ann_min >= 1/50]
+  ann_geom[ann_min < 1/50 & ann_geom >= 1/50] <- 1/50
+
+  
+  if(any(ann_geom < rare_limit)){
+    print(paste("****", h))
+    print(paste("obs beyond rare limit",
+                paste(1/ann_geom[ann_geom < rare_limit], collapse=" ")))
+  }
+  
+  ncvar_put(nc=ncin, varid="dpe", vals=dai_geom, start=c(h,1),
+            count=c(1,length(dai_geom)))
+  ncvar_put(nc=ncin, varid="ape", vals=ann_min, start=c(h,1),
+            count=c(1,length(dai_geom)))
+  #ncvar_put(nc=ncin, varid="dpe", vals=ann_mid$poe, start=c(h,1),
+  #          count=c(1,length(dai_geom)))
+  ncvar_put(nc=ncin, varid="ape_mid", vals=ann_geom, start=c(h,1),
+            count=c(1,length(dai_geom)))
+  
+  return(c(sum(ann_geom < rare_limit), 1/min(1/5000,ann_geom)))
+}
+
+
+eventSummaryLine <- function(obs_events, i, threshold, r1=1:19914){
+  ni <- eventNo[i]
+  vvec <- sum(
+    (ncvar_get(obs_events, "flow", start=c(1,i), count=c(-1,1)) > threshold),
+    na.rm=T)
+  avec <- ncvar_get(obs_events, "ape", start=c(1,i), count=c(-1,1))
+  min_dvec <- min(
+    ncvar_get(obs_events, "dpe", start=c(1,i), count=c(-1,1)),
+    na.rm=T)
+  D <- eventDayList[[jT]][[jW]][ni]
+  L <- eventLList[[jT]][[jW]][ni]
+  #ncl <- nclustevent(avec < (1-exp(-2*20/360)))
+  #pk <- peakyfun(avec, (1-exp(-2*20/360)))
+
+  return(list(i, D, L, vvec, min(avec), min_dvec, season(D), 0,0))
+}
+
 dpeApeComputer2 <- function(h, vals, obs_events, pars, thresh_val, ncin, 
                            events_per_year=2, rare_limit=1e-3){
   # Calculates daily and annual probability of exceedence based on observed flow
@@ -112,114 +222,6 @@ dpeApeComputer2 <- function(h, vals, obs_events, pars, thresh_val, ncin,
   return(c(sum(valsape < rare_limit), 1/min(valsape[valsape > (1/5000)])))
 }
 
-dpeApeComputer <- function(h, vals, obs_events, pars, thresh_val, ncin, 
-                           events_per_year=2, rare_limit=1e-3, midrp = 50){
-  # Calculates daily and annual probability of exceedence based on observed flow
-  # and GPA parameters using a hybrid empirical/modelled distribution.
-  # Calculates 360-day conversion and 20-events-per-year conversion.
-  # Saves directly to the netcdf file.
-  # Returns number of extreme events, and annual RP of those events.
-  ecd <- ecdf(c(-1,vals,1e8))
-  
-  mid_changept <- -log(1-(1/midrp))/360 # daily PoE for 1/50year flood
-  mid_prob <- (1-mid_changept)/(1 - ecd(thresh_val))
-  
-  parsGL <- vec2par(unlist(pars[3:5]), type='glo')
-  parsGP <- vec2par(unlist(pars[6:8]), type='gpa')
-  
-  glo_poe0 <- 1 - lmomco::cdfglo(obs_events, parsGL)
-  gpa_poe0 <- 1 - lmomco::cdfgpa(obs_events, parsGP)
-  
-  # gpa_poe <- pmin(gpa_poe0, glo_poe0)  #take the rarer of glo_poe and gpa_poe
-  # 
-  # gpa_geom <- sqrt(gpa_poe0 * glo_poe0)
-  # # The harmonic mean errs towards the smaller of the two 
-  # # (HM(10,1000)=100, AM(10,1000) = 505)
-  # 
-  # glim <- c(quaglo((1-mid_changept), parsGL), quagpa(1-mid_changept, parsGP))
-  # glim[glim==max(glim)] = 1.05*max(glim)
-  # 
-  # lint <- approx(glim,
-  #                c(1-cdfglo(glim[1], parsGL), 1-cdfgpa(glim[2], parsGP)),
-  #                xout=obs_events)
-  # lint$y[lint$x < min(glim)] <- 0.1*min(c(1e-10,lint$y), na.rm=T)
-  # lint$y[lint$x > max(glim)] <- 2
-  # 
-  # gpa_li <- pmax(pmin(glo_poe0, gpa_poe0), pmin(lint$y, gpa_geom))
-  # 
-  # gpa_poe_mid <- dplyr::if_else(gpa_poe > mid_changept,
-  #                        gpa_poe,
-  #                        gpa_li,
-  #                        missing=glo_poe0)
-  
-  ecd_poe <- 1 - ecd(obs_events)
-  
-  d2a <- function(ecdp, poe, thresh_val, obs){
-    poe[is.na(poe)] <- 1
-    wh_ext <- (obs > thresh_val)# & (poe < ecdp)
-    wh_ext[is.na(wh_ext)] <- FALSE
-  
-    poe[wh_ext] <- poe[wh_ext]*(1 - ecd(thresh_val))
-    poe[!wh_ext] <- ecdp[!wh_ext]
-  
-    ape <- 1 - exp(-360*poe)
-    ape[is.na(ape)] <- 1
-    
-    ape[ape < 1/5000] <- 1/5000
-    poe[poe < -log(1-(1/5000))/360] <- -log(1-(1/5000))/360
-    return(list(ape=ape, poe=poe))
-  }
-  
-  # ann <- d2a(ecd_poe, gpa_poe, thresh_val, obs_events)
-  # ann_mid <- d2a(ecd_poe, gpa_poe_mid, thresh_val, obs_events)
-  
-  ann_glo <- d2a(ecd_poe, glo_poe0, thresh_val, obs_events)
-  ann_gpa <- d2a(ecd_poe, gpa_poe0, thresh_val, obs_events)
-  ann_geom <- sqrt(ann_glo$ape * ann_gpa$ape)
-  ann_min <- pmin(ann_glo$ape, ann_gpa$ape)
-  dai_min <- pmin(ann_glo$poe, ann_gpa$poe)
-  dai_geom <- sqrt(ann_glo$poe * ann_gpa$poe)
-  
-  ann_geom[ann_min >= 1/50] <- ann_min[ann_min >= 1/50]
-  ann_geom[ann_min < 1/50 & ann_geom >= 1/50] <- 1/50
-
-  
-  if(any(ann_geom < rare_limit)){
-    print(paste("****", h))
-    print(paste("obs beyond rare limit",
-                paste(1/ann_geom[ann_geom < rare_limit], collapse=" ")))
-  }
-  
-  ncvar_put(nc=ncin, varid="dpe", vals=dai_geom, start=c(h,1),
-            count=c(1,length(dai_geom)))
-  ncvar_put(nc=ncin, varid="ape", vals=ann_min, start=c(h,1),
-            count=c(1,length(dai_geom)))
-  #ncvar_put(nc=ncin, varid="dpe", vals=ann_mid$poe, start=c(h,1),
-  #          count=c(1,length(dai_geom)))
-  ncvar_put(nc=ncin, varid="ape_mid", vals=ann_geom, start=c(h,1),
-            count=c(1,length(dai_geom)))
-  
-  return(c(sum(ann_geom < rare_limit),
-           paste(1/ann_geom[ann_geom < rare_limit])))
-}
-
-
-eventSummaryLine <- function(obs_events, i, threshold, r1=1:19914){
-  ni <- eventNo[i]
-  vvec <- sum(
-    (ncvar_get(obs_events, "flow", start=c(1,i), count=c(-1,1)) > threshold),
-    na.rm=T)
-  avec <- ncvar_get(obs_events, "ape", start=c(1,i), count=c(-1,1))
-  min_dvec <- min(
-    ncvar_get(obs_events, "dpe", start=c(1,i), count=c(-1,1)),
-    na.rm=T)
-  D <- eventDayList[[jT]][[jW]][ni]
-  L <- eventLList[[jT]][[jW]][ni]
-  #ncl <- nclustevent(avec < (1-exp(-2*20/360)))
-  #pk <- peakyfun(avec, (1-exp(-2*20/360)))
-
-  return(list(i, D, L, vvec, min(avec), min_dvec, season(D), 0,0))
-}
 
 POT_extract_UKFE2 <- function (x, div = NULL, thresh = 0.975, Plot = TRUE){
     Low.Func <- function(TS) {

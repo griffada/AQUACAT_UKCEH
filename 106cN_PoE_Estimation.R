@@ -1,7 +1,7 @@
 #~~~~~~~~~~~~~~~~~~~~~~~
 # Adam Griffin, 2020-06-15
 #
-# Estimating probability of exceedence along time series using ecdf and
+# Estimating probability of exceedance along time series using ecdf and
 # plotting positions.
 # Uses inputs from 102_Threshold_Extract, 104_Event_Extract and 
 # 105_Event_Summary
@@ -19,7 +19,7 @@
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
 print("running 106N")
-if(interactive()){commandArgs <- function(...){c("01","present")}}
+if(interactive()){commandArgs <- function(...){c("05","present")}}
 ##### SETUP #####------------------------------------------------------------
 suppressMessages({
   library(extRemes)
@@ -34,18 +34,16 @@ if(substr(osVersion,1,3) == "Win"){
   source("~/AQUACAT/CodeABG/setup_script_00.R")
 }
 
-subfold <- paste0("RCM", RCM, suffix, "/")
-
 if(settings$OBSdpe & settings$OBSape){
-  stop("OBS probs already exist. stopping 106N.")
+ stop("OBS probs already exist. stopping 106N.")
 }
 
 ##### DATA #####--------------------------------------------------------------
 
-suffix_pres  <- "_198012_201011"
-subfold_pres <- paste0("RCM", RCM, suffix_pres, "/")
-ncpres <- ncoriginal <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix_pres, "_out.nc") 
+ncpres <- paste0(g2g_wd, "dmflow_RCM", RCM, suffix, "_out.nc") 
 ncin_pres <- nc_open(ncpres)
+
+suffix_pres <- "_198012_201011"
 
 # matrix of threshold value (col) at a given cell (row)
 threshMat <- readRDS(paste0(data_wd, subfold, "threshMat_RCM",
@@ -62,8 +60,14 @@ nc_events <- nc_open(paste0(data_wd,subfold, "eventOBS_",
 
 NE <- sum(ncvar_get(nc_events, "eventNo") > 0)
 
-partable <- readdf(paste0(data_wd,subfold_pres, 
-                  "paramtableG_",thresh1, "_RCM", RCM, suffix_pres, ".csv"))
+partable <- readdf(paste0(data_wd,subfold, 
+                  "paramtableG_",thresh1, "_RCM", RCM, suffix, ".csv"))
+
+# if(period=="future"){
+#   partable <- readdf(paste0(data_wd, subfold,
+#                             "paramtableP_", thresh1, "_RCM", suffix_pres, ".csv"))
+# }
+
 
 gpa_tracker <- c()
 gpa_worst   <- c()
@@ -77,17 +81,14 @@ for (h in 1:NH) {
     print(h)
     I <- difftime(Sys.time(), ST, units="secs")
     I0 <- difftime(Sys.time(), ST0, units="secs")
+    print(I)
     print(paste("Percent remaining", 100 * round((NH - h)/NH ,2)))
     ST <- Sys.time()
     print(ST) 
   }
   
   thr        <- threshMat[h,jT]
-  meanInt    <- partable$meanint[h]
   thresholdH <- partable$threshold[h]
-  locH       <- partable$loc[h]
-  scaleH     <- partable$sca[h]
-  shapeH     <- partable$shape[h]
 
     # Full timeseries for location
   vals <- ncvar_get(ncin_pres, "dmflow",
@@ -112,9 +113,9 @@ for (h in 1:NH) {
 
 nc_close(ncin_pres)
 nc_close(nc_events)
-print(paste("Number of extreme events:", sum(gpa_tracker > 0)))
-print("Quantiles of highest return period AT LOCATION:")
-print(quantile(gpa_worst, probs=seq(0, 1, by=0.1)))
+#print(paste("Number of extreme locations:", sum(gpa_tracker > 0)))
+#print("Quantiles of highest return period AT LOCATION:")
+#print(quantile(gpa_worst, probs=seq(0, 1, by=0.1)))
 
 settings$OBSdpe <- TRUE
 settings$OBSape <- TRUE
