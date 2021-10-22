@@ -13,7 +13,7 @@
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
 if(interactive()){
-  commandArgs <- function(...){c("05","present","NW")}
+  commandArgs <- function(...){c("01","present","NW")}
 }
 #### SETUP ####----------------------------------------------------------
 if(substr(osVersion,1,3) == "Win"){
@@ -25,9 +25,10 @@ if(substr(osVersion,1,3) == "Win"){
 }
 
 # if(settings$HTdpe & settings$HTape){
-#   print("HT probs exist. Stopping 110N.")
-# }else{
+  # print("HT probs exist. Stopping 110N.")
+# }else
 {
+
 library(ilaprosUtils)
 library(lmomco)
 library(extRemes)
@@ -76,7 +77,7 @@ print(Sys.time() - ST)
 partable <- readdf(paste0(data_wd,subfold, 
                         "paramtableG_",thresh1, "_RCM", RCM, suffix, ".csv"))
 
-ht_events <- nc_open(paste0(data_wd,subfold, REG, "/eventHT_region_",
+ht_events <- nc_open(paste0(data_wd,subfold, REG, "/eventOBS_region_",
                   REG,"_RCM", RCM, suffix, ".nc"), write=T)
 
 NE <- sum(ncvar_get(ht_events, "eventNo") > 0)
@@ -117,7 +118,7 @@ for(h in 1:NE){
                     count=c(1, 1, 10800))
   
   eventflow_HT <- ncvar_get(ht_events, "flow",
-                    start=c(h,1), count=c(1,NE))
+                    start=c(1,h), count=c(NE,1))
 
   da <- dpeApeComputer(h,
                  vals,
@@ -132,8 +133,8 @@ for(h in 1:NE){
 nc_close(ht_events)
 nc_close(ncin)
 
-settings$HTdpe <- TRUE
-settings$HTape <- TRUE
+settings$OBSdpe <- TRUE
+settings$OBSape <- TRUE
 settings$HTPoE_Estimation <- "110cN"
 write_yaml(settings, settingspath)
 

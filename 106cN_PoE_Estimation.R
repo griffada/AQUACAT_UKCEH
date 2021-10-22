@@ -34,9 +34,9 @@ if(substr(osVersion,1,3) == "Win"){
   source("~/AQUACAT/CodeABG/setup_script_00.R")
 }
 
-if(settings$OBSdpe & settings$OBSape){
- stop("OBS probs already exist. stopping 106N.")
-}
+# if(settings$OBSdpe & settings$OBSape){
+ # stop("OBS probs already exist. stopping 106N.")
+# }
 
 ##### DATA #####--------------------------------------------------------------
 

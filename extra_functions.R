@@ -67,7 +67,7 @@ dpeApeComputer <- function(h, vals, obs_events, pars, thresh_val, ncin,
   ecd <- ecdf(c(-1,vals,1e8))
   
   mid_changept <- -log(1-(1/midrp))/360 # daily PoE for 1/50year flood
-  mid_prob <- (1-mid_changept)/(1 - ecd(thresh_val))
+  mid_prob <- mid_changept/(1 - ecd(thresh_val))
   
   parsGL <- vec2par(unlist(pars[3:5]), type='glo')
   parsGP <- vec2par(unlist(pars[6:8]), type='gpa')
@@ -99,9 +99,9 @@ dpeApeComputer <- function(h, vals, obs_events, pars, thresh_val, ncin,
   
   ecd_poe <- 1 - ecd(obs_events)
   POT2 <- pars$pot2
-  d2a <- function(ecdp, poe, thresh_val, pot2=POT2, obs){
+  d2a <- function(ecdp, poe, thresh_val, obs, pot2=POT2){
     poe[is.na(poe)] <- 1
-    wh_ext <- (obs > thresh_val) & (poe < ecdp)
+    wh_ext <- (obs > pot2) #& (poe < ecdp)
     wh_ext[is.na(wh_ext)] <- FALSE
   
     poe[wh_ext] <- poe[wh_ext]*(1 - ecd(thresh_val))
@@ -122,6 +122,21 @@ dpeApeComputer <- function(h, vals, obs_events, pars, thresh_val, ncin,
   ann_gpa <- d2a(ecd_poe, gpa_poe0, thresh_val, obs_events)
   ann_geom <- sqrt(ann_glo$ape * ann_gpa$ape)
   dai_geom <- sqrt(ann_glo$poe * ann_gpa$poe)
+  
+  # # The harmonic mean errs towards the smaller of the two 
+  # # (HM(10,1000)=100, AM(10,1000) = 505)
+  # 
+  glim <- c(quaglo(mid_prob, parsGL), quagpa(mid_prob, parsGP))
+  glim[glim==max(glim)] = 1.025*max(glim)
+  glim[glim==min(glim)] = 0.975*min(glim)
+
+  lint <- approx(glim,
+                 c(1-cdfglo(glim[1], parsGL), 1-cdfgpa(glim[2], parsGP)),
+                 xout=obs_events)
+  lint$y[lint$x < min(glim)] <- 0.1*min(c(1e-5,lint$y), na.rm=T)
+  lint$y[lint$x > max(glim)] <- 2
+
+  gpa_li <- pmax(pmin(ann_glo$ape, ann_gpa$ape), pmin(lint$y, ann_geom))
   
   ann_min <- d2a(ecd_poe, gpa_poe, thresh_val, obs_events)$ape
   

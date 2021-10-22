@@ -15,7 +15,7 @@
 #
 #~~~~~~~~~~~~~~~~~~~~~~~
 if(interactive()){
-  commandArgs <- function(...){c("01","present","NW")}
+  commandArgs <- function(...){c("05","present","NW")}
 }
 if(substr(osVersion,1,3) == "Win"){
   source("S:/CodeABG/setup_script_00.R")
@@ -215,8 +215,8 @@ nSample <- settings$nSampleHT
 mult <- 2
 dS <- 50
 
-savepath <- paste0(data_wd, subfold, REG, "/eventHT_",REG,"_",
-                         thresh1,"_", ws1, "_RCM", RCM, suffix, ".nc")
+savepath <- paste0(data_wd, subfold, REG, "/eventHT_region_",REG,
+                   "_RCM", RCM, suffix, ".nc")
 
 cdfPrimer(RCM, period, "HT", NE=nSample, NH=NREG, thresh1=thresh1, ws1=ws1,
           rn=rn[r1,], savepath=savepath)

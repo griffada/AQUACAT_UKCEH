@@ -24,10 +24,10 @@ if (substr(osVersion,1,3) == "Win") {
   source("~/AQUACAT/CodeABG/setup_script_00.R")
 }
 
-if(settings$EC2ape & settings$EC2dpe){
- stop("EC probabilities exist. Stopping 117N.")
-}else{
-#{
+# if(settings$EC2ape & settings$EC2dpe){
+ # stop("EC probabilities exist. Stopping 117N.")
+# }else{
+{
 ##### SETUP #####---------------------------------------------------
 suppressPackageStartupMessages({
 library(extRemes)
